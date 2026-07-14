@@ -14,7 +14,302 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          nombre?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
+      questions: {
+        Row: {
+          activa: boolean
+          codigo: string
+          concepto: string | null
+          created_at: string
+          dificultad: Database["public"]["Enums"]["dificultad_enum"]
+          explicacion: string
+          id: string
+          objetivo_aprendizaje: string | null
+          opcion_a: string
+          opcion_b: string
+          opcion_c: string
+          opcion_d: string
+          pregunta: string
+          referencia_fuente: string
+          respuesta_correcta: Database["public"]["Enums"]["respuesta_enum"]
+          subject_id: string
+          subtopic_id: string | null
+          topic_id: string
+          user_id: string
+        }
+        Insert: {
+          activa?: boolean
+          codigo: string
+          concepto?: string | null
+          created_at?: string
+          dificultad: Database["public"]["Enums"]["dificultad_enum"]
+          explicacion?: string
+          id?: string
+          objetivo_aprendizaje?: string | null
+          opcion_a: string
+          opcion_b: string
+          opcion_c: string
+          opcion_d: string
+          pregunta: string
+          referencia_fuente?: string
+          respuesta_correcta: Database["public"]["Enums"]["respuesta_enum"]
+          subject_id: string
+          subtopic_id?: string | null
+          topic_id: string
+          user_id: string
+        }
+        Update: {
+          activa?: boolean
+          codigo?: string
+          concepto?: string | null
+          created_at?: string
+          dificultad?: Database["public"]["Enums"]["dificultad_enum"]
+          explicacion?: string
+          id?: string
+          objetivo_aprendizaje?: string | null
+          opcion_a?: string
+          opcion_b?: string
+          opcion_c?: string
+          opcion_d?: string
+          pregunta?: string
+          referencia_fuente?: string
+          respuesta_correcta?: Database["public"]["Enums"]["respuesta_enum"]
+          subject_id?: string
+          subtopic_id?: string | null
+          topic_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questions_subtopic_id_fkey"
+            columns: ["subtopic_id"]
+            isOneToOne: false
+            referencedRelation: "subtopics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subjects: {
+        Row: {
+          created_at: string
+          descripcion: string | null
+          id: string
+          nombre: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subtopics: {
+        Row: {
+          created_at: string
+          id: string
+          nombre: string
+          topic_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nombre: string
+          topic_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nombre?: string
+          topic_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subtopics_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_answers: {
+        Row: {
+          correcta: boolean | null
+          created_at: string
+          id: string
+          orden: number
+          question_id: string
+          respuesta_usuario:
+            | Database["public"]["Enums"]["respuesta_enum"]
+            | null
+          test_id: string
+          user_id: string
+        }
+        Insert: {
+          correcta?: boolean | null
+          created_at?: string
+          id?: string
+          orden: number
+          question_id: string
+          respuesta_usuario?:
+            | Database["public"]["Enums"]["respuesta_enum"]
+            | null
+          test_id: string
+          user_id: string
+        }
+        Update: {
+          correcta?: boolean | null
+          created_at?: string
+          id?: string
+          orden?: number
+          question_id?: string
+          respuesta_usuario?:
+            | Database["public"]["Enums"]["respuesta_enum"]
+            | null
+          test_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_answers_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tests: {
+        Row: {
+          aciertos: number
+          completado: boolean
+          created_at: string
+          fallos: number
+          fecha_finalizacion: string | null
+          fecha_inicio: string
+          id: string
+          numero_preguntas: number
+          porcentaje: number
+          sin_responder: number
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          aciertos?: number
+          completado?: boolean
+          created_at?: string
+          fallos?: number
+          fecha_finalizacion?: string | null
+          fecha_inicio?: string
+          id?: string
+          numero_preguntas: number
+          porcentaje?: number
+          sin_responder?: number
+          tipo: string
+          user_id: string
+        }
+        Update: {
+          aciertos?: number
+          completado?: boolean
+          created_at?: string
+          fallos?: number
+          fecha_finalizacion?: string | null
+          fecha_inicio?: string
+          id?: string
+          numero_preguntas?: number
+          porcentaje?: number
+          sin_responder?: number
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      topics: {
+        Row: {
+          created_at: string
+          id: string
+          nombre: string
+          numero: number
+          subject_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nombre: string
+          numero: number
+          subject_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nombre?: string
+          numero?: number
+          subject_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topics_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +318,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      dificultad_enum: "facil" | "medio" | "dificil"
+      respuesta_enum: "A" | "B" | "C" | "D"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +446,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      dificultad_enum: ["facil", "medio", "dificil"],
+      respuesta_enum: ["A", "B", "C", "D"],
+    },
   },
 } as const
