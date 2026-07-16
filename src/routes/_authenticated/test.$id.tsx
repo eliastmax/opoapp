@@ -20,6 +20,7 @@ function TestPage() {
   const qc = useQueryClient();
   const [current, setCurrent] = useState(0);
   const [confirmFinish, setConfirmFinish] = useState(false);
+  const [finishing, setFinishing] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["test", id],
@@ -28,7 +29,7 @@ function TestPage() {
       if (e1) throw e1;
       const { data: answers, error: e2 } = await supabase
         .from("test_answers")
-        .select("*, questions(*)")
+        .select("*, questions!test_answers_question_id_fkey(*)")
         .eq("test_id", id)
         .order("orden");
       if (e2) throw e2;
@@ -46,6 +47,7 @@ function TestPage() {
 
   const total = data?.answers.length ?? 0;
   const answered = useMemo(() => (data?.answers.filter((a) => a.respuesta_usuario !== null).length ?? 0), [data]);
+  const remaining = total - answered;
 
   if (isLoading) return <div className="flex items-center justify-center pt-20"><Loader2 className="w-6 h-6 animate-spin" /></div>;
   if (error) return <p className="text-destructive p-4">{(error as Error).message}</p>;
@@ -72,24 +74,42 @@ function TestPage() {
   }
 
   async function finish() {
-    let aciertos = 0, fallos = 0, sin = 0;
-    const updates = data!.answers.map(async (a) => {
-      const q = a.questions;
-      if (!q) return;
-      if (!a.respuesta_usuario) { sin++; return; }
-      const correcta = a.respuesta_usuario === q.respuesta_correcta;
-      if (correcta) aciertos++; else fallos++;
-      await supabase.from("test_answers").update({ correcta }).eq("id", a.id);
-    });
-    await Promise.all(updates);
-    const pct = data!.answers.length > 0 ? (aciertos / data!.answers.length) * 100 : 0;
-    const { error } = await supabase.from("tests").update({
-      completado: true,
-      fecha_finalizacion: new Date().toISOString(),
-      aciertos, fallos, sin_responder: sin, porcentaje: Number(pct.toFixed(2)),
-    }).eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    navigate({ to: "/resultados/$id", params: { id }, replace: true });
+    if (finishing) return;
+    setFinishing(true);
+    try {
+      let aciertos = 0, fallos = 0, sin = 0;
+      const updates = data!.answers.map(async (a) => {
+        const q = a.questions;
+        if (!q) return;
+        if (!a.respuesta_usuario) { sin++; return; }
+        const correcta = a.respuesta_usuario === q.respuesta_correcta;
+        if (correcta) aciertos++; else fallos++;
+        await supabase.from("test_answers").update({ correcta }).eq("id", a.id);
+      });
+      await Promise.all(updates);
+      const pct = data!.answers.length > 0 ? (aciertos / data!.answers.length) * 100 : 0;
+      const { error } = await supabase.from("tests").update({
+        completado: true,
+        fecha_finalizacion: new Date().toISOString(),
+        aciertos, fallos, sin_responder: sin, porcentaje: Number(pct.toFixed(2)),
+      }).eq("id", id);
+      if (error) throw error;
+      navigate({ to: "/resultados/$id", params: { id }, replace: true });
+    } catch (e) {
+      toast.error((e as Error).message);
+      setFinishing(false);
+    }
+  }
+
+  function revisarRespuestas() {
+    setConfirmFinish(false);
+    const idx = data!.answers.findIndex((a) => a.respuesta_usuario === null);
+    setCurrent(idx >= 0 ? idx : 0);
+  }
+
+  function handleNext() {
+    if (current < total - 1) setCurrent((c) => c + 1);
+    else setConfirmFinish(true);
   }
 
   const options: Array<[Respuesta, string]> = [
@@ -97,18 +117,18 @@ function TestPage() {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="pt-1">
-        <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
+        <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
           <span>Pregunta {current + 1} de {total}</span>
-          <span>{answered}/{total} contestadas</span>
+          <span>Quedan {remaining}</span>
         </div>
         <Progress value={((current + 1) / total) * 100} />
       </div>
 
-      <Card className="p-4">
-        <div className="text-xs text-muted-foreground mb-1">{question.codigo} · {question.dificultad}</div>
-        <p className="text-base font-medium leading-relaxed">{question.pregunta}</p>
+      <Card className="p-3">
+        <div className="text-xs text-muted-foreground mb-1 capitalize">{question.dificultad}</div>
+        <p className="text-base font-medium leading-snug">{question.pregunta}</p>
       </Card>
 
       <div className="space-y-2">
@@ -118,24 +138,20 @@ function TestPage() {
             <button
               key={letter}
               onClick={() => selectOption(letter)}
-              className={`w-full text-left p-3 rounded-lg border transition-colors min-h-14 ${active ? "border-primary bg-primary/10" : "bg-card"}`}
+              className={`w-full text-left p-2.5 rounded-lg border transition-colors min-h-12 ${active ? "border-primary bg-primary/10" : "bg-card"}`}
             >
-              <div className="flex gap-3">
+              <div className="flex gap-3 items-center">
                 <span className={`flex-none w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${active ? "bg-primary text-primary-foreground" : "bg-muted"}`}>{letter}</span>
-                <span className="flex-1 text-sm leading-relaxed pt-1">{text}</span>
+                <span className="flex-1 text-sm leading-snug">{text}</span>
               </div>
             </button>
           );
         })}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 pt-1">
         <Button variant="outline" className="flex-1 h-12" disabled={current === 0} onClick={() => setCurrent((c) => c - 1)}>Anterior</Button>
-        {current < total - 1 ? (
-          <Button className="flex-1 h-12" onClick={() => setCurrent((c) => c + 1)}>Siguiente</Button>
-        ) : (
-          <Button className="flex-1 h-12" onClick={() => setConfirmFinish(true)}>Finalizar</Button>
-        )}
+        <Button className="flex-1 h-12" onClick={handleNext}>Siguiente</Button>
       </div>
 
       <AlertDialog open={confirmFinish} onOpenChange={setConfirmFinish}>
@@ -143,13 +159,15 @@ function TestPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Finalizar test</AlertDialogTitle>
             <AlertDialogDescription>
-              {answered < total ? `Tienes ${total - answered} preguntas sin responder. ` : ""}
-              ¿Seguro que quieres corregir y finalizar?
+              Has llegado al final del test. ¿Quieres finalizar y corregir?
+              {remaining > 0 ? ` Te quedan ${remaining} sin responder.` : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={finish}>Finalizar</AlertDialogAction>
+            <AlertDialogCancel onClick={revisarRespuestas}>Revisar respuestas</AlertDialogCancel>
+            <AlertDialogAction onClick={finish} disabled={finishing}>
+              {finishing ? <Loader2 className="w-4 h-4 animate-spin" /> : "Finalizar y corregir"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
