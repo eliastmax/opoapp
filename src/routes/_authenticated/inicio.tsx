@@ -48,7 +48,7 @@ function InicioPage() {
 
       const { data: rows, error: eRows } = await supabase
         .from("test_answers")
-        .select("question_id, questions!inner(activa)")
+        .select("question_id, questions!test_answers_question_id_fkey!inner(activa)")
         .eq("correcta", false);
       if (eRows) throw eRows;
 
