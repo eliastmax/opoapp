@@ -165,7 +165,7 @@ function ResultadosPage() {
         </div>
       ) : (
         <div className="space-y-2">
-          <Button className="w-full h-12" onClick={repetirFalladas}>Repetir falladas ({falladas.length})</Button>
+          <Button className="w-full h-12" onClick={repetirFalladas}>Repetir falladas</Button>
           <Button variant="outline" className="w-full h-12" onClick={() => goReview("fallos")}>Ver corrección</Button>
           <Button variant="outline" className="w-full h-12" onClick={() => goReview("todas")}>Revisar todas</Button>
           <Link to="/inicio"><Button variant="ghost" className="w-full h-12">Volver al inicio</Button></Link>
