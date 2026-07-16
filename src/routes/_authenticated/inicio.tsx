@@ -24,7 +24,7 @@ function InicioPage() {
         supabase.from("tests").select("id", { count: "exact", head: true }).eq("completado", true),
         supabase.from("tests").select("id, porcentaje, aciertos, numero_preguntas, fecha_finalizacion").eq("completado", true).order("fecha_finalizacion", { ascending: false }).limit(1).maybeSingle(),
         supabase.from("test_answers").select("correcta").not("correcta", "is", null),
-        supabase.from("test_answers").select("question_id").eq("correcta", false),
+        supabase.from("test_answers").select("question_id, questions!test_answers_question_id_fkey!inner(activa)").eq("correcta", false).eq("questions.activa", true),
       ]);
       const totalRespuestas = aciertosTotal.data?.length ?? 0;
       const aciertos = aciertosTotal.data?.filter((r) => r.correcta === true).length ?? 0;
