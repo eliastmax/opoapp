@@ -46,6 +46,32 @@ function CrearPage() {
 
   const canStart = useMemo(() => subjectId && topicId && difs.length > 0, [subjectId, topicId, difs]);
 
+  // Auto-select when only one option exists
+  useEffect(() => {
+    if (subjects && subjects.length === 1 && !subjectId) {
+      setSubjectId(subjects[0].id);
+      setTopicId("");
+      setSubtopicIds([]);
+    }
+  }, [subjects, subjectId]);
+
+  useEffect(() => {
+    if (subjectId && topics && topics.length === 1 && !topicId) {
+      setTopicId(topics[0].id);
+      setSubtopicIds([]);
+    }
+  }, [subjectId, topics, topicId]);
+
+  useEffect(() => {
+    if (topicId && subtopics && subtopics.length === 1 && subtopicIds.length === 0) {
+      setSubtopicIds([subtopics[0].id]);
+    }
+  }, [topicId, subtopics, subtopicIds.length]);
+
+  const hideSubject = !!subjects && subjects.length === 1;
+  const hideTopic = !!topics && topics.length === 1;
+  const hideSubtopic = !!subtopics && subtopics.length <= 1;
+
   async function iniciar() {
     if (!canStart) return;
     setStarting(true);
