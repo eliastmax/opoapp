@@ -98,6 +98,27 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "questions_owner_subject_fk"
+            columns: ["user_id", "subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["user_id", "id"]
+          },
+          {
+            foreignKeyName: "questions_owner_subtopic_fk"
+            columns: ["user_id", "subtopic_id"]
+            isOneToOne: false
+            referencedRelation: "subtopics"
+            referencedColumns: ["user_id", "id"]
+          },
+          {
+            foreignKeyName: "questions_owner_topic_fk"
+            columns: ["user_id", "topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["user_id", "id"]
+          },
+          {
             foreignKeyName: "questions_subject_id_fkey"
             columns: ["subject_id"]
             isOneToOne: false
@@ -168,6 +189,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "subtopics_owner_topic_fk"
+            columns: ["user_id", "topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["user_id", "id"]
+          },
+          {
             foreignKeyName: "subtopics_topic_id_fkey"
             columns: ["topic_id"]
             isOneToOne: false
@@ -214,6 +242,20 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "test_answers_owner_question_fk"
+            columns: ["user_id", "question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["user_id", "id"]
+          },
+          {
+            foreignKeyName: "test_answers_owner_test_fk"
+            columns: ["user_id", "test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["user_id", "id"]
+          },
           {
             foreignKeyName: "test_answers_question_id_fkey"
             columns: ["question_id"]
@@ -301,6 +343,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "topics_owner_subject_fk"
+            columns: ["user_id", "subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["user_id", "id"]
+          },
           {
             foreignKeyName: "topics_subject_id_fkey"
             columns: ["subject_id"]

@@ -38,7 +38,7 @@ function ImportarPage() {
       if ("fatal" in parsed) { toast.error(parsed.fatal); setLoading(false); return; }
 
       const { data: existing } = await supabase.from("questions")
-        .select("id, codigo, pregunta, topic_id, subtopic_id, topics(nombre, numero, subjects(nombre)), subtopics(nombre)");
+        .select("id, codigo, pregunta, topic_id, subtopic_id, topics!questions_topic_id_fkey(nombre, numero, subjects!topics_subject_id_fkey(nombre)), subtopics!questions_subtopic_id_fkey(nombre)");
       const codeSet = new Set((existing ?? []).map((q) => q.codigo));
       const existingList = existing ?? [];
 

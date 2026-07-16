@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,32 @@ function CrearPage() {
   });
 
   const canStart = useMemo(() => subjectId && topicId && difs.length > 0, [subjectId, topicId, difs]);
+
+  // Auto-select when only one option exists
+  useEffect(() => {
+    if (subjects && subjects.length === 1 && !subjectId) {
+      setSubjectId(subjects[0].id);
+      setTopicId("");
+      setSubtopicIds([]);
+    }
+  }, [subjects, subjectId]);
+
+  useEffect(() => {
+    if (subjectId && topics && topics.length === 1 && !topicId) {
+      setTopicId(topics[0].id);
+      setSubtopicIds([]);
+    }
+  }, [subjectId, topics, topicId]);
+
+  useEffect(() => {
+    if (topicId && subtopics && subtopics.length === 1 && subtopicIds.length === 0) {
+      setSubtopicIds([subtopics[0].id]);
+    }
+  }, [topicId, subtopics, subtopicIds.length]);
+
+  const hideSubject = !!subjects && subjects.length === 1;
+  const hideTopic = !!topics && topics.length === 1;
+  const hideSubtopic = !!subtopics && subtopics.length <= 1;
 
   async function iniciar() {
     if (!canStart) return;
@@ -105,18 +131,20 @@ function CrearPage() {
       </header>
 
       <Card className="p-4 space-y-4">
-        <div className="space-y-1.5">
-          <Label>Materia</Label>
-          <Select value={subjectId} onValueChange={(v) => { setSubjectId(v); setTopicId(""); setSubtopicIds([]); }}>
-            <SelectTrigger className="h-12"><SelectValue placeholder="Selecciona materia" /></SelectTrigger>
-            <SelectContent>
-              {(subjects ?? []).map((s) => <SelectItem key={s.id} value={s.id}>{s.nombre}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          {subjects && subjects.length === 0 && <p className="text-xs text-muted-foreground">Aún no tienes materias. Importa un CSV primero.</p>}
-        </div>
+        {!hideSubject && (
+          <div className="space-y-1.5">
+            <Label>Materia</Label>
+            <Select value={subjectId} onValueChange={(v) => { setSubjectId(v); setTopicId(""); setSubtopicIds([]); }}>
+              <SelectTrigger className="h-12"><SelectValue placeholder="Selecciona materia" /></SelectTrigger>
+              <SelectContent>
+                {(subjects ?? []).map((s) => <SelectItem key={s.id} value={s.id}>{s.nombre}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {subjects && subjects.length === 0 && <p className="text-xs text-muted-foreground">Aún no tienes materias. Importa un CSV primero.</p>}
+          </div>
+        )}
 
-        {subjectId && (
+        {subjectId && !hideTopic && (
           <div className="space-y-1.5">
             <Label>Tema</Label>
             <Select value={topicId} onValueChange={(v) => { setTopicId(v); setSubtopicIds([]); }}>
@@ -128,7 +156,7 @@ function CrearPage() {
           </div>
         )}
 
-        {topicId && subtopics && subtopics.length > 0 && (
+        {topicId && subtopics && subtopics.length > 0 && !hideSubtopic && (
           <div className="space-y-1.5">
             <Label>Subapartados (opcional)</Label>
             <div className="space-y-2 rounded-md border p-3">
@@ -144,6 +172,7 @@ function CrearPage() {
             </div>
           </div>
         )}
+
 
         <div className="space-y-1.5">
           <Label>Dificultad</Label>
