@@ -131,18 +131,20 @@ function CrearPage() {
       </header>
 
       <Card className="p-4 space-y-4">
-        <div className="space-y-1.5">
-          <Label>Materia</Label>
-          <Select value={subjectId} onValueChange={(v) => { setSubjectId(v); setTopicId(""); setSubtopicIds([]); }}>
-            <SelectTrigger className="h-12"><SelectValue placeholder="Selecciona materia" /></SelectTrigger>
-            <SelectContent>
-              {(subjects ?? []).map((s) => <SelectItem key={s.id} value={s.id}>{s.nombre}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          {subjects && subjects.length === 0 && <p className="text-xs text-muted-foreground">Aún no tienes materias. Importa un CSV primero.</p>}
-        </div>
+        {!hideSubject && (
+          <div className="space-y-1.5">
+            <Label>Materia</Label>
+            <Select value={subjectId} onValueChange={(v) => { setSubjectId(v); setTopicId(""); setSubtopicIds([]); }}>
+              <SelectTrigger className="h-12"><SelectValue placeholder="Selecciona materia" /></SelectTrigger>
+              <SelectContent>
+                {(subjects ?? []).map((s) => <SelectItem key={s.id} value={s.id}>{s.nombre}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {subjects && subjects.length === 0 && <p className="text-xs text-muted-foreground">Aún no tienes materias. Importa un CSV primero.</p>}
+          </div>
+        )}
 
-        {subjectId && (
+        {subjectId && !hideTopic && (
           <div className="space-y-1.5">
             <Label>Tema</Label>
             <Select value={topicId} onValueChange={(v) => { setTopicId(v); setSubtopicIds([]); }}>
@@ -154,7 +156,7 @@ function CrearPage() {
           </div>
         )}
 
-        {topicId && subtopics && subtopics.length > 0 && (
+        {topicId && subtopics && subtopics.length > 0 && !hideSubtopic && (
           <div className="space-y-1.5">
             <Label>Subapartados (opcional)</Label>
             <div className="space-y-2 rounded-md border p-3">
@@ -170,6 +172,7 @@ function CrearPage() {
             </div>
           </div>
         )}
+
 
         <div className="space-y-1.5">
           <Label>Dificultad</Label>
