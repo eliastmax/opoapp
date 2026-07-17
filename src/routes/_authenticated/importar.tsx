@@ -186,7 +186,8 @@ function ImportarPage() {
     setImporting(true);
     try {
       const payload = [...preview.nuevas, ...preview.compatibles].map(rowToPayload);
-      const { data, error } = await supabase.rpc("import_questions_batch", { payload });
+      // Cast payload to Json for supabase-generated types (Record<string,unknown> is structurally Json-compatible).
+      const { data, error } = await supabase.rpc("import_questions_batch", { payload: payload as unknown as never });
       if (error) throw error;
       const res = (data ?? {}) as { inserted?: number; enriched?: number; omitted?: number };
       setResult({
