@@ -1,4 +1,4 @@
-/// <reference types="bun" />
+// @ts-expect-error bun:test provided by bun runtime
 import { describe, it, expect } from "bun:test";
 import { readFileSync } from "fs";
 import { join } from "path";
