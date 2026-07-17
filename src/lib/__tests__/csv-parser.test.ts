@@ -9,10 +9,9 @@ const V1_BASIC = HEADERS_V1_BASIC.join(";") + "\n" +
 const V1_ENRICHED_COMMA = HEADERS_V1_ENRICHED.join(",") + "\n" +
   'SMS-T20-0001,Materia X,20,Tema Y,Sub A,medio,Concepto,Objetivo,¿Pregunta?,A1,B1,C1,D1,B,Expl,Ref\n';
 
-function assertOk<T extends { fatal?: unknown }>(res: T): asserts res is Exclude<T, { fatal: string }> {
-  if ("fatal" in res && typeof (res as { fatal?: unknown }).fatal === "string") {
-    throw new Error("fatal: " + (res as { fatal: string }).fatal);
-  }
+import type { ParseResult, ParseFatal } from "../csv-parser";
+function assertOk(res: ParseResult | ParseFatal): asserts res is ParseResult {
+  if ("fatal" in res) throw new Error("fatal: " + res.fatal);
 }
 
 describe("parseCsv", () => {
