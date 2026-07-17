@@ -35,68 +35,131 @@ export type Database = {
       questions: {
         Row: {
           activa: boolean
+          apartado: string | null
           codigo: string
           concepto: string | null
           created_at: string
           dificultad: Database["public"]["Enums"]["dificultad_enum"]
+          dificultad_conceptual:
+            | Database["public"]["Enums"]["dificultad_enum"]
+            | null
+          dificultad_examen:
+            | Database["public"]["Enums"]["dificultad_enum"]
+            | null
+          documento_referencia: string | null
           explicacion: string
+          frecuencia_historica: string | null
           id: string
+          nivel_pedagogico: string | null
           objetivo_aprendizaje: string | null
           opcion_a: string
           opcion_b: string
           opcion_c: string
           opcion_d: string
+          pagina_fin: number | null
+          pagina_inicio: number | null
+          perspectiva: string | null
           pregunta: string
           referencia_fuente: string
           respuesta_correcta: Database["public"]["Enums"]["respuesta_enum"]
           subject_id: string
           subtopic_id: string | null
+          tipo_trampa: string | null
           topic_id: string
           user_id: string
         }
         Insert: {
           activa?: boolean
+          apartado?: string | null
           codigo: string
           concepto?: string | null
           created_at?: string
           dificultad: Database["public"]["Enums"]["dificultad_enum"]
+          dificultad_conceptual?:
+            | Database["public"]["Enums"]["dificultad_enum"]
+            | null
+          dificultad_examen?:
+            | Database["public"]["Enums"]["dificultad_enum"]
+            | null
+          documento_referencia?: string | null
           explicacion?: string
+          frecuencia_historica?: string | null
           id?: string
+          nivel_pedagogico?: string | null
           objetivo_aprendizaje?: string | null
           opcion_a: string
           opcion_b: string
           opcion_c: string
           opcion_d: string
+          pagina_fin?: number | null
+          pagina_inicio?: number | null
+          perspectiva?: string | null
           pregunta: string
           referencia_fuente?: string
           respuesta_correcta: Database["public"]["Enums"]["respuesta_enum"]
           subject_id: string
           subtopic_id?: string | null
+          tipo_trampa?: string | null
           topic_id: string
           user_id: string
         }
         Update: {
           activa?: boolean
+          apartado?: string | null
           codigo?: string
           concepto?: string | null
           created_at?: string
           dificultad?: Database["public"]["Enums"]["dificultad_enum"]
+          dificultad_conceptual?:
+            | Database["public"]["Enums"]["dificultad_enum"]
+            | null
+          dificultad_examen?:
+            | Database["public"]["Enums"]["dificultad_enum"]
+            | null
+          documento_referencia?: string | null
           explicacion?: string
+          frecuencia_historica?: string | null
           id?: string
+          nivel_pedagogico?: string | null
           objetivo_aprendizaje?: string | null
           opcion_a?: string
           opcion_b?: string
           opcion_c?: string
           opcion_d?: string
+          pagina_fin?: number | null
+          pagina_inicio?: number | null
+          perspectiva?: string | null
           pregunta?: string
           referencia_fuente?: string
           respuesta_correcta?: Database["public"]["Enums"]["respuesta_enum"]
           subject_id?: string
           subtopic_id?: string | null
+          tipo_trampa?: string | null
           topic_id?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "questions_owner_subject_fk"
+            columns: ["user_id", "subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["user_id", "id"]
+          },
+          {
+            foreignKeyName: "questions_owner_subtopic_fk"
+            columns: ["user_id", "subtopic_id"]
+            isOneToOne: false
+            referencedRelation: "subtopics"
+            referencedColumns: ["user_id", "id"]
+          },
+          {
+            foreignKeyName: "questions_owner_topic_fk"
+            columns: ["user_id", "topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["user_id", "id"]
+          },
           {
             foreignKeyName: "questions_subject_id_fkey"
             columns: ["subject_id"]
@@ -168,6 +231,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "subtopics_owner_topic_fk"
+            columns: ["user_id", "topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["user_id", "id"]
+          },
+          {
             foreignKeyName: "subtopics_topic_id_fkey"
             columns: ["topic_id"]
             isOneToOne: false
@@ -214,6 +284,20 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "test_answers_owner_question_fk"
+            columns: ["user_id", "question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["user_id", "id"]
+          },
+          {
+            foreignKeyName: "test_answers_owner_test_fk"
+            columns: ["user_id", "test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["user_id", "id"]
+          },
           {
             foreignKeyName: "test_answers_question_id_fkey"
             columns: ["question_id"]
@@ -302,6 +386,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "topics_owner_subject_fk"
+            columns: ["user_id", "subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["user_id", "id"]
+          },
+          {
             foreignKeyName: "topics_subject_id_fkey"
             columns: ["subject_id"]
             isOneToOne: false
@@ -315,7 +406,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      import_questions_batch: { Args: { payload: Json }; Returns: Json }
     }
     Enums: {
       dificultad_enum: "facil" | "medio" | "dificil"
