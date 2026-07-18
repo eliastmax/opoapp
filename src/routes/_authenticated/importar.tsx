@@ -110,9 +110,33 @@ function ImportarPage() {
       }
 
       const nuevas: ParsedRow[] = [];
-      const compatibles: ParsedRow[] = [];
+      const paraEnriquecer: ParsedRow[] = [];
+      const sinCambios: ParsedRow[] = [];
       const conflictos: Conflict[] = [];
       const similares: SimilarWarning[] = [];
+
+      const textMissing = (v: string | null | undefined) => (v ?? "").trim() === "";
+      const rowNeedsEnrichment = (row: ParsedRow, ex: ExistingQuestion): boolean => {
+        const textFields: Array<[string | null, string | null]> = [
+          [ex.concepto, row.concepto],
+          [ex.objetivo_aprendizaje, row.objetivo_aprendizaje],
+          [ex.apartado, row.apartado],
+          [ex.perspectiva, row.perspectiva],
+          [ex.nivel_pedagogico, row.nivel_pedagogico],
+          [ex.tipo_trampa, row.tipo_trampa],
+          [ex.documento_referencia, row.documento_referencia],
+          [ex.frecuencia_historica, row.frecuencia_historica],
+          [ex.referencia_fuente, row.referencia_fuente],
+        ];
+        for (const [stored, incoming] of textFields) {
+          if (textMissing(stored) && !textMissing(incoming)) return true;
+        }
+        if (ex.dificultad_conceptual === null && row.dificultad_conceptual !== null) return true;
+        if (ex.dificultad_examen === null && row.dificultad_examen !== null) return true;
+        if (ex.pagina_inicio === null && row.pagina_inicio !== null) return true;
+        if (ex.pagina_fin === null && row.pagina_fin !== null) return true;
+        return false;
+      };
 
       for (const row of rowsWithCodes) {
         const code = row.codigo!;
@@ -126,8 +150,13 @@ function ImportarPage() {
             existente.opcion_d === row.opcion_d &&
             existente.respuesta_correcta === row.respuesta_correcta &&
             (existente.explicacion ?? "") === (row.explicacion ?? "");
-          if (match) compatibles.push(row);
-          else conflictos.push({ row, codigo: code, causa: "Código existente con contenido diferente" });
+          if (!match) {
+            conflictos.push({ row, codigo: code, causa: "Código existente con contenido diferente" });
+          } else if (rowNeedsEnrichment(row, existente)) {
+            paraEnriquecer.push(row);
+          } else {
+            sinCambios.push(row);
+          }
           continue;
         }
         // Same enunciado under different code → conflict
@@ -152,8 +181,9 @@ function ImportarPage() {
       setPreview({
         mode: parsed.mode, delimiter: parsed.delimiter, headers: parsed.headers,
         rowsAll: rowsWithCodes, errors: parsed.errors,
-        nuevas, compatibles, conflictos, similares, materias, temas,
+        nuevas, paraEnriquecer, sinCambios, conflictos, similares, materias, temas,
       });
+
     } catch (e) {
       toast.error((e as Error).message);
     }
