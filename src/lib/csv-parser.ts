@@ -278,7 +278,8 @@ function validateRow(raw: Record<string, string>, mode: FormatMode, rowNum: numb
     }
     dificultad = d;
   } else if (mode === "enriched") {
-    codigo = req(raw.codigo, "codigo", rowNum);
+    codigo = (raw.codigo ?? "").trim() || null;
+
     concepto = (raw.concepto ?? "").trim() || null;
     objetivo_aprendizaje = (raw.objetivo_aprendizaje ?? "").trim() || null;
     const difRaw = req(raw.dificultad, "dificultad", rowNum).toLowerCase();
