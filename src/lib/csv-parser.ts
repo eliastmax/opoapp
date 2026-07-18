@@ -97,8 +97,8 @@ const DIFICULTAD_V1_MAP: Record<string, Dificultad> = {
   dificil: "dificil", "difícil": "dificil",
 };
 
-function normHeader(h: string): string {
-  return h.replace(/^\uFEFF/, "").trim().toLowerCase();
+function stripBom(h: string): string {
+  return h.replace(/^\uFEFF/, "");
 }
 
 function arraysEqual(a: readonly string[], b: readonly string[]): boolean {
@@ -113,20 +113,22 @@ function detectMode(fields: string[]): FormatMode | null {
 }
 
 function acceptedFormatsHint(): string {
-  return "Formatos admitidos: V1 básico (13 columnas), V1 enriquecido (16), V2 (25).";
+  return "Formatos admitidos: V1 básico (13 columnas), V1 enriquecido (16), V2 (25). Se requiere coincidencia exacta de nombres.";
 }
 
 export function parseCsv(text: string): ParseResult | ParseFatal {
-  // First pass: detect delimiter using Papa auto-detection restricted to ; and ,
+  // Strict header comparison: only BOM is stripped from the first header cell.
+  // No case-folding, no trimming, no diacritic normalization.
   const detect = Papa.parse<Record<string, string>>(text, {
     header: true,
     skipEmptyLines: "greedy",
     delimitersToGuess: [";", ","],
-    transformHeader: normHeader,
+    transformHeader: (h, i) => (i === 0 ? stripBom(h) : h),
   });
 
   const delimiter = detect.meta.delimiter || ";";
-  const fields = (detect.meta.fields ?? []).map(normHeader);
+  const rawFields = detect.meta.fields ?? [];
+  const fields = rawFields.map((h, i) => (i === 0 ? stripBom(h) : h));
   const headerInfo: HeaderInfo = { delimiter, columnCount: fields.length, headers: fields };
 
   const mode = detectMode(fields);
@@ -136,6 +138,7 @@ export function parseCsv(text: string): ParseResult | ParseFatal {
       header: headerInfo,
     };
   }
+
 
   const valid: ParsedRow[] = [];
   const errors: RowError[] = [];
