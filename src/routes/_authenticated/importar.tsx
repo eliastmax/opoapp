@@ -31,7 +31,8 @@ interface Preview {
   rowsAll: ParsedRow[];
   errors: RowError[];
   nuevas: ParsedRow[];
-  compatibles: ParsedRow[];
+  paraEnriquecer: ParsedRow[];
+  sinCambios: ParsedRow[];
   conflictos: Conflict[];
   similares: SimilarWarning[];
   materias: string[];
@@ -45,6 +46,7 @@ interface ImportResult {
   conflictos: number;
   errores: number;
 }
+
 
 const DELIM_LABEL: Record<string, string> = { ";": "punto y coma (;)", ",": "coma (,)" };
 
