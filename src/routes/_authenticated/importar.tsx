@@ -31,7 +31,8 @@ interface Preview {
   rowsAll: ParsedRow[];
   errors: RowError[];
   nuevas: ParsedRow[];
-  compatibles: ParsedRow[];
+  paraEnriquecer: ParsedRow[];
+  sinCambios: ParsedRow[];
   conflictos: Conflict[];
   similares: SimilarWarning[];
   materias: string[];
@@ -45,6 +46,7 @@ interface ImportResult {
   conflictos: number;
   errores: number;
 }
+
 
 const DELIM_LABEL: Record<string, string> = { ";": "punto y coma (;)", ",": "coma (,)" };
 
@@ -108,9 +110,33 @@ function ImportarPage() {
       }
 
       const nuevas: ParsedRow[] = [];
-      const compatibles: ParsedRow[] = [];
+      const paraEnriquecer: ParsedRow[] = [];
+      const sinCambios: ParsedRow[] = [];
       const conflictos: Conflict[] = [];
       const similares: SimilarWarning[] = [];
+
+      const textMissing = (v: string | null | undefined) => (v ?? "").trim() === "";
+      const rowNeedsEnrichment = (row: ParsedRow, ex: ExistingQuestion): boolean => {
+        const textFields: Array<[string | null, string | null]> = [
+          [ex.concepto, row.concepto],
+          [ex.objetivo_aprendizaje, row.objetivo_aprendizaje],
+          [ex.apartado, row.apartado],
+          [ex.perspectiva, row.perspectiva],
+          [ex.nivel_pedagogico, row.nivel_pedagogico],
+          [ex.tipo_trampa, row.tipo_trampa],
+          [ex.documento_referencia, row.documento_referencia],
+          [ex.frecuencia_historica, row.frecuencia_historica],
+          [ex.referencia_fuente, row.referencia_fuente],
+        ];
+        for (const [stored, incoming] of textFields) {
+          if (textMissing(stored) && !textMissing(incoming)) return true;
+        }
+        if (ex.dificultad_conceptual === null && row.dificultad_conceptual !== null) return true;
+        if (ex.dificultad_examen === null && row.dificultad_examen !== null) return true;
+        if (ex.pagina_inicio === null && row.pagina_inicio !== null) return true;
+        if (ex.pagina_fin === null && row.pagina_fin !== null) return true;
+        return false;
+      };
 
       for (const row of rowsWithCodes) {
         const code = row.codigo!;
@@ -124,8 +150,13 @@ function ImportarPage() {
             existente.opcion_d === row.opcion_d &&
             existente.respuesta_correcta === row.respuesta_correcta &&
             (existente.explicacion ?? "") === (row.explicacion ?? "");
-          if (match) compatibles.push(row);
-          else conflictos.push({ row, codigo: code, causa: "Código existente con contenido diferente" });
+          if (!match) {
+            conflictos.push({ row, codigo: code, causa: "Código existente con contenido diferente" });
+          } else if (rowNeedsEnrichment(row, existente)) {
+            paraEnriquecer.push(row);
+          } else {
+            sinCambios.push(row);
+          }
           continue;
         }
         // Same enunciado under different code → conflict
@@ -150,8 +181,9 @@ function ImportarPage() {
       setPreview({
         mode: parsed.mode, delimiter: parsed.delimiter, headers: parsed.headers,
         rowsAll: rowsWithCodes, errors: parsed.errors,
-        nuevas, compatibles, conflictos, similares, materias, temas,
+        nuevas, paraEnriquecer, sinCambios, conflictos, similares, materias, temas,
       });
+
     } catch (e) {
       toast.error((e as Error).message);
     }
@@ -194,7 +226,7 @@ function ImportarPage() {
     if (preview.errors.length > 0) return;
     setImporting(true);
     try {
-      const payload = [...preview.nuevas, ...preview.compatibles].map(rowToPayload);
+      const payload = [...preview.nuevas, ...preview.paraEnriquecer, ...preview.sinCambios].map(rowToPayload);
       // Cast payload to Json for supabase-generated types (Record<string,unknown> is structurally Json-compatible).
       const { data, error } = await supabase.rpc("import_questions_batch", { payload: payload as unknown as never });
       if (error) throw error;
@@ -214,7 +246,7 @@ function ImportarPage() {
     setImporting(false);
   }
 
-  const canConfirm = !!preview && preview.errors.length === 0 && (preview.nuevas.length + preview.compatibles.length) > 0;
+  const canConfirm = !!preview && preview.errors.length === 0 && (preview.nuevas.length + preview.paraEnriquecer.length + preview.sinCambios.length) > 0;
 
   return (
     <div className="space-y-4">
@@ -276,7 +308,9 @@ function ImportarPage() {
               <li>Delimitador: <span className="font-medium">{DELIM_LABEL[preview.delimiter] ?? preview.delimiter}</span></li>
               <li>Válidas: <span className="font-medium">{preview.rowsAll.length}</span></li>
               <li>Nuevas: <span className="font-medium text-success">{preview.nuevas.length}</span></li>
-              <li>Compatibles (enriquecer): <span className="font-medium">{preview.compatibles.length}</span></li>
+              <li>Existentes para enriquecer: <span className="font-medium">{preview.paraEnriquecer.length}</span></li>
+              <li>Existentes sin cambios: <span className="font-medium text-muted-foreground">{preview.sinCambios.length}</span></li>
+
               <li>Conflictos: <span className="font-medium text-warning">{preview.conflictos.length}</span></li>
               <li>Errores: <span className="font-medium text-destructive">{preview.errors.length}</span></li>
             </ul>

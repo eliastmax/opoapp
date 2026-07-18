@@ -143,5 +143,73 @@ describe("parseCsv", () => {
     expect(r.valid).toHaveLength(0);
     expect(r.errors.some((e) => e.field === "pagina_fin")).toBe(true);
   });
+
+  it("opción vacía explícita → error", () => {
+    const rows = HEADERS_V1_BASIC.join(";") + "\n" +
+      'M;1;T;S;facil;¿?;;B;C;D;A;E;R\n';
+    const r = parseCsv(rows);
+    assertOk(r);
+    expect(r.valid).toHaveLength(0);
+    expect(r.errors.some((e) => e.field === "opcion_a")).toBe(true);
+  });
+
+  it("cabecera con espacio final → fatal (sin trim)", () => {
+    const bad = "materia ;numero_tema;tema;subapartado;dificultad;pregunta;opcion_a;opcion_b;opcion_c;opcion_d;respuesta_correcta;explicacion;referencia_fuente\n" +
+      "M;1;T;S;facil;¿?;A;B;C;D;A;E;R\n";
+    const r = parseCsv(bad);
+    expect("fatal" in r).toBe(true);
+    if ("fatal" in r) {
+      expect(r.header.headers[0]).toBe("materia ");
+    }
+  });
+
+  it("V2 preserva los 25 campos de una fila", () => {
+    const row = HEADERS_V2.join(";") + "\n" +
+      'SMS-T02-0007;Materia;2;Tema T;Apart;Sub;Concep;Obj;definicion;aprendizaje;medio;facil;plazo;¿Enunciado?;OA;OB;OC;OD;C;Expl;Doc.pdf;12;18;Ref bibliográfica;media\n';
+    const r = parseCsv(row);
+    assertOk(r);
+    expect(r.valid).toHaveLength(1);
+    const v = r.valid[0];
+    expect(v.codigo).toBe("SMS-T02-0007");
+    expect(v.materia).toBe("Materia");
+    expect(v.numero_tema).toBe(2);
+    expect(v.tema).toBe("Tema T");
+    expect(v.apartado).toBe("Apart");
+    expect(v.subapartado).toBe("Sub");
+    expect(v.concepto).toBe("Concep");
+    expect(v.objetivo_aprendizaje).toBe("Obj");
+    expect(v.perspectiva).toBe("definicion");
+    expect(v.nivel_pedagogico).toBe("aprendizaje");
+    expect(v.dificultad_conceptual).toBe("medio");
+    expect(v.dificultad_examen).toBe("facil");
+    expect(v.dificultad).toBe("facil");
+    expect(v.tipo_trampa).toBe("plazo");
+    expect(v.pregunta).toBe("¿Enunciado?");
+    expect(v.opcion_a).toBe("OA");
+    expect(v.opcion_b).toBe("OB");
+    expect(v.opcion_c).toBe("OC");
+    expect(v.opcion_d).toBe("OD");
+    expect(v.respuesta_correcta).toBe("C");
+    expect(v.explicacion).toBe("Expl");
+    expect(v.documento_referencia).toBe("Doc.pdf");
+    expect(v.pagina_inicio).toBe(12);
+    expect(v.pagina_fin).toBe(18);
+    expect(v.referencia_fuente).toBe("Ref bibliográfica");
+    expect(v.frecuencia_historica).toBe("media");
+  });
+
+  it("V2 páginas: entero + null son válidos", () => {
+    const rows = HEADERS_V2.join(";") + "\n" +
+      'C1;M;1;T;Ap;Sub;C;O;definicion;aprendizaje;facil;facil;ninguna;¿?;A;B;C;D;A;E;Doc;;42;Ref;alta\n' +
+      'C2;M;1;T;Ap;Sub;C;O;definicion;aprendizaje;facil;facil;ninguna;¿otra?;A;B;C;D;A;E;Doc;7;;Ref;alta\n';
+    const r = parseCsv(rows);
+    assertOk(r);
+    expect(r.valid).toHaveLength(2);
+    expect(r.valid[0].pagina_inicio).toBeNull();
+    expect(r.valid[0].pagina_fin).toBe(42);
+    expect(r.valid[1].pagina_inicio).toBe(7);
+    expect(r.valid[1].pagina_fin).toBeNull();
+  });
 });
+
 
