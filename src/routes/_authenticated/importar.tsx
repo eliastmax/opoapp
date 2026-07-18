@@ -52,6 +52,13 @@ type ExistingQuestion = {
   id: string; codigo: string; pregunta: string;
   opcion_a: string; opcion_b: string; opcion_c: string; opcion_d: string;
   respuesta_correcta: string; explicacion: string | null;
+  concepto: string | null; objetivo_aprendizaje: string | null;
+  apartado: string | null; perspectiva: string | null;
+  nivel_pedagogico: string | null; tipo_trampa: string | null;
+  dificultad_conceptual: string | null; dificultad_examen: string | null;
+  documento_referencia: string | null; pagina_inicio: number | null;
+  pagina_fin: number | null; frecuencia_historica: string | null;
+  referencia_fuente: string | null;
 };
 
 function ImportarPage() {
@@ -68,12 +75,14 @@ function ImportarPage() {
       const parsed = parseCsv(text);
       if ("fatal" in parsed) { setFatalHeader({ msg: parsed.fatal, header: parsed.header }); setLoading(false); return; }
 
-      const { data: existing } = await supabase.from("questions")
-        .select("id, codigo, pregunta, opcion_a, opcion_b, opcion_c, opcion_d, respuesta_correcta, explicacion");
+      const { data: existing, error: existingError } = await supabase.from("questions")
+        .select("id, codigo, pregunta, opcion_a, opcion_b, opcion_c, opcion_d, respuesta_correcta, explicacion, concepto, objetivo_aprendizaje, apartado, perspectiva, nivel_pedagogico, tipo_trampa, dificultad_conceptual, dificultad_examen, documento_referencia, pagina_inicio, pagina_fin, frecuencia_historica, referencia_fuente");
+      if (existingError) throw existingError;
       const existingList = (existing ?? []) as ExistingQuestion[];
       const byCode = new Map(existingList.map((q) => [q.codigo, q]));
       const byEnunciado = new Map<string, ExistingQuestion>();
       for (const q of existingList) byEnunciado.set(normalizeText(q.pregunta), q);
+
 
       // Generate SMS codes for V1 basic rows before classification
       const codeSet = new Set(existingList.map((q) => q.codigo));
