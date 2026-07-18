@@ -308,7 +308,9 @@ function ImportarPage() {
               <li>Delimitador: <span className="font-medium">{DELIM_LABEL[preview.delimiter] ?? preview.delimiter}</span></li>
               <li>Válidas: <span className="font-medium">{preview.rowsAll.length}</span></li>
               <li>Nuevas: <span className="font-medium text-success">{preview.nuevas.length}</span></li>
-              <li>Compatibles (enriquecer): <span className="font-medium">{preview.compatibles.length}</span></li>
+              <li>Existentes para enriquecer: <span className="font-medium">{preview.paraEnriquecer.length}</span></li>
+              <li>Existentes sin cambios: <span className="font-medium text-muted-foreground">{preview.sinCambios.length}</span></li>
+
               <li>Conflictos: <span className="font-medium text-warning">{preview.conflictos.length}</span></li>
               <li>Errores: <span className="font-medium text-destructive">{preview.errors.length}</span></li>
             </ul>
