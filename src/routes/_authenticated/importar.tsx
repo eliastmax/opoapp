@@ -246,7 +246,7 @@ function ImportarPage() {
     setImporting(false);
   }
 
-  const canConfirm = !!preview && preview.errors.length === 0 && (preview.nuevas.length + preview.compatibles.length) > 0;
+  const canConfirm = !!preview && preview.errors.length === 0 && (preview.nuevas.length + preview.paraEnriquecer.length + preview.sinCambios.length) > 0;
 
   return (
     <div className="space-y-4">
