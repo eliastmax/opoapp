@@ -100,6 +100,31 @@ describe("parseCsv", () => {
     }
   });
 
+  it("cabeceras exactas: rechaza mayúsculas/espacios (sin normalizar)", () => {
+    const bad = "Materia;numero_tema;tema;subapartado;dificultad;pregunta;opcion_a;opcion_b;opcion_c;opcion_d;respuesta_correcta;explicacion;referencia_fuente\n" +
+      "M;1;T;S;facil;¿?;A;B;C;D;A;E;R\n";
+    const r = parseCsv(bad);
+    expect("fatal" in r).toBe(true);
+  });
+
+  it("V1-16 con código vacío se acepta (codigo=null)", () => {
+    const rows = HEADERS_V1_ENRICHED.join(";") + "\n" +
+      ';M;1;T;S;facil;C;O;¿?;A;B;C;D;A;E;R\n';
+    const r = parseCsv(rows);
+    assertOk(r);
+    expect(r.valid).toHaveLength(1);
+    expect(r.valid[0].codigo).toBeNull();
+  });
+
+  it("numero_tema no entero → error estricto", () => {
+    const rows = HEADERS_V1_BASIC.join(";") + "\n" +
+      'M;20abc;T;S;facil;¿?;A;B;C;D;A;E;R\n';
+    const r = parseCsv(rows);
+    assertOk(r);
+    expect(r.valid).toHaveLength(0);
+    expect(r.errors.some((e) => e.field === "numero_tema")).toBe(true);
+  });
+
   it("soporta comillas con delimitador dentro y CRLF/BOM", () => {
     const text = "\uFEFF" + HEADERS_V1_BASIC.join(";") + "\r\n" +
       'Mat;1;"Tema; con ;";Sub;facil;"Pregunta ""quoted""";A;B;C;D;A;Expl;Ref\r\n';
@@ -119,3 +144,4 @@ describe("parseCsv", () => {
     expect(r.errors.some((e) => e.field === "pagina_fin")).toBe(true);
   });
 });
+

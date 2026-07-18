@@ -97,8 +97,8 @@ const DIFICULTAD_V1_MAP: Record<string, Dificultad> = {
   dificil: "dificil", "difícil": "dificil",
 };
 
-function normHeader(h: string): string {
-  return h.replace(/^\uFEFF/, "").trim().toLowerCase();
+function stripBom(h: string): string {
+  return h.replace(/^\uFEFF/, "");
 }
 
 function arraysEqual(a: readonly string[], b: readonly string[]): boolean {
@@ -113,20 +113,22 @@ function detectMode(fields: string[]): FormatMode | null {
 }
 
 function acceptedFormatsHint(): string {
-  return "Formatos admitidos: V1 básico (13 columnas), V1 enriquecido (16), V2 (25).";
+  return "Formatos admitidos: V1 básico (13 columnas), V1 enriquecido (16), V2 (25). Se requiere coincidencia exacta de nombres.";
 }
 
 export function parseCsv(text: string): ParseResult | ParseFatal {
-  // First pass: detect delimiter using Papa auto-detection restricted to ; and ,
+  // Strict header comparison: only BOM is stripped from the first header cell.
+  // No case-folding, no trimming, no diacritic normalization.
   const detect = Papa.parse<Record<string, string>>(text, {
     header: true,
     skipEmptyLines: "greedy",
     delimitersToGuess: [";", ","],
-    transformHeader: normHeader,
+    transformHeader: (h, i) => (i === 0 ? stripBom(h) : h),
   });
 
   const delimiter = detect.meta.delimiter || ";";
-  const fields = (detect.meta.fields ?? []).map(normHeader);
+  const rawFields = detect.meta.fields ?? [];
+  const fields = rawFields.map((h, i) => (i === 0 ? stripBom(h) : h));
   const headerInfo: HeaderInfo = { delimiter, columnCount: fields.length, headers: fields };
 
   const mode = detectMode(fields);
@@ -136,6 +138,7 @@ export function parseCsv(text: string): ParseResult | ParseFatal {
       header: headerInfo,
     };
   }
+
 
   const valid: ParsedRow[] = [];
   const errors: RowError[] = [];
@@ -217,11 +220,12 @@ function parseIntStrict(v: string | undefined, name: string, rowNum: number): nu
 function validateRow(raw: Record<string, string>, mode: FormatMode, rowNum: number): ParsedRow {
   const materia = req(raw.materia, "materia", rowNum);
   const numTemaStr = req(raw.numero_tema, "numero_tema", rowNum);
-  const numero_tema = parseInt(numTemaStr, 10);
-  if (!Number.isFinite(numero_tema) || numero_tema < 0) {
-    const err: RowError = { row: rowNum, field: "numero_tema", reason: "numero_tema debe ser numérico" };
+  if (!/^\d+$/.test(numTemaStr)) {
+    const err: RowError = { row: rowNum, field: "numero_tema", reason: `numero_tema debe ser un entero no negativo (recibido "${numTemaStr}")` };
     throw err;
   }
+  const numero_tema = parseInt(numTemaStr, 10);
+
   const tema = req(raw.tema, "tema", rowNum);
   const subapartado = (raw.subapartado ?? "").trim();
   const pregunta = req(raw.pregunta, "pregunta", rowNum);
@@ -274,7 +278,8 @@ function validateRow(raw: Record<string, string>, mode: FormatMode, rowNum: numb
     }
     dificultad = d;
   } else if (mode === "enriched") {
-    codigo = req(raw.codigo, "codigo", rowNum);
+    codigo = (raw.codigo ?? "").trim() || null;
+
     concepto = (raw.concepto ?? "").trim() || null;
     objetivo_aprendizaje = (raw.objetivo_aprendizaje ?? "").trim() || null;
     const difRaw = req(raw.dificultad, "dificultad", rowNum).toLowerCase();
