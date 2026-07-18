@@ -220,11 +220,12 @@ function parseIntStrict(v: string | undefined, name: string, rowNum: number): nu
 function validateRow(raw: Record<string, string>, mode: FormatMode, rowNum: number): ParsedRow {
   const materia = req(raw.materia, "materia", rowNum);
   const numTemaStr = req(raw.numero_tema, "numero_tema", rowNum);
-  const numero_tema = parseInt(numTemaStr, 10);
-  if (!Number.isFinite(numero_tema) || numero_tema < 0) {
-    const err: RowError = { row: rowNum, field: "numero_tema", reason: "numero_tema debe ser numérico" };
+  if (!/^\d+$/.test(numTemaStr)) {
+    const err: RowError = { row: rowNum, field: "numero_tema", reason: `numero_tema debe ser un entero no negativo (recibido "${numTemaStr}")` };
     throw err;
   }
+  const numero_tema = parseInt(numTemaStr, 10);
+
   const tema = req(raw.tema, "tema", rowNum);
   const subapartado = (raw.subapartado ?? "").trim();
   const pregunta = req(raw.pregunta, "pregunta", rowNum);
