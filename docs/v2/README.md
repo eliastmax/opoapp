@@ -7,10 +7,11 @@ Este índice registra qué partes de la V2 están realmente implementadas y vali
 - Importador CSV V2 compatible con V1: implementado y validado con 429 preguntas.
 - Fallos activos: implementado y validado en uso real.
 - [Dudas activas y estadísticas por pregunta](sprint-02-dudas-estadisticas.md): implementado y validado en uso real.
+- [Motor de selección inteligente V2](sprint-03-seleccion-inteligente.md): implementado y validado en uso real; selector de subapartados compactado posteriormente.
 
 ## Sprint actual
 
-- [Motor de selección inteligente V2](sprint-03-seleccion-inteligente.md): implementado; pendiente de validación real tras publicación.
+- Progresión Aprendizaje, Consolidación y Tribunal: pendiente de iniciar.
 
 ## Próximos bloques
 
