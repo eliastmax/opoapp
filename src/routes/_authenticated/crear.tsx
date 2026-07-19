@@ -5,18 +5,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import type { Dificultad } from "@/lib/csv-parser";
 import { keepActiveFailureIds } from "@/lib/active-failures";
+import { keepActiveDoubtIds } from "@/lib/active-doubts";
 
 export const Route = createFileRoute("/_authenticated/crear")({
   component: CrearPage,
 });
 
-type Modalidad = "mezcladas" | "nuevas" | "falladas";
+type Modalidad = "mezcladas" | "nuevas" | "falladas" | "dudas";
 const DIFICULTADES: Dificultad[] = ["facil", "medio", "dificil"];
 const CANTIDADES = [5, 10, 20, 30, 50] as const;
 
@@ -32,20 +39,38 @@ function CrearPage() {
 
   const { data: subjects } = useQuery({
     queryKey: ["subjects"],
-    queryFn: async () => (await supabase.from("subjects").select("id, nombre").order("nombre")).data ?? [],
+    queryFn: async () =>
+      (await supabase.from("subjects").select("id, nombre").order("nombre")).data ?? [],
   });
   const { data: topics } = useQuery({
     queryKey: ["topics", subjectId],
     enabled: !!subjectId,
-    queryFn: async () => (await supabase.from("topics").select("id, numero, nombre").eq("subject_id", subjectId).order("numero")).data ?? [],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("topics")
+          .select("id, numero, nombre")
+          .eq("subject_id", subjectId)
+          .order("numero")
+      ).data ?? [],
   });
   const { data: subtopics } = useQuery({
     queryKey: ["subtopics", topicId],
     enabled: !!topicId,
-    queryFn: async () => (await supabase.from("subtopics").select("id, nombre").eq("topic_id", topicId).order("nombre")).data ?? [],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("subtopics")
+          .select("id, nombre")
+          .eq("topic_id", topicId)
+          .order("nombre")
+      ).data ?? [],
   });
 
-  const canStart = useMemo(() => subjectId && topicId && difs.length > 0, [subjectId, topicId, difs]);
+  const canStart = useMemo(
+    () => subjectId && topicId && difs.length > 0,
+    [subjectId, topicId, difs],
+  );
 
   // Auto-select when only one option exists
   useEffect(() => {
@@ -81,14 +106,21 @@ function CrearPage() {
       const userId = userData.user!.id;
 
       // Query pool
-      let q = supabase.from("questions").select("id").eq("activa", true).eq("topic_id", topicId).in("dificultad", difs);
+      let q = supabase
+        .from("questions")
+        .select("id")
+        .eq("activa", true)
+        .eq("topic_id", topicId)
+        .in("dificultad", difs);
       if (subtopicIds.length > 0) q = q.in("subtopic_id", subtopicIds);
       const { data: pool, error: e1 } = await q;
       if (e1) throw e1;
       let ids = (pool ?? []).map((p) => p.id);
 
       if (modalidad === "nuevas") {
-        const { data: answered } = await supabase.from("test_answers").select("question_id, correcta");
+        const { data: answered } = await supabase
+          .from("test_answers")
+          .select("question_id, correcta");
         const seen = new Set((answered ?? []).map((a) => a.question_id));
         ids = ids.filter((id) => !seen.has(id));
       } else if (modalidad === "falladas") {
@@ -102,9 +134,24 @@ function CrearPage() {
         const { data: activeFailures, error: activeFailuresError } = await failedQuery;
         if (activeFailuresError) throw activeFailuresError;
         ids = keepActiveFailureIds(ids, activeFailures ?? []);
+      } else if (modalidad === "dudas") {
+        let doubtQuery = supabase
+          .from("active_doubt_questions")
+          .select("question_id")
+          .eq("user_id", userId)
+          .eq("topic_id", topicId)
+          .in("dificultad", difs);
+        if (subtopicIds.length > 0) doubtQuery = doubtQuery.in("subtopic_id", subtopicIds);
+        const { data: activeDoubts, error: activeDoubtsError } = await doubtQuery;
+        if (activeDoubtsError) throw activeDoubtsError;
+        ids = keepActiveDoubtIds(ids, activeDoubts ?? []);
       }
 
-      if (ids.length === 0) { toast.error("No hay preguntas con esos filtros"); setStarting(false); return; }
+      if (ids.length === 0) {
+        toast.error("No hay preguntas con esos filtros");
+        setStarting(false);
+        return;
+      }
       if (ids.length < cantidad) toast.warning(`Solo hay ${ids.length} preguntas disponibles`);
 
       // shuffle
@@ -114,12 +161,24 @@ function CrearPage() {
       }
       const chosen = ids.slice(0, Math.min(cantidad, ids.length));
 
-      const { data: test, error: eTest } = await supabase.from("tests").insert({
-        user_id: userId, tipo: modalidad, numero_preguntas: chosen.length, sin_responder: chosen.length,
-      }).select().single();
+      const { data: test, error: eTest } = await supabase
+        .from("tests")
+        .insert({
+          user_id: userId,
+          tipo: modalidad,
+          numero_preguntas: chosen.length,
+          sin_responder: chosen.length,
+        })
+        .select()
+        .single();
       if (eTest) throw eTest;
 
-      const answers = chosen.map((qid, i) => ({ user_id: userId, test_id: test.id, question_id: qid, orden: i + 1 }));
+      const answers = chosen.map((qid, i) => ({
+        user_id: userId,
+        test_id: test.id,
+        question_id: qid,
+        orden: i + 1,
+      }));
       const { error: eAns } = await supabase.from("test_answers").insert(answers);
       if (eAns) throw eAns;
 
@@ -141,23 +200,52 @@ function CrearPage() {
         {!hideSubject && (
           <div className="space-y-1.5">
             <Label>Materia</Label>
-            <Select value={subjectId} onValueChange={(v) => { setSubjectId(v); setTopicId(""); setSubtopicIds([]); }}>
-              <SelectTrigger className="h-12"><SelectValue placeholder="Selecciona materia" /></SelectTrigger>
+            <Select
+              value={subjectId}
+              onValueChange={(v) => {
+                setSubjectId(v);
+                setTopicId("");
+                setSubtopicIds([]);
+              }}
+            >
+              <SelectTrigger className="h-12">
+                <SelectValue placeholder="Selecciona materia" />
+              </SelectTrigger>
               <SelectContent>
-                {(subjects ?? []).map((s) => <SelectItem key={s.id} value={s.id}>{s.nombre}</SelectItem>)}
+                {(subjects ?? []).map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.nombre}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            {subjects && subjects.length === 0 && <p className="text-xs text-muted-foreground">Aún no tienes materias. Importa un CSV primero.</p>}
+            {subjects && subjects.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                Aún no tienes materias. Importa un CSV primero.
+              </p>
+            )}
           </div>
         )}
 
         {subjectId && !hideTopic && (
           <div className="space-y-1.5">
             <Label>Tema</Label>
-            <Select value={topicId} onValueChange={(v) => { setTopicId(v); setSubtopicIds([]); }}>
-              <SelectTrigger className="h-12"><SelectValue placeholder="Selecciona tema" /></SelectTrigger>
+            <Select
+              value={topicId}
+              onValueChange={(v) => {
+                setTopicId(v);
+                setSubtopicIds([]);
+              }}
+            >
+              <SelectTrigger className="h-12">
+                <SelectValue placeholder="Selecciona tema" />
+              </SelectTrigger>
               <SelectContent>
-                {(topics ?? []).map((t) => <SelectItem key={t.id} value={t.id}>{t.numero}. {t.nombre}</SelectItem>)}
+                {(topics ?? []).map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.numero}. {t.nombre}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -171,7 +259,11 @@ function CrearPage() {
                 <label key={s.id} className="flex items-center gap-2 text-sm">
                   <Checkbox
                     checked={subtopicIds.includes(s.id)}
-                    onCheckedChange={(c) => setSubtopicIds((prev) => c ? [...prev, s.id] : prev.filter((x) => x !== s.id))}
+                    onCheckedChange={(c) =>
+                      setSubtopicIds((prev) =>
+                        c ? [...prev, s.id] : prev.filter((x) => x !== s.id),
+                      )
+                    }
                   />
                   {s.nombre}
                 </label>
@@ -179,7 +271,6 @@ function CrearPage() {
             </div>
           </div>
         )}
-
 
         <div className="space-y-1.5">
           <Label>Dificultad</Label>
@@ -190,9 +281,13 @@ function CrearPage() {
                 <button
                   type="button"
                   key={d}
-                  onClick={() => setDifs((prev) => active ? prev.filter((x) => x !== d) : [...prev, d])}
+                  onClick={() =>
+                    setDifs((prev) => (active ? prev.filter((x) => x !== d) : [...prev, d]))
+                  }
                   className={`flex-1 h-11 rounded-md border text-sm font-medium capitalize ${active ? "bg-primary text-primary-foreground border-primary" : "bg-background"}`}
-                >{d}</button>
+                >
+                  {d}
+                </button>
               );
             })}
           </div>
@@ -207,7 +302,9 @@ function CrearPage() {
                 type="button"
                 onClick={() => setCantidad(n)}
                 className={`h-11 rounded-md border text-sm font-semibold ${cantidad === n ? "bg-primary text-primary-foreground border-primary" : "bg-background"}`}
-              >{n}</button>
+              >
+                {n}
+              </button>
             ))}
           </div>
         </div>
@@ -215,11 +312,14 @@ function CrearPage() {
         <div className="space-y-1.5">
           <Label>Modalidad</Label>
           <Select value={modalidad} onValueChange={(v) => setModalidad(v as Modalidad)}>
-            <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-12">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="mezcladas">Mezcladas</SelectItem>
               <SelectItem value="nuevas">Nunca realizadas</SelectItem>
               <SelectItem value="falladas">Falladas</SelectItem>
+              <SelectItem value="dudas">Marcadas como duda</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -228,16 +328,41 @@ function CrearPage() {
       <Card className="p-4">
         <div className="text-xs uppercase text-muted-foreground font-medium mb-2">Resumen</div>
         <ul className="text-sm space-y-1">
-          <li>Materia: <span className="font-medium">{subjects?.find((s) => s.id === subjectId)?.nombre ?? "—"}</span></li>
-          <li>Tema: <span className="font-medium">{topics?.find((t) => t.id === topicId)?.nombre ?? "—"}</span></li>
-          <li>Subapartados: <span className="font-medium">{subtopicIds.length === 0 ? "Todos" : subtopicIds.length}</span></li>
-          <li>Dificultad: <span className="font-medium capitalize">{difs.join(", ") || "—"}</span></li>
-          <li>Preguntas: <span className="font-medium">{cantidad}</span></li>
-          <li>Modalidad: <span className="font-medium capitalize">{modalidad}</span></li>
+          <li>
+            Materia:{" "}
+            <span className="font-medium">
+              {subjects?.find((s) => s.id === subjectId)?.nombre ?? "—"}
+            </span>
+          </li>
+          <li>
+            Tema:{" "}
+            <span className="font-medium">
+              {topics?.find((t) => t.id === topicId)?.nombre ?? "—"}
+            </span>
+          </li>
+          <li>
+            Subapartados:{" "}
+            <span className="font-medium">
+              {subtopicIds.length === 0 ? "Todos" : subtopicIds.length}
+            </span>
+          </li>
+          <li>
+            Dificultad: <span className="font-medium capitalize">{difs.join(", ") || "—"}</span>
+          </li>
+          <li>
+            Preguntas: <span className="font-medium">{cantidad}</span>
+          </li>
+          <li>
+            Modalidad: <span className="font-medium capitalize">{modalidad}</span>
+          </li>
         </ul>
       </Card>
 
-      <Button onClick={iniciar} disabled={!canStart || starting} className="w-full h-14 text-base font-semibold">
+      <Button
+        onClick={iniciar}
+        disabled={!canStart || starting}
+        className="w-full h-14 text-base font-semibold"
+      >
         {starting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Iniciar test"}
       </Button>
     </div>
