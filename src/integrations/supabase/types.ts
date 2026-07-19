@@ -358,6 +358,66 @@ export type Database = {
           },
         ];
       };
+      test_question_selection: {
+        Row: {
+          algorithm_version: string;
+          base_weight: number;
+          created_at: string;
+          final_weight: number;
+          overlap_exception: boolean;
+          question_id: string;
+          selection_group: string;
+          selection_order: number;
+          selection_reason: string;
+          test_id: string;
+          user_id: string;
+          was_in_previous_test: boolean;
+        };
+        Insert: {
+          algorithm_version?: string;
+          base_weight: number;
+          created_at?: string;
+          final_weight: number;
+          overlap_exception?: boolean;
+          question_id: string;
+          selection_group: string;
+          selection_order: number;
+          selection_reason: string;
+          test_id: string;
+          user_id: string;
+          was_in_previous_test?: boolean;
+        };
+        Update: {
+          algorithm_version?: string;
+          base_weight?: number;
+          created_at?: string;
+          final_weight?: number;
+          overlap_exception?: boolean;
+          question_id?: string;
+          selection_group?: string;
+          selection_order?: number;
+          selection_reason?: string;
+          test_id?: string;
+          user_id?: string;
+          was_in_previous_test?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "test_question_selection_owner_question_fk";
+            columns: ["user_id", "question_id"];
+            isOneToOne: false;
+            referencedRelation: "questions";
+            referencedColumns: ["user_id", "id"];
+          },
+          {
+            foreignKeyName: "test_question_selection_owner_test_fk";
+            columns: ["user_id", "test_id"];
+            isOneToOne: false;
+            referencedRelation: "tests";
+            referencedColumns: ["user_id", "id"];
+          },
+        ];
+      };
       tests: {
         Row: {
           aciertos: number;
@@ -536,6 +596,21 @@ export type Database = {
           fallos: number;
           porcentaje: number;
           sin_responder: number;
+        }[];
+      };
+      create_smart_test: {
+        Args: {
+          p_difficulties?: Database["public"]["Enums"]["dificultad_enum"][];
+          p_question_count?: number;
+          p_subtopic_ids?: string[];
+          p_topic_id: string;
+        };
+        Returns: {
+          overlap_count: number;
+          overlap_limit: number;
+          selected_count: number;
+          test_id: string;
+          used_overlap_exception: boolean;
         }[];
       };
       import_questions_batch: { Args: { payload: Json }; Returns: Json };

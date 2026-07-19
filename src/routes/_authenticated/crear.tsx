@@ -105,6 +105,25 @@ function CrearPage() {
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData.user!.id;
 
+      if (modalidad === "mezcladas") {
+        const { data: smartTest, error: smartError } = await supabase.rpc("create_smart_test", {
+          p_topic_id: topicId,
+          p_subtopic_ids: subtopicIds.length > 0 ? subtopicIds : undefined,
+          p_difficulties: difs,
+          p_question_count: cantidad,
+        });
+        if (smartError) throw smartError;
+
+        const created = smartTest?.[0];
+        if (!created) throw new Error("No se pudo crear el test inteligente");
+        if (created.selected_count < cantidad) {
+          toast.warning(`Solo hay ${created.selected_count} preguntas disponibles`);
+        }
+
+        navigate({ to: "/test/$id", params: { id: created.test_id } });
+        return;
+      }
+
       // Query pool
       let q = supabase
         .from("questions")
@@ -316,12 +335,17 @@ function CrearPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="mezcladas">Mezcladas</SelectItem>
+              <SelectItem value="mezcladas">Mezcladas · selección inteligente</SelectItem>
               <SelectItem value="nuevas">Nunca realizadas</SelectItem>
               <SelectItem value="falladas">Falladas</SelectItem>
               <SelectItem value="dudas">Marcadas como duda</SelectItem>
             </SelectContent>
           </Select>
+          {modalidad === "mezcladas" && (
+            <p className="text-xs text-muted-foreground">
+              Prioriza preguntas útiles y reduce repeticiones recientes sin salir de tus filtros.
+            </p>
+          )}
         </div>
       </Card>
 
@@ -353,7 +377,10 @@ function CrearPage() {
             Preguntas: <span className="font-medium">{cantidad}</span>
           </li>
           <li>
-            Modalidad: <span className="font-medium capitalize">{modalidad}</span>
+            Modalidad:{" "}
+            <span className="font-medium">
+              {modalidad === "mezcladas" ? "Selección inteligente" : modalidad}
+            </span>
           </li>
         </ul>
       </Card>
