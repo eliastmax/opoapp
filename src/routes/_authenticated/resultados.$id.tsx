@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Loader2, CheckCircle2, XCircle, MinusCircle } from "lucide-react";
 import { toast } from "sonner";
+import { keepActiveFailureIds } from "@/lib/active-failures";
 
 export const Route = createFileRoute("/_authenticated/resultados/$id")({
   component: ResultadosPage,
@@ -79,14 +80,29 @@ function ResultadosPage() {
   async function repetirFalladas() {
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData.user!.id;
-    const qids = falladas.map((f) => f.question_id);
-    if (qids.length === 0) { toast.error("No hay falladas"); return; }
+    const historicalIds = falladas.map((f) => f.question_id);
+    if (historicalIds.length === 0) { toast.error("No hay falladas"); return; }
+
+    const { data: activeRows, error: activeError } = await supabase
+      .from("active_failed_questions")
+      .select("question_id")
+      .eq("user_id", userId)
+      .in("question_id", historicalIds);
+    if (activeError) { toast.error(activeError.message); return; }
+
+    const qids = keepActiveFailureIds(historicalIds, activeRows ?? []);
+    if (qids.length === 0) {
+      toast.success("Estas preguntas ya están corregidas");
+      return;
+    }
+
     const { data: newTest, error } = await supabase.from("tests").insert({
       user_id: userId, tipo: "falladas", numero_preguntas: qids.length, sin_responder: qids.length,
     }).select().single();
     if (error) { toast.error(error.message); return; }
     const rows = qids.map((qid, i) => ({ user_id: userId, test_id: newTest.id, question_id: qid, orden: i + 1 }));
-    await supabase.from("test_answers").insert(rows);
+    const { error: answersError } = await supabase.from("test_answers").insert(rows);
+    if (answersError) { toast.error(answersError.message); return; }
     navigate({ to: "/test/$id", params: { id: newTest.id } });
   }
 
