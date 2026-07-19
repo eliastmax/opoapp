@@ -5,7 +5,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Loader2, CheckCircle2, XCircle, MinusCircle, Flag } from "lucide-react";
+import {
+  BookOpen,
+  CheckCircle2,
+  ClipboardCopy,
+  Flag,
+  Loader2,
+  MinusCircle,
+  XCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import { keepActiveFailureIds } from "@/lib/active-failures";
 import { keepActiveDoubtIds } from "@/lib/active-doubts";
@@ -14,6 +22,13 @@ import {
   summarizeSelection,
   type SelectionTraceRow,
 } from "@/lib/smart-selection";
+import {
+  answerWithText,
+  buildDiagnosticGroups,
+  buildTestExport,
+  type DiagnosticAnswer,
+  type DiagnosticQuestion,
+} from "@/lib/result-diagnostics";
 
 export const Route = createFileRoute("/_authenticated/resultados/$id")({
   component: ResultadosPage,
@@ -37,6 +52,11 @@ type AnswerRow = {
     explicacion: string | null;
     referencia_fuente: string | null;
     concepto: string | null;
+    perspectiva: string | null;
+    apartado: string | null;
+    documento_referencia: string | null;
+    pagina_inicio: number | null;
+    pagina_fin: number | null;
     objetivo_aprendizaje: string | null;
     topics: { nombre: string } | null;
     subtopics: { nombre: string } | null;
@@ -86,6 +106,7 @@ function ResultadosPage() {
   const falladas = answers.filter((a) => a.correcta === false);
   const dudosas = answers.filter((a) => a.marked_doubt);
   const revisar = answers.filter((a) => a.correcta === false || a.marked_doubt);
+  const diagnosticGroups = buildDiagnosticGroups(answers as unknown as DiagnosticAnswer[]);
   const perfecto = t.fallos === 0 && t.sin_responder === 0;
   const {
     counts: selectionCounts,
@@ -222,9 +243,28 @@ function ResultadosPage() {
     scrollToReview();
   }
 
+  async function copyTestReport() {
+    const report = buildTestExport({
+      percentage: Number(t.porcentaje),
+      correct: t.aciertos,
+      failures: t.fallos,
+      unanswered: t.sin_responder,
+      questionCount: t.numero_preguntas,
+      groups: diagnosticGroups,
+    });
+    try {
+      await navigator.clipboard.writeText(report);
+      toast.success("Informe copiado");
+    } catch {
+      toast.error("No se pudo copiar el informe");
+    }
+  }
+
   const renderAnswer = (a: AnswerRow) => {
     const q = a.questions;
     if (!q) return null;
+    const userAnswer = answerWithText(q as DiagnosticQuestion, a.respuesta_usuario);
+    const correctAnswer = answerWithText(q as DiagnosticQuestion, q.respuesta_correcta);
     const estado =
       a.respuesta_usuario === null
         ? {
@@ -259,11 +299,11 @@ function ResultadosPage() {
             <span
               className={`font-medium ${a.correcta ? "text-success" : a.respuesta_usuario === null ? "text-muted-foreground" : "text-destructive"}`}
             >
-              {a.respuesta_usuario ?? "—"}
+              {userAnswer ?? "Sin responder"}
             </span>
           </div>
           <div>
-            Correcta: <span className="text-success font-medium">{q.respuesta_correcta}</span>
+            Respuesta correcta: <span className="text-success font-medium">{correctAnswer}</span>
           </div>
         </div>
         {q.explicacion && (
@@ -351,6 +391,55 @@ function ResultadosPage() {
           </p>
         </Card>
       )}
+
+      {diagnosticGroups.length > 0 && (
+        <Card className="p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-primary" />
+            <div className="text-xs font-medium uppercase text-muted-foreground">Qué repasar</div>
+          </div>
+          <div className="space-y-4">
+            {diagnosticGroups.map((group) => (
+              <div
+                key={group.concept}
+                className="space-y-1 border-t pt-3 first:border-t-0 first:pt-0"
+              >
+                <div className="text-sm font-semibold">{group.concept}</div>
+                <div className="text-xs text-muted-foreground">
+                  {group.failures} {group.failures === 1 ? "fallo" : "fallos"} · {group.doubts}{" "}
+                  {group.doubts === 1 ? "duda" : "dudas"}
+                </div>
+                {group.perspectives.length > 0 && (
+                  <div className="text-xs text-muted-foreground">
+                    Enfoques: {group.perspectives.join(", ")}
+                  </div>
+                )}
+                {group.references.map((reference) => (
+                  <div key={reference} className="text-xs text-primary">
+                    Repasa: {reference}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      <Card className="space-y-3 p-4">
+        <div>
+          <div className="text-xs font-medium uppercase text-muted-foreground">
+            Exportar resultado
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Copia un resumen con el resultado, los conceptos a repasar y sus referencias. No incluye
+            el banco completo.
+          </p>
+        </div>
+        <Button type="button" variant="outline" className="w-full" onClick={copyTestReport}>
+          <ClipboardCopy className="mr-2 h-4 w-4" />
+          Copiar informe para ChatGPT
+        </Button>
+      </Card>
 
       {sinFallosDuros ? (
         <div className="space-y-2">
