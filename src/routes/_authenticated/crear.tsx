@@ -13,8 +13,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { ChevronDown, Loader2, Search } from "lucide-react";
 import type { Dificultad } from "@/lib/csv-parser";
 import { keepActiveFailureIds } from "@/lib/active-failures";
 import { keepActiveDoubtIds } from "@/lib/active-doubts";
@@ -32,6 +42,9 @@ function CrearPage() {
   const [subjectId, setSubjectId] = useState<string>("");
   const [topicId, setTopicId] = useState<string>("");
   const [subtopicIds, setSubtopicIds] = useState<string[]>([]);
+  const [subtopicDialogOpen, setSubtopicDialogOpen] = useState(false);
+  const [draftSubtopicIds, setDraftSubtopicIds] = useState<string[]>([]);
+  const [subtopicSearch, setSubtopicSearch] = useState("");
   const [difs, setDifs] = useState<Dificultad[]>([...DIFICULTADES]);
   const [cantidad, setCantidad] = useState<number>(10);
   const [modalidad, setModalidad] = useState<Modalidad>("mezcladas");
@@ -72,6 +85,17 @@ function CrearPage() {
     [subjectId, topicId, difs],
   );
 
+  const filteredSubtopics = useMemo(() => {
+    const normalize = (value: string) =>
+      value
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLocaleLowerCase("es");
+    const query = normalize(subtopicSearch.trim());
+    if (!query) return subtopics ?? [];
+    return (subtopics ?? []).filter((subtopic) => normalize(subtopic.nombre).includes(query));
+  }, [subtopics, subtopicSearch]);
+
   // Auto-select when only one option exists
   useEffect(() => {
     if (subjects && subjects.length === 1 && !subjectId) {
@@ -97,6 +121,14 @@ function CrearPage() {
   const hideSubject = !!subjects && subjects.length === 1;
   const hideTopic = !!topics && topics.length === 1;
   const hideSubtopic = !!subtopics && subtopics.length <= 1;
+
+  function handleSubtopicDialogOpenChange(open: boolean) {
+    if (open) {
+      setDraftSubtopicIds(subtopicIds);
+      setSubtopicSearch("");
+    }
+    setSubtopicDialogOpen(open);
+  }
 
   async function iniciar() {
     if (!canStart) return;
@@ -273,21 +305,106 @@ function CrearPage() {
         {topicId && subtopics && subtopics.length > 0 && !hideSubtopic && (
           <div className="space-y-1.5">
             <Label>Subapartados (opcional)</Label>
-            <div className="space-y-2 rounded-md border p-3">
-              {subtopics.map((s) => (
-                <label key={s.id} className="flex items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={subtopicIds.includes(s.id)}
-                    onCheckedChange={(c) =>
-                      setSubtopicIds((prev) =>
-                        c ? [...prev, s.id] : prev.filter((x) => x !== s.id),
-                      )
-                    }
-                  />
-                  {s.nombre}
-                </label>
-              ))}
-            </div>
+            <Dialog open={subtopicDialogOpen} onOpenChange={handleSubtopicDialogOpenChange}>
+              <DialogTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 w-full justify-between px-3 font-normal"
+                >
+                  <span className="truncate">
+                    {subtopicIds.length === 0
+                      ? "Todos los subapartados"
+                      : subtopicIds.length === 1
+                        ? "1 seleccionado"
+                        : `${subtopicIds.length} seleccionados`}
+                  </span>
+                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
+                </Button>
+              </DialogTrigger>
+
+              <DialogContent className="w-[calc(100%-2rem)] max-w-md gap-0 overflow-hidden rounded-lg p-0">
+                <DialogHeader className="border-b p-4 pr-10 text-left">
+                  <DialogTitle>Elegir subapartados</DialogTitle>
+                  <DialogDescription>
+                    Si no seleccionas ninguno, se utilizarán todos.
+                  </DialogDescription>
+                </DialogHeader>
+
+                {subtopics.length > 6 && (
+                  <div className="border-b p-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        value={subtopicSearch}
+                        onChange={(event) => setSubtopicSearch(event.target.value)}
+                        placeholder="Buscar subapartado"
+                        aria-label="Buscar subapartado"
+                        className="h-11 pl-9"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="max-h-[50vh] space-y-1 overflow-y-auto p-3">
+                  {filteredSubtopics.map((subtopic) => {
+                    const checked = draftSubtopicIds.includes(subtopic.id);
+                    return (
+                      <label
+                        key={subtopic.id}
+                        className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-muted"
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(selected) =>
+                            setDraftSubtopicIds((previous) =>
+                              selected
+                                ? previous.includes(subtopic.id)
+                                  ? previous
+                                  : [...previous, subtopic.id]
+                                : previous.filter((id) => id !== subtopic.id),
+                            )
+                          }
+                        />
+                        <span>{subtopic.nombre}</span>
+                      </label>
+                    );
+                  })}
+                  {filteredSubtopics.length === 0 && (
+                    <p className="px-2 py-8 text-center text-sm text-muted-foreground">
+                      No hay subapartados que coincidan con la búsqueda.
+                    </p>
+                  )}
+                </div>
+
+                <DialogFooter className="flex-row gap-2 border-t p-4 sm:space-x-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setSubtopicIds([]);
+                      setSubtopicDialogOpen(false);
+                    }}
+                  >
+                    Usar todos
+                  </Button>
+                  <Button
+                    type="button"
+                    className="flex-1"
+                    onClick={() => {
+                      setSubtopicIds(draftSubtopicIds);
+                      setSubtopicDialogOpen(false);
+                    }}
+                  >
+                    Aplicar
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            <p className="text-xs text-muted-foreground">
+              Puedes limitar el test a uno o varios subapartados.
+            </p>
           </div>
         )}
 
