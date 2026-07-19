@@ -42,6 +42,10 @@ Estos valores no se consideran definitivos. Se calibrarán con uso real sin rein
 - Los pesos detallados permanecen internos. La interfaz muestra motivos comprensibles, no fórmulas.
 - No cambia el esquema CSV ni el Generador de Preguntas V2.
 
+## Corrección UX posterior
+
+El selector de subapartados de Crear test se presenta como un único control compacto. Al abrirlo muestra una ventana desplazable con buscador, selección múltiple, acción para aplicar y acción para volver a utilizar todos los subapartados. La selección mantiene la semántica anterior: ninguna selección explícita significa «todos» y los identificadores elegidos se envían sin cambios al motor inteligente o a las modalidades manuales.
+
 ## Datos añadidos
 
 ### `test_question_selection`
@@ -68,10 +72,11 @@ Función transaccional que valida los filtros, selecciona sin reemplazo, crea el
 5. Un error revierte toda la creación y no deja tests incompletos.
 6. El usuario puede seguir creando tests de nuevas, falladas o dudas.
 7. La pantalla de resultados explica la composición sin mostrar métricas innecesarias.
+8. Una cantidad elevada de subapartados no alarga el formulario principal y puede filtrarse mediante búsqueda.
 
 ## Prompt optimizado para Lovable
 
-Trabaja exclusivamente sobre `OpoTest Study`; no modifiques `OpoTest: V2`. No regeneres ni rediseñes el código. Verifica que la versión sincronizada desde GitHub convierte la modalidad Mezcladas en selección inteligente, conserva Nunca realizadas, Falladas y Dudas, y muestra en Resultados la tarjeta «Cómo se eligieron». Si el commit ya está sincronizado, limita la actuación a informar de la versión y del resultado de la verificación. No uses el agente para implementar cambios adicionales.
+Trabaja exclusivamente sobre `OpoTest Study`; no modifiques `OpoTest: V2`. No regeneres ni rediseñes el código. Verifica que la versión sincronizada desde GitHub mantiene la selección inteligente y que, en Crear test, los subapartados aparecen en un selector compacto que abre una ventana con búsqueda, selección múltiple, «Usar todos» y «Aplicar». Comprueba que el resumen refleja «Todos» o el número elegido y que el test respeta el filtro. Si el commit ya está sincronizado, limita la actuación a informar de la versión y del resultado de la verificación. No uses el agente para implementar cambios adicionales.
 
 ## Prompt optimizado para el Generador de Preguntas
 
