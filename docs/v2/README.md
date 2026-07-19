@@ -8,18 +8,17 @@ Este índice registra qué partes de la V2 están realmente implementadas y vali
 - Fallos activos: implementado y validado en uso real.
 - [Dudas activas y estadísticas por pregunta](sprint-02-dudas-estadisticas.md): implementado y validado en uso real.
 - [Motor de selección inteligente V2](sprint-03-seleccion-inteligente.md): implementado y validado en uso real; selector de subapartados compactado posteriormente.
+- [Diagnóstico de resultados y exportación útil](sprint-04-diagnostico-resultados.md): implementado y validado en uso real.
 
 ## Sprint en implementación
 
-- [Diagnóstico de resultados y exportación útil](sprint-04-diagnostico-resultados.md): diagnóstico factual del test, referencias exactas, exportación resumida y respuestas completas.
+- [Centro de progreso y estados de evidencia](sprint-05-centro-progreso.md): avance por materia y tema sin inflarlo por repetición.
 
 ## Próximo bloque
 
-- Centro de progreso y estados de evidencia.
+- Progreso real y motivación basada en cambios verificados.
 
 ## Próximos bloques
 
-- Diagnóstico y mapa de dominio.
 - Sesión recomendada automática.
-- Progreso real y motivación basada en cambios verificados.
 - Progresión Aprendizaje, Consolidación y Tribunal.

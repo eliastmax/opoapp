@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Trophy, Target, XCircle, ArrowRight, Loader2, Flag } from "lucide-react";
+import { BookOpen, Trophy, Target, XCircle, ArrowRight, Loader2, Flag, Gauge } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { uniqueActiveFailureIds } from "@/lib/active-failures";
@@ -192,7 +192,7 @@ function InicioPage() {
         />
         <StatCard
           icon={Target}
-          label="% Acierto global"
+          label="% Acierto histórico"
           value={isLoading ? undefined : `${data?.pctGlobal ?? 0}%`}
         />
         {hasFalladas ? (
@@ -281,6 +281,19 @@ function InicioPage() {
           </Link>
         </Card>
       )}
+
+      <Link to="/progreso" className="block">
+        <Card className="flex items-center gap-3 p-4 transition-colors hover:bg-accent/50">
+          <Gauge className="h-5 w-5 text-primary" />
+          <div className="flex-1">
+            <div className="text-sm font-semibold">Ver progreso por temas</div>
+            <div className="text-xs text-muted-foreground">
+              Cobertura, acierto actual y evidencia
+            </div>
+          </div>
+          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+        </Card>
+      </Link>
 
       <div className="pt-2">
         <Link to="/crear">
