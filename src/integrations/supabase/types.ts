@@ -613,6 +613,32 @@ export type Database = {
           used_overlap_exception: boolean;
         }[];
       };
+      get_topic_progress_summary: {
+        Args: never;
+        Returns: {
+          active_doubts: number;
+          active_failures: number;
+          active_questions: number;
+          available_concepts: number;
+          available_perspectives: number;
+          completed_sessions: number;
+          coverage_percentage: number;
+          evidence_state: string;
+          first_activity_at: string | null;
+          last_activity_at: string | null;
+          latest_correct_questions: number;
+          mastery_percentage: number | null;
+          metric_version: string;
+          seen_concepts: number;
+          seen_perspectives: number;
+          subject_id: string;
+          subject_name: string;
+          topic_id: string;
+          topic_name: string;
+          topic_number: number;
+          unique_questions_seen: number;
+        }[];
+      };
       import_questions_batch: { Args: { payload: Json }; Returns: Json };
     };
     Enums: {

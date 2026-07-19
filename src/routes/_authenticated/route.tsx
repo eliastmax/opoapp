@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, redirect, Link, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Home, PlusSquare, ListChecks, Upload, Settings } from "lucide-react";
+import { Home, PlusSquare, Gauge, Upload, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated")({
 const nav = [
   { to: "/inicio", label: "Inicio", icon: Home },
   { to: "/crear", label: "Crear", icon: PlusSquare },
-  { to: "/historial", label: "Resultados", icon: ListChecks },
+  { to: "/progreso", label: "Progreso", icon: Gauge },
   { to: "/importar", label: "Importar", icon: Upload },
   { to: "/ajustes", label: "Ajustes", icon: Settings },
 ] as const;
