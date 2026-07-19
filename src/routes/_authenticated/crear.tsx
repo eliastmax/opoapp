@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import type { Dificultad } from "@/lib/csv-parser";
+import { keepActiveFailureIds } from "@/lib/active-failures";
 
 export const Route = createFileRoute("/_authenticated/crear")({
   component: CrearPage,
@@ -86,15 +87,21 @@ function CrearPage() {
       if (e1) throw e1;
       let ids = (pool ?? []).map((p) => p.id);
 
-      if (modalidad !== "mezcladas") {
+      if (modalidad === "nuevas") {
         const { data: answered } = await supabase.from("test_answers").select("question_id, correcta");
-        if (modalidad === "nuevas") {
-          const seen = new Set((answered ?? []).map((a) => a.question_id));
-          ids = ids.filter((id) => !seen.has(id));
-        } else {
-          const falladas = new Set((answered ?? []).filter((a) => a.correcta === false).map((a) => a.question_id));
-          ids = ids.filter((id) => falladas.has(id));
-        }
+        const seen = new Set((answered ?? []).map((a) => a.question_id));
+        ids = ids.filter((id) => !seen.has(id));
+      } else if (modalidad === "falladas") {
+        let failedQuery = supabase
+          .from("active_failed_questions")
+          .select("question_id")
+          .eq("user_id", userId)
+          .eq("topic_id", topicId)
+          .in("dificultad", difs);
+        if (subtopicIds.length > 0) failedQuery = failedQuery.in("subtopic_id", subtopicIds);
+        const { data: activeFailures, error: activeFailuresError } = await failedQuery;
+        if (activeFailuresError) throw activeFailuresError;
+        ids = keepActiveFailureIds(ids, activeFailures ?? []);
       }
 
       if (ids.length === 0) { toast.error("No hay preguntas con esos filtros"); setStarting(false); return; }

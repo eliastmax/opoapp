@@ -403,9 +403,28 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      active_failed_questions: {
+        Row: {
+          dificultad: Database["public"]["Enums"]["dificultad_enum"] | null
+          last_answered_at: string | null
+          question_id: string | null
+          subtopic_id: string | null
+          topic_id: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      complete_test: {
+        Args: { p_test_id: string }
+        Returns: {
+          aciertos: number
+          fallos: number
+          porcentaje: number
+          sin_responder: number
+        }[]
+      }
       import_questions_batch: { Args: { payload: Json }; Returns: Json }
     }
     Enums: {

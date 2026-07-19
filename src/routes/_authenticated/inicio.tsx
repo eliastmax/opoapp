@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, Trophy, Target, XCircle, ArrowRight, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { uniqueActiveFailureIds } from "@/lib/active-failures";
 
 export const Route = createFileRoute("/_authenticated/inicio")({
   component: InicioPage,
@@ -19,23 +20,25 @@ function InicioPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
-      const [activas, completados, ultimo, aciertosTotal, falladasDistintas] = await Promise.all([
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) throw userError ?? new Error("Sesión no válida");
+
+      const [activas, completados, ultimo, aciertosTotal, falladasActivas] = await Promise.all([
         supabase.from("questions").select("id", { count: "exact", head: true }).eq("activa", true),
         supabase.from("tests").select("id", { count: "exact", head: true }).eq("completado", true),
         supabase.from("tests").select("id, porcentaje, aciertos, numero_preguntas, fecha_finalizacion").eq("completado", true).order("fecha_finalizacion", { ascending: false }).limit(1).maybeSingle(),
         supabase.from("test_answers").select("correcta").not("correcta", "is", null),
-        supabase.from("test_answers").select("question_id, questions!test_answers_question_id_fkey!inner(activa)").eq("correcta", false).eq("questions.activa", true),
+        supabase.from("active_failed_questions").select("question_id", { count: "exact", head: true }).eq("user_id", userData.user.id),
       ]);
       const totalRespuestas = aciertosTotal.data?.length ?? 0;
       const aciertos = aciertosTotal.data?.filter((r) => r.correcta === true).length ?? 0;
       const pct = totalRespuestas > 0 ? Math.round((aciertos / totalRespuestas) * 100) : 0;
-      const distintasFalladas = new Set((falladasDistintas.data ?? []).map((r) => r.question_id)).size;
       return {
         activas: activas.count ?? 0,
         completados: completados.count ?? 0,
         ultimo: ultimo.data,
         pctGlobal: pct,
-        distintasFalladas,
+        distintasFalladas: falladasActivas.count ?? 0,
       };
     },
   });
@@ -47,18 +50,12 @@ function InicioPage() {
       const userId = userData.user!.id;
 
       const { data: rows, error: eRows } = await supabase
-        .from("test_answers")
-        .select("question_id, questions!test_answers_question_id_fkey!inner(activa)")
-        .eq("correcta", false);
+        .from("active_failed_questions")
+        .select("question_id")
+        .eq("user_id", userId);
       if (eRows) throw eRows;
 
-      const ids = Array.from(
-        new Set(
-          (rows ?? [])
-            .filter((r) => r.questions && r.questions.activa === true)
-            .map((r) => r.question_id),
-        ),
-      );
+      const ids = uniqueActiveFailureIds(rows ?? []);
 
       if (ids.length === 0) {
         toast.error("No tienes fallos pendientes");

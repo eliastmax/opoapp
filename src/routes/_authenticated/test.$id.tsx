@@ -77,23 +77,9 @@ function TestPage() {
     if (finishing) return;
     setFinishing(true);
     try {
-      let aciertos = 0, fallos = 0, sin = 0;
-      const updates = data!.answers.map(async (a) => {
-        const q = a.questions;
-        if (!q) return;
-        if (!a.respuesta_usuario) { sin++; return; }
-        const correcta = a.respuesta_usuario === q.respuesta_correcta;
-        if (correcta) aciertos++; else fallos++;
-        await supabase.from("test_answers").update({ correcta }).eq("id", a.id);
-      });
-      await Promise.all(updates);
-      const pct = data!.answers.length > 0 ? (aciertos / data!.answers.length) * 100 : 0;
-      const { error } = await supabase.from("tests").update({
-        completado: true,
-        fecha_finalizacion: new Date().toISOString(),
-        aciertos, fallos, sin_responder: sin, porcentaje: Number(pct.toFixed(2)),
-      }).eq("id", id);
+      const { error } = await supabase.rpc("complete_test", { p_test_id: id });
       if (error) throw error;
+      await qc.invalidateQueries({ queryKey: ["dashboard"] });
       navigate({ to: "/resultados/$id", params: { id }, replace: true });
     } catch (e) {
       toast.error((e as Error).message);
