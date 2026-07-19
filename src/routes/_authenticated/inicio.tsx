@@ -4,10 +4,11 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Trophy, Target, XCircle, ArrowRight, Loader2 } from "lucide-react";
+import { BookOpen, Trophy, Target, XCircle, ArrowRight, Loader2, Flag } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { uniqueActiveFailureIds } from "@/lib/active-failures";
+import { uniqueActiveDoubtIds } from "@/lib/active-doubts";
 
 export const Route = createFileRoute("/_authenticated/inicio")({
   component: InicioPage,
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/_authenticated/inicio")({
 function InicioPage() {
   const navigate = useNavigate();
   const [repasando, setRepasando] = useState(false);
+  const [repasandoDudas, setRepasandoDudas] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
@@ -23,13 +25,33 @@ function InicioPage() {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError || !userData.user) throw userError ?? new Error("Sesión no válida");
 
-      const [activas, completados, ultimo, aciertosTotal, falladasActivas] = await Promise.all([
-        supabase.from("questions").select("id", { count: "exact", head: true }).eq("activa", true),
-        supabase.from("tests").select("id", { count: "exact", head: true }).eq("completado", true),
-        supabase.from("tests").select("id, porcentaje, aciertos, numero_preguntas, fecha_finalizacion").eq("completado", true).order("fecha_finalizacion", { ascending: false }).limit(1).maybeSingle(),
-        supabase.from("test_answers").select("correcta").not("correcta", "is", null),
-        supabase.from("active_failed_questions").select("question_id", { count: "exact", head: true }).eq("user_id", userData.user.id),
-      ]);
+      const [activas, completados, ultimo, aciertosTotal, falladasActivas, dudasActivas] =
+        await Promise.all([
+          supabase
+            .from("questions")
+            .select("id", { count: "exact", head: true })
+            .eq("activa", true),
+          supabase
+            .from("tests")
+            .select("id", { count: "exact", head: true })
+            .eq("completado", true),
+          supabase
+            .from("tests")
+            .select("id, porcentaje, aciertos, numero_preguntas, fecha_finalizacion")
+            .eq("completado", true)
+            .order("fecha_finalizacion", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          supabase.from("test_answers").select("correcta").not("correcta", "is", null),
+          supabase
+            .from("active_failed_questions")
+            .select("question_id", { count: "exact", head: true })
+            .eq("user_id", userData.user.id),
+          supabase
+            .from("active_doubt_questions")
+            .select("question_id", { count: "exact", head: true })
+            .eq("user_id", userData.user.id),
+        ]);
       const totalRespuestas = aciertosTotal.data?.length ?? 0;
       const aciertos = aciertosTotal.data?.filter((r) => r.correcta === true).length ?? 0;
       const pct = totalRespuestas > 0 ? Math.round((aciertos / totalRespuestas) * 100) : 0;
@@ -39,6 +61,7 @@ function InicioPage() {
         ultimo: ultimo.data,
         pctGlobal: pct,
         distintasFalladas: falladasActivas.count ?? 0,
+        distintasDudosas: dudasActivas.count ?? 0,
       };
     },
   });
@@ -68,12 +91,24 @@ function InicioPage() {
         [ids[i], ids[j]] = [ids[j], ids[i]];
       }
 
-      const { data: test, error: eTest } = await supabase.from("tests").insert({
-        user_id: userId, tipo: "falladas", numero_preguntas: ids.length, sin_responder: ids.length,
-      }).select().single();
+      const { data: test, error: eTest } = await supabase
+        .from("tests")
+        .insert({
+          user_id: userId,
+          tipo: "falladas",
+          numero_preguntas: ids.length,
+          sin_responder: ids.length,
+        })
+        .select()
+        .single();
       if (eTest) throw eTest;
 
-      const answers = ids.map((qid, i) => ({ user_id: userId, test_id: test.id, question_id: qid, orden: i + 1 }));
+      const answers = ids.map((qid, i) => ({
+        user_id: userId,
+        test_id: test.id,
+        question_id: qid,
+        orden: i + 1,
+      }));
       const { error: eAns } = await supabase.from("test_answers").insert(answers);
       if (eAns) throw eAns;
 
@@ -84,8 +119,58 @@ function InicioPage() {
     }
   }
 
+  async function repasarDudas() {
+    setRepasandoDudas(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user!.id;
+      const { data: rows, error: rowsError } = await supabase
+        .from("active_doubt_questions")
+        .select("question_id")
+        .eq("user_id", userId);
+      if (rowsError) throw rowsError;
+
+      const ids = uniqueActiveDoubtIds(rows ?? []);
+      if (ids.length === 0) {
+        toast.error("No tienes dudas pendientes");
+        setRepasandoDudas(false);
+        return;
+      }
+
+      for (let i = ids.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [ids[i], ids[j]] = [ids[j], ids[i]];
+      }
+
+      const { data: test, error: testError } = await supabase
+        .from("tests")
+        .insert({
+          user_id: userId,
+          tipo: "dudas",
+          numero_preguntas: ids.length,
+          sin_responder: ids.length,
+        })
+        .select()
+        .single();
+      if (testError) throw testError;
+      const answers = ids.map((questionId, index) => ({
+        user_id: userId,
+        test_id: test.id,
+        question_id: questionId,
+        orden: index + 1,
+      }));
+      const { error: answersError } = await supabase.from("test_answers").insert(answers);
+      if (answersError) throw answersError;
+      navigate({ to: "/test/$id", params: { id: test.id } });
+    } catch (error) {
+      toast.error((error as Error).message);
+      setRepasandoDudas(false);
+    }
+  }
+
   const falladas = data?.distintasFalladas ?? 0;
   const hasFalladas = falladas > 0;
+  const dudas = data?.distintasDudosas ?? 0;
 
   return (
     <div className="space-y-4">
@@ -95,9 +180,21 @@ function InicioPage() {
       </header>
 
       <div className="grid grid-cols-2 gap-3">
-        <StatCard icon={BookOpen} label="Preguntas activas" value={isLoading ? undefined : data?.activas ?? 0} />
-        <StatCard icon={Trophy} label="Tests completados" value={isLoading ? undefined : data?.completados ?? 0} />
-        <StatCard icon={Target} label="% Acierto global" value={isLoading ? undefined : `${data?.pctGlobal ?? 0}%`} />
+        <StatCard
+          icon={BookOpen}
+          label="Preguntas activas"
+          value={isLoading ? undefined : (data?.activas ?? 0)}
+        />
+        <StatCard
+          icon={Trophy}
+          label="Tests completados"
+          value={isLoading ? undefined : (data?.completados ?? 0)}
+        />
+        <StatCard
+          icon={Target}
+          label="% Acierto global"
+          value={isLoading ? undefined : `${data?.pctGlobal ?? 0}%`}
+        />
         {hasFalladas ? (
           <button
             type="button"
@@ -110,43 +207,108 @@ function InicioPage() {
             <div className="text-xs text-muted-foreground">Preguntas falladas</div>
             <div className="text-xl font-bold mt-0.5">{falladas}</div>
             <div className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary">
-              {repasando ? <><Loader2 className="w-3 h-3 animate-spin" /> Preparando…</> : <>Repasar fallos <ArrowRight className="w-3 h-3" /></>}
+              {repasando ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" /> Preparando…
+                </>
+              ) : (
+                <>
+                  Repasar fallos <ArrowRight className="w-3 h-3" />
+                </>
+              )}
             </div>
           </button>
         ) : (
           <Card className="p-4">
             <XCircle className="w-5 h-5 text-primary mb-2" />
             <div className="text-xs text-muted-foreground">Preguntas falladas</div>
-            {isLoading ? <Skeleton className="h-7 w-16 mt-1" /> : <div className="text-xl font-bold mt-0.5">0</div>}
-            {!isLoading && <div className="text-xs text-muted-foreground mt-1">No tienes fallos pendientes</div>}
+            {isLoading ? (
+              <Skeleton className="h-7 w-16 mt-1" />
+            ) : (
+              <div className="text-xl font-bold mt-0.5">0</div>
+            )}
+            {!isLoading && (
+              <div className="text-xs text-muted-foreground mt-1">No tienes fallos pendientes</div>
+            )}
           </Card>
         )}
       </div>
 
+      {dudas > 0 && (
+        <button
+          type="button"
+          onClick={repasarDudas}
+          disabled={repasandoDudas}
+          aria-label={`Repasar ${dudas} preguntas marcadas como duda`}
+          className="w-full text-left rounded-lg border bg-card p-4 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-70"
+        >
+          <div className="flex items-center gap-3">
+            <Flag className="w-5 h-5 text-primary" />
+            <div className="flex-1">
+              <div className="text-xs text-muted-foreground">Preguntas con duda</div>
+              <div className="text-xl font-bold">{dudas}</div>
+            </div>
+            <div className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
+              {repasandoDudas ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" /> Preparando…
+                </>
+              ) : (
+                <>
+                  Repasar dudas <ArrowRight className="w-3 h-3" />
+                </>
+              )}
+            </div>
+          </div>
+        </button>
+      )}
+
       {data?.ultimo && (
         <Card className="p-4">
-          <div className="text-xs uppercase text-muted-foreground font-medium">Último resultado</div>
+          <div className="text-xs uppercase text-muted-foreground font-medium">
+            Último resultado
+          </div>
           <div className="mt-1 text-2xl font-bold">{Number(data.ultimo.porcentaje)}%</div>
-          <div className="text-sm text-muted-foreground">{data.ultimo.aciertos}/{data.ultimo.numero_preguntas} correctas</div>
-          <Link to="/resultados/$id" params={{ id: data.ultimo.id }} className="mt-3 inline-flex items-center gap-1 text-sm text-primary font-medium">
+          <div className="text-sm text-muted-foreground">
+            {data.ultimo.aciertos}/{data.ultimo.numero_preguntas} correctas
+          </div>
+          <Link
+            to="/resultados/$id"
+            params={{ id: data.ultimo.id }}
+            className="mt-3 inline-flex items-center gap-1 text-sm text-primary font-medium"
+          >
             Ver detalle <ArrowRight className="w-4 h-4" />
           </Link>
         </Card>
       )}
 
       <div className="pt-2">
-        <Link to="/crear"><Button className="w-full h-14 text-base font-semibold">Crear test</Button></Link>
+        <Link to="/crear">
+          <Button className="w-full h-14 text-base font-semibold">Crear test</Button>
+        </Link>
       </div>
     </div>
   );
 }
 
-function StatCard({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: number | string | undefined }) {
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: number | string | undefined;
+}) {
   return (
     <Card className="p-4">
       <Icon className="w-5 h-5 text-primary mb-2" />
       <div className="text-xs text-muted-foreground">{label}</div>
-      {value === undefined ? <Skeleton className="h-7 w-16 mt-1" /> : <div className="text-xl font-bold mt-0.5">{value}</div>}
+      {value === undefined ? (
+        <Skeleton className="h-7 w-16 mt-1" />
+      ) : (
+        <div className="text-xl font-bold mt-0.5">{value}</div>
+      )}
     </Card>
   );
 }

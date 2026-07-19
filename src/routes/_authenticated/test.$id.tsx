@@ -6,9 +6,18 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Flag, Loader2 } from "lucide-react";
 import type { Respuesta } from "@/lib/csv-parser";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/test/$id")({
   component: TestPage,
@@ -25,7 +34,11 @@ function TestPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["test", id],
     queryFn: async () => {
-      const { data: test, error: e1 } = await supabase.from("tests").select("*").eq("id", id).single();
+      const { data: test, error: e1 } = await supabase
+        .from("tests")
+        .select("*")
+        .eq("id", id)
+        .single();
       if (e1) throw e1;
       const { data: answers, error: e2 } = await supabase
         .from("test_answers")
@@ -39,17 +52,29 @@ function TestPage() {
 
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
-      if (data && !data.test.completado) { e.preventDefault(); e.returnValue = ""; }
+      if (data && !data.test.completado) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, [data]);
 
   const total = data?.answers.length ?? 0;
-  const answered = useMemo(() => (data?.answers.filter((a) => a.respuesta_usuario !== null).length ?? 0), [data]);
+  const answered = useMemo(
+    () => data?.answers.filter((a) => a.respuesta_usuario !== null).length ?? 0,
+    [data],
+  );
+  const doubts = useMemo(() => data?.answers.filter((a) => a.marked_doubt).length ?? 0, [data]);
   const remaining = total - answered;
 
-  if (isLoading) return <div className="flex items-center justify-center pt-20"><Loader2 className="w-6 h-6 animate-spin" /></div>;
+  if (isLoading)
+    return (
+      <div className="flex items-center justify-center pt-20">
+        <Loader2 className="w-6 h-6 animate-spin" />
+      </div>
+    );
   if (error) return <p className="text-destructive p-4">{(error as Error).message}</p>;
   if (!data) return null;
 
@@ -63,12 +88,36 @@ function TestPage() {
   if (!question) return null;
 
   async function selectOption(opt: Respuesta) {
-    const { error } = await supabase.from("test_answers").update({ respuesta_usuario: opt }).eq("id", item.id);
-    if (error) { toast.error(error.message); return; }
+    const { error } = await supabase
+      .from("test_answers")
+      .update({ respuesta_usuario: opt })
+      .eq("id", item.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     qc.setQueryData<typeof data>(["test", id], (prev) => {
       if (!prev) return prev;
       const answers = [...prev.answers];
       answers[current] = { ...answers[current], respuesta_usuario: opt };
+      return { ...prev, answers };
+    });
+  }
+
+  async function toggleDoubt() {
+    const markedDoubt = !item.marked_doubt;
+    const { error } = await supabase
+      .from("test_answers")
+      .update({ marked_doubt: markedDoubt })
+      .eq("id", item.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    qc.setQueryData<typeof data>(["test", id], (prev) => {
+      if (!prev) return prev;
+      const answers = [...prev.answers];
+      answers[current] = { ...answers[current], marked_doubt: markedDoubt };
       return { ...prev, answers };
     });
   }
@@ -90,7 +139,8 @@ function TestPage() {
   function revisarRespuestas() {
     setConfirmFinish(false);
     const idx = data!.answers.findIndex((a) => a.respuesta_usuario === null);
-    setCurrent(idx >= 0 ? idx : 0);
+    const doubtIdx = data!.answers.findIndex((a) => a.marked_doubt);
+    setCurrent(idx >= 0 ? idx : doubtIdx >= 0 ? doubtIdx : 0);
   }
 
   function handleNext() {
@@ -99,14 +149,19 @@ function TestPage() {
   }
 
   const options: Array<[Respuesta, string]> = [
-    ["A", question.opcion_a], ["B", question.opcion_b], ["C", question.opcion_c], ["D", question.opcion_d],
+    ["A", question.opcion_a],
+    ["B", question.opcion_b],
+    ["C", question.opcion_c],
+    ["D", question.opcion_d],
   ];
 
   return (
     <div className="space-y-3">
       <div className="pt-1">
         <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-          <span>Pregunta {current + 1} de {total}</span>
+          <span>
+            Pregunta {current + 1} de {total}
+          </span>
           <span>Quedan {remaining}</span>
         </div>
         <Progress value={((current + 1) / total) * 100} />
@@ -127,7 +182,11 @@ function TestPage() {
               className={`w-full text-left p-2.5 rounded-lg border transition-colors min-h-12 ${active ? "border-primary bg-primary/10" : "bg-card"}`}
             >
               <div className="flex gap-3 items-center">
-                <span className={`flex-none w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${active ? "bg-primary text-primary-foreground" : "bg-muted"}`}>{letter}</span>
+                <span
+                  className={`flex-none w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${active ? "bg-primary text-primary-foreground" : "bg-muted"}`}
+                >
+                  {letter}
+                </span>
                 <span className="flex-1 text-sm leading-snug">{text}</span>
               </div>
             </button>
@@ -135,9 +194,29 @@ function TestPage() {
         })}
       </div>
 
+      <Button
+        type="button"
+        variant={item.marked_doubt ? "default" : "outline"}
+        className="w-full h-11"
+        onClick={toggleDoubt}
+        aria-pressed={item.marked_doubt}
+      >
+        <Flag className="w-4 h-4 mr-2" />
+        {item.marked_doubt ? "Marcada como duda" : "Marcar como duda"}
+      </Button>
+
       <div className="flex gap-2 pt-1">
-        <Button variant="outline" className="flex-1 h-12" disabled={current === 0} onClick={() => setCurrent((c) => c - 1)}>Anterior</Button>
-        <Button className="flex-1 h-12" onClick={handleNext}>Siguiente</Button>
+        <Button
+          variant="outline"
+          className="flex-1 h-12"
+          disabled={current === 0}
+          onClick={() => setCurrent((c) => c - 1)}
+        >
+          Anterior
+        </Button>
+        <Button className="flex-1 h-12" onClick={handleNext}>
+          Siguiente
+        </Button>
       </div>
 
       <AlertDialog open={confirmFinish} onOpenChange={setConfirmFinish}>
@@ -147,6 +226,9 @@ function TestPage() {
             <AlertDialogDescription>
               Has llegado al final del test. ¿Quieres finalizar y corregir?
               {remaining > 0 ? ` Te quedan ${remaining} sin responder.` : ""}
+              {doubts > 0
+                ? ` Has marcado ${doubts} ${doubts === 1 ? "pregunta" : "preguntas"} como duda.`
+                : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

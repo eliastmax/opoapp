@@ -1,558 +1,669 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
+    PostgrestVersion: "14.5";
+  };
   public: {
     Tables: {
       profiles: {
         Row: {
-          created_at: string
-          id: string
-          nombre: string
-        }
+          created_at: string;
+          id: string;
+          nombre: string;
+        };
         Insert: {
-          created_at?: string
-          id: string
-          nombre?: string
-        }
+          created_at?: string;
+          id: string;
+          nombre?: string;
+        };
         Update: {
-          created_at?: string
-          id?: string
-          nombre?: string
-        }
-        Relationships: []
-      }
+          created_at?: string;
+          id?: string;
+          nombre?: string;
+        };
+        Relationships: [];
+      };
+      question_statistics: {
+        Row: {
+          answered_count: number;
+          appearances_count: number;
+          correct_count: number;
+          current_correct_streak: number;
+          current_incorrect_streak: number;
+          doubt_count: number;
+          incorrect_count: number;
+          last_answered_at: string | null;
+          last_correct_at: string | null;
+          last_doubted_at: string | null;
+          last_incorrect_at: string | null;
+          last_seen_at: string | null;
+          next_review_at: string | null;
+          question_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          answered_count?: number;
+          appearances_count?: number;
+          correct_count?: number;
+          current_correct_streak?: number;
+          current_incorrect_streak?: number;
+          doubt_count?: number;
+          incorrect_count?: number;
+          last_answered_at?: string | null;
+          last_correct_at?: string | null;
+          last_doubted_at?: string | null;
+          last_incorrect_at?: string | null;
+          last_seen_at?: string | null;
+          next_review_at?: string | null;
+          question_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          answered_count?: number;
+          appearances_count?: number;
+          correct_count?: number;
+          current_correct_streak?: number;
+          current_incorrect_streak?: number;
+          doubt_count?: number;
+          incorrect_count?: number;
+          last_answered_at?: string | null;
+          last_correct_at?: string | null;
+          last_doubted_at?: string | null;
+          last_incorrect_at?: string | null;
+          last_seen_at?: string | null;
+          next_review_at?: string | null;
+          question_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "question_statistics_owner_question_fk";
+            columns: ["user_id", "question_id"];
+            isOneToOne: true;
+            referencedRelation: "questions";
+            referencedColumns: ["user_id", "id"];
+          },
+        ];
+      };
       questions: {
         Row: {
-          activa: boolean
-          apartado: string | null
-          codigo: string
-          concepto: string | null
-          created_at: string
-          dificultad: Database["public"]["Enums"]["dificultad_enum"]
-          dificultad_conceptual:
-            | Database["public"]["Enums"]["dificultad_enum"]
-            | null
-          dificultad_examen:
-            | Database["public"]["Enums"]["dificultad_enum"]
-            | null
-          documento_referencia: string | null
-          explicacion: string
-          frecuencia_historica: string | null
-          id: string
-          nivel_pedagogico: string | null
-          objetivo_aprendizaje: string | null
-          opcion_a: string
-          opcion_b: string
-          opcion_c: string
-          opcion_d: string
-          pagina_fin: number | null
-          pagina_inicio: number | null
-          perspectiva: string | null
-          pregunta: string
-          referencia_fuente: string
-          respuesta_correcta: Database["public"]["Enums"]["respuesta_enum"]
-          subject_id: string
-          subtopic_id: string | null
-          tipo_trampa: string | null
-          topic_id: string
-          user_id: string
-        }
+          activa: boolean;
+          apartado: string | null;
+          codigo: string;
+          concepto: string | null;
+          created_at: string;
+          dificultad: Database["public"]["Enums"]["dificultad_enum"];
+          dificultad_conceptual: Database["public"]["Enums"]["dificultad_enum"] | null;
+          dificultad_examen: Database["public"]["Enums"]["dificultad_enum"] | null;
+          documento_referencia: string | null;
+          explicacion: string;
+          frecuencia_historica: string | null;
+          id: string;
+          nivel_pedagogico: string | null;
+          objetivo_aprendizaje: string | null;
+          opcion_a: string;
+          opcion_b: string;
+          opcion_c: string;
+          opcion_d: string;
+          pagina_fin: number | null;
+          pagina_inicio: number | null;
+          perspectiva: string | null;
+          pregunta: string;
+          referencia_fuente: string;
+          respuesta_correcta: Database["public"]["Enums"]["respuesta_enum"];
+          subject_id: string;
+          subtopic_id: string | null;
+          tipo_trampa: string | null;
+          topic_id: string;
+          user_id: string;
+        };
         Insert: {
-          activa?: boolean
-          apartado?: string | null
-          codigo: string
-          concepto?: string | null
-          created_at?: string
-          dificultad: Database["public"]["Enums"]["dificultad_enum"]
-          dificultad_conceptual?:
-            | Database["public"]["Enums"]["dificultad_enum"]
-            | null
-          dificultad_examen?:
-            | Database["public"]["Enums"]["dificultad_enum"]
-            | null
-          documento_referencia?: string | null
-          explicacion?: string
-          frecuencia_historica?: string | null
-          id?: string
-          nivel_pedagogico?: string | null
-          objetivo_aprendizaje?: string | null
-          opcion_a: string
-          opcion_b: string
-          opcion_c: string
-          opcion_d: string
-          pagina_fin?: number | null
-          pagina_inicio?: number | null
-          perspectiva?: string | null
-          pregunta: string
-          referencia_fuente?: string
-          respuesta_correcta: Database["public"]["Enums"]["respuesta_enum"]
-          subject_id: string
-          subtopic_id?: string | null
-          tipo_trampa?: string | null
-          topic_id: string
-          user_id: string
-        }
+          activa?: boolean;
+          apartado?: string | null;
+          codigo: string;
+          concepto?: string | null;
+          created_at?: string;
+          dificultad: Database["public"]["Enums"]["dificultad_enum"];
+          dificultad_conceptual?: Database["public"]["Enums"]["dificultad_enum"] | null;
+          dificultad_examen?: Database["public"]["Enums"]["dificultad_enum"] | null;
+          documento_referencia?: string | null;
+          explicacion?: string;
+          frecuencia_historica?: string | null;
+          id?: string;
+          nivel_pedagogico?: string | null;
+          objetivo_aprendizaje?: string | null;
+          opcion_a: string;
+          opcion_b: string;
+          opcion_c: string;
+          opcion_d: string;
+          pagina_fin?: number | null;
+          pagina_inicio?: number | null;
+          perspectiva?: string | null;
+          pregunta: string;
+          referencia_fuente?: string;
+          respuesta_correcta: Database["public"]["Enums"]["respuesta_enum"];
+          subject_id: string;
+          subtopic_id?: string | null;
+          tipo_trampa?: string | null;
+          topic_id: string;
+          user_id: string;
+        };
         Update: {
-          activa?: boolean
-          apartado?: string | null
-          codigo?: string
-          concepto?: string | null
-          created_at?: string
-          dificultad?: Database["public"]["Enums"]["dificultad_enum"]
-          dificultad_conceptual?:
-            | Database["public"]["Enums"]["dificultad_enum"]
-            | null
-          dificultad_examen?:
-            | Database["public"]["Enums"]["dificultad_enum"]
-            | null
-          documento_referencia?: string | null
-          explicacion?: string
-          frecuencia_historica?: string | null
-          id?: string
-          nivel_pedagogico?: string | null
-          objetivo_aprendizaje?: string | null
-          opcion_a?: string
-          opcion_b?: string
-          opcion_c?: string
-          opcion_d?: string
-          pagina_fin?: number | null
-          pagina_inicio?: number | null
-          perspectiva?: string | null
-          pregunta?: string
-          referencia_fuente?: string
-          respuesta_correcta?: Database["public"]["Enums"]["respuesta_enum"]
-          subject_id?: string
-          subtopic_id?: string | null
-          tipo_trampa?: string | null
-          topic_id?: string
-          user_id?: string
-        }
+          activa?: boolean;
+          apartado?: string | null;
+          codigo?: string;
+          concepto?: string | null;
+          created_at?: string;
+          dificultad?: Database["public"]["Enums"]["dificultad_enum"];
+          dificultad_conceptual?: Database["public"]["Enums"]["dificultad_enum"] | null;
+          dificultad_examen?: Database["public"]["Enums"]["dificultad_enum"] | null;
+          documento_referencia?: string | null;
+          explicacion?: string;
+          frecuencia_historica?: string | null;
+          id?: string;
+          nivel_pedagogico?: string | null;
+          objetivo_aprendizaje?: string | null;
+          opcion_a?: string;
+          opcion_b?: string;
+          opcion_c?: string;
+          opcion_d?: string;
+          pagina_fin?: number | null;
+          pagina_inicio?: number | null;
+          perspectiva?: string | null;
+          pregunta?: string;
+          referencia_fuente?: string;
+          respuesta_correcta?: Database["public"]["Enums"]["respuesta_enum"];
+          subject_id?: string;
+          subtopic_id?: string | null;
+          tipo_trampa?: string | null;
+          topic_id?: string;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "questions_owner_subject_fk"
-            columns: ["user_id", "subject_id"]
-            isOneToOne: false
-            referencedRelation: "subjects"
-            referencedColumns: ["user_id", "id"]
+            foreignKeyName: "questions_owner_subject_fk";
+            columns: ["user_id", "subject_id"];
+            isOneToOne: false;
+            referencedRelation: "subjects";
+            referencedColumns: ["user_id", "id"];
           },
           {
-            foreignKeyName: "questions_owner_subtopic_fk"
-            columns: ["user_id", "subtopic_id"]
-            isOneToOne: false
-            referencedRelation: "subtopics"
-            referencedColumns: ["user_id", "id"]
+            foreignKeyName: "questions_owner_subtopic_fk";
+            columns: ["user_id", "subtopic_id"];
+            isOneToOne: false;
+            referencedRelation: "subtopics";
+            referencedColumns: ["user_id", "id"];
           },
           {
-            foreignKeyName: "questions_owner_topic_fk"
-            columns: ["user_id", "topic_id"]
-            isOneToOne: false
-            referencedRelation: "topics"
-            referencedColumns: ["user_id", "id"]
+            foreignKeyName: "questions_owner_topic_fk";
+            columns: ["user_id", "topic_id"];
+            isOneToOne: false;
+            referencedRelation: "topics";
+            referencedColumns: ["user_id", "id"];
           },
           {
-            foreignKeyName: "questions_subject_id_fkey"
-            columns: ["subject_id"]
-            isOneToOne: false
-            referencedRelation: "subjects"
-            referencedColumns: ["id"]
+            foreignKeyName: "questions_subject_id_fkey";
+            columns: ["subject_id"];
+            isOneToOne: false;
+            referencedRelation: "subjects";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "questions_subtopic_id_fkey"
-            columns: ["subtopic_id"]
-            isOneToOne: false
-            referencedRelation: "subtopics"
-            referencedColumns: ["id"]
+            foreignKeyName: "questions_subtopic_id_fkey";
+            columns: ["subtopic_id"];
+            isOneToOne: false;
+            referencedRelation: "subtopics";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "questions_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "topics"
-            referencedColumns: ["id"]
+            foreignKeyName: "questions_topic_id_fkey";
+            columns: ["topic_id"];
+            isOneToOne: false;
+            referencedRelation: "topics";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       subjects: {
         Row: {
-          created_at: string
-          descripcion: string | null
-          id: string
-          nombre: string
-          user_id: string
-        }
+          created_at: string;
+          descripcion: string | null;
+          id: string;
+          nombre: string;
+          user_id: string;
+        };
         Insert: {
-          created_at?: string
-          descripcion?: string | null
-          id?: string
-          nombre: string
-          user_id: string
-        }
+          created_at?: string;
+          descripcion?: string | null;
+          id?: string;
+          nombre: string;
+          user_id: string;
+        };
         Update: {
-          created_at?: string
-          descripcion?: string | null
-          id?: string
-          nombre?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
+          created_at?: string;
+          descripcion?: string | null;
+          id?: string;
+          nombre?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       subtopics: {
         Row: {
-          created_at: string
-          id: string
-          nombre: string
-          topic_id: string
-          user_id: string
-        }
+          created_at: string;
+          id: string;
+          nombre: string;
+          topic_id: string;
+          user_id: string;
+        };
         Insert: {
-          created_at?: string
-          id?: string
-          nombre: string
-          topic_id: string
-          user_id: string
-        }
+          created_at?: string;
+          id?: string;
+          nombre: string;
+          topic_id: string;
+          user_id: string;
+        };
         Update: {
-          created_at?: string
-          id?: string
-          nombre?: string
-          topic_id?: string
-          user_id?: string
-        }
+          created_at?: string;
+          id?: string;
+          nombre?: string;
+          topic_id?: string;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "subtopics_owner_topic_fk"
-            columns: ["user_id", "topic_id"]
-            isOneToOne: false
-            referencedRelation: "topics"
-            referencedColumns: ["user_id", "id"]
+            foreignKeyName: "subtopics_owner_topic_fk";
+            columns: ["user_id", "topic_id"];
+            isOneToOne: false;
+            referencedRelation: "topics";
+            referencedColumns: ["user_id", "id"];
           },
           {
-            foreignKeyName: "subtopics_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "topics"
-            referencedColumns: ["id"]
+            foreignKeyName: "subtopics_topic_id_fkey";
+            columns: ["topic_id"];
+            isOneToOne: false;
+            referencedRelation: "topics";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       test_answers: {
         Row: {
-          correcta: boolean | null
-          created_at: string
-          id: string
-          orden: number
-          question_id: string
-          respuesta_usuario:
-            | Database["public"]["Enums"]["respuesta_enum"]
-            | null
-          test_id: string
-          user_id: string
-        }
+          correcta: boolean | null;
+          created_at: string;
+          id: string;
+          marked_doubt: boolean;
+          orden: number;
+          question_id: string;
+          respuesta_usuario: Database["public"]["Enums"]["respuesta_enum"] | null;
+          test_id: string;
+          user_id: string;
+        };
         Insert: {
-          correcta?: boolean | null
-          created_at?: string
-          id?: string
-          orden: number
-          question_id: string
-          respuesta_usuario?:
-            | Database["public"]["Enums"]["respuesta_enum"]
-            | null
-          test_id: string
-          user_id: string
-        }
+          correcta?: boolean | null;
+          created_at?: string;
+          id?: string;
+          marked_doubt?: boolean;
+          orden: number;
+          question_id: string;
+          respuesta_usuario?: Database["public"]["Enums"]["respuesta_enum"] | null;
+          test_id: string;
+          user_id: string;
+        };
         Update: {
-          correcta?: boolean | null
-          created_at?: string
-          id?: string
-          orden?: number
-          question_id?: string
-          respuesta_usuario?:
-            | Database["public"]["Enums"]["respuesta_enum"]
-            | null
-          test_id?: string
-          user_id?: string
-        }
+          correcta?: boolean | null;
+          created_at?: string;
+          id?: string;
+          marked_doubt?: boolean;
+          orden?: number;
+          question_id?: string;
+          respuesta_usuario?: Database["public"]["Enums"]["respuesta_enum"] | null;
+          test_id?: string;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "test_answers_owner_question_fk"
-            columns: ["user_id", "question_id"]
-            isOneToOne: false
-            referencedRelation: "questions"
-            referencedColumns: ["user_id", "id"]
+            foreignKeyName: "test_answers_owner_question_fk";
+            columns: ["user_id", "question_id"];
+            isOneToOne: false;
+            referencedRelation: "questions";
+            referencedColumns: ["user_id", "id"];
           },
           {
-            foreignKeyName: "test_answers_owner_test_fk"
-            columns: ["user_id", "test_id"]
-            isOneToOne: false
-            referencedRelation: "tests"
-            referencedColumns: ["user_id", "id"]
+            foreignKeyName: "test_answers_owner_test_fk";
+            columns: ["user_id", "test_id"];
+            isOneToOne: false;
+            referencedRelation: "tests";
+            referencedColumns: ["user_id", "id"];
           },
           {
-            foreignKeyName: "test_answers_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "questions"
-            referencedColumns: ["id"]
+            foreignKeyName: "test_answers_question_id_fkey";
+            columns: ["question_id"];
+            isOneToOne: false;
+            referencedRelation: "questions";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "test_answers_test_id_fkey"
-            columns: ["test_id"]
-            isOneToOne: false
-            referencedRelation: "tests"
-            referencedColumns: ["id"]
+            foreignKeyName: "test_answers_test_id_fkey";
+            columns: ["test_id"];
+            isOneToOne: false;
+            referencedRelation: "tests";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       tests: {
         Row: {
-          aciertos: number
-          completado: boolean
-          created_at: string
-          fallos: number
-          fecha_finalizacion: string | null
-          fecha_inicio: string
-          id: string
-          numero_preguntas: number
-          porcentaje: number
-          sin_responder: number
-          tipo: string
-          user_id: string
-        }
+          aciertos: number;
+          completado: boolean;
+          created_at: string;
+          fallos: number;
+          fecha_finalizacion: string | null;
+          fecha_inicio: string;
+          id: string;
+          numero_preguntas: number;
+          porcentaje: number;
+          sin_responder: number;
+          tipo: string;
+          user_id: string;
+        };
         Insert: {
-          aciertos?: number
-          completado?: boolean
-          created_at?: string
-          fallos?: number
-          fecha_finalizacion?: string | null
-          fecha_inicio?: string
-          id?: string
-          numero_preguntas: number
-          porcentaje?: number
-          sin_responder?: number
-          tipo: string
-          user_id: string
-        }
+          aciertos?: number;
+          completado?: boolean;
+          created_at?: string;
+          fallos?: number;
+          fecha_finalizacion?: string | null;
+          fecha_inicio?: string;
+          id?: string;
+          numero_preguntas: number;
+          porcentaje?: number;
+          sin_responder?: number;
+          tipo: string;
+          user_id: string;
+        };
         Update: {
-          aciertos?: number
-          completado?: boolean
-          created_at?: string
-          fallos?: number
-          fecha_finalizacion?: string | null
-          fecha_inicio?: string
-          id?: string
-          numero_preguntas?: number
-          porcentaje?: number
-          sin_responder?: number
-          tipo?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
+          aciertos?: number;
+          completado?: boolean;
+          created_at?: string;
+          fallos?: number;
+          fecha_finalizacion?: string | null;
+          fecha_inicio?: string;
+          id?: string;
+          numero_preguntas?: number;
+          porcentaje?: number;
+          sin_responder?: number;
+          tipo?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       topics: {
         Row: {
-          created_at: string
-          id: string
-          nombre: string
-          numero: number
-          subject_id: string
-          user_id: string
-        }
+          created_at: string;
+          id: string;
+          nombre: string;
+          numero: number;
+          subject_id: string;
+          user_id: string;
+        };
         Insert: {
-          created_at?: string
-          id?: string
-          nombre: string
-          numero: number
-          subject_id: string
-          user_id: string
-        }
+          created_at?: string;
+          id?: string;
+          nombre: string;
+          numero: number;
+          subject_id: string;
+          user_id: string;
+        };
         Update: {
-          created_at?: string
-          id?: string
-          nombre?: string
-          numero?: number
-          subject_id?: string
-          user_id?: string
-        }
+          created_at?: string;
+          id?: string;
+          nombre?: string;
+          numero?: number;
+          subject_id?: string;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "topics_owner_subject_fk"
-            columns: ["user_id", "subject_id"]
-            isOneToOne: false
-            referencedRelation: "subjects"
-            referencedColumns: ["user_id", "id"]
+            foreignKeyName: "topics_owner_subject_fk";
+            columns: ["user_id", "subject_id"];
+            isOneToOne: false;
+            referencedRelation: "subjects";
+            referencedColumns: ["user_id", "id"];
           },
           {
-            foreignKeyName: "topics_subject_id_fkey"
-            columns: ["subject_id"]
-            isOneToOne: false
-            referencedRelation: "subjects"
-            referencedColumns: ["id"]
+            foreignKeyName: "topics_subject_id_fkey";
+            columns: ["subject_id"];
+            isOneToOne: false;
+            referencedRelation: "subjects";
+            referencedColumns: ["id"];
           },
-        ]
-      }
-    }
+        ];
+      };
+    };
     Views: {
+      active_doubt_questions: {
+        Row: {
+          dificultad: Database["public"]["Enums"]["dificultad_enum"] | null;
+          last_reviewed_at: string | null;
+          question_id: string | null;
+          subtopic_id: string | null;
+          topic_id: string | null;
+          user_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "questions_subtopic_id_fkey";
+            columns: ["subtopic_id"];
+            isOneToOne: false;
+            referencedRelation: "subtopics";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "questions_topic_id_fkey";
+            columns: ["topic_id"];
+            isOneToOne: false;
+            referencedRelation: "topics";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "test_answers_owner_question_fk";
+            columns: ["user_id", "question_id"];
+            isOneToOne: false;
+            referencedRelation: "questions";
+            referencedColumns: ["user_id", "id"];
+          },
+          {
+            foreignKeyName: "test_answers_question_id_fkey";
+            columns: ["question_id"];
+            isOneToOne: false;
+            referencedRelation: "questions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       active_failed_questions: {
         Row: {
-          dificultad: Database["public"]["Enums"]["dificultad_enum"] | null
-          last_answered_at: string | null
-          question_id: string | null
-          subtopic_id: string | null
-          topic_id: string | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
-    }
+          dificultad: Database["public"]["Enums"]["dificultad_enum"] | null;
+          last_answered_at: string | null;
+          question_id: string | null;
+          subtopic_id: string | null;
+          topic_id: string | null;
+          user_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "questions_subtopic_id_fkey";
+            columns: ["subtopic_id"];
+            isOneToOne: false;
+            referencedRelation: "subtopics";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "questions_topic_id_fkey";
+            columns: ["topic_id"];
+            isOneToOne: false;
+            referencedRelation: "topics";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "test_answers_owner_question_fk";
+            columns: ["user_id", "question_id"];
+            isOneToOne: false;
+            referencedRelation: "questions";
+            referencedColumns: ["user_id", "id"];
+          },
+          {
+            foreignKeyName: "test_answers_question_id_fkey";
+            columns: ["question_id"];
+            isOneToOne: false;
+            referencedRelation: "questions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+    };
     Functions: {
       complete_test: {
-        Args: { p_test_id: string }
+        Args: { p_test_id: string };
         Returns: {
-          aciertos: number
-          fallos: number
-          porcentaje: number
-          sin_responder: number
-        }[]
-      }
-      import_questions_batch: { Args: { payload: Json }; Returns: Json }
-    }
+          aciertos: number;
+          fallos: number;
+          porcentaje: number;
+          sin_responder: number;
+        }[];
+      };
+      import_questions_batch: { Args: { payload: Json }; Returns: Json };
+    };
     Enums: {
-      dificultad_enum: "facil" | "medio" | "dificil"
-      respuesta_enum: "A" | "B" | "C" | "D"
-    }
+      dificultad_enum: "facil" | "medio" | "dificil";
+      respuesta_enum: "A" | "B" | "C" | "D";
+    };
     CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-}
+      [_ in never]: never;
+    };
+  };
+};
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">];
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R
+      Row: infer R;
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R;
       }
       ? R
       : never
-    : never
+    : never;
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
+      Insert: infer I;
     }
     ? I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
+        Insert: infer I;
       }
       ? I
       : never
-    : never
+    : never;
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
+      Update: infer U;
     }
     ? U
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
+        Update: infer U;
       }
       ? U
       : never
-    : never
+    : never;
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
+    : never;
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
+    : never;
 
 export const Constants = {
   public: {
@@ -561,4 +672,4 @@ export const Constants = {
       respuesta_enum: ["A", "B", "C", "D"],
     },
   },
-} as const
+} as const;
