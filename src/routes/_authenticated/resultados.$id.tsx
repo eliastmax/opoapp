@@ -9,6 +9,11 @@ import { Loader2, CheckCircle2, XCircle, MinusCircle, Flag } from "lucide-react"
 import { toast } from "sonner";
 import { keepActiveFailureIds } from "@/lib/active-failures";
 import { keepActiveDoubtIds } from "@/lib/active-doubts";
+import {
+  SELECTION_LABELS,
+  summarizeSelection,
+  type SelectionTraceRow,
+} from "@/lib/smart-selection";
 
 export const Route = createFileRoute("/_authenticated/resultados/$id")({
   component: ResultadosPage,
@@ -55,7 +60,16 @@ function ResultadosPage() {
         )
         .eq("test_id", id)
         .order("orden");
-      return { test, answers: (answers ?? []) as unknown as AnswerRow[] };
+      const { data: selection } = await supabase
+        .from("test_question_selection")
+        .select("selection_group, selection_reason, was_in_previous_test, overlap_exception")
+        .eq("test_id", id)
+        .order("selection_order");
+      return {
+        test,
+        answers: (answers ?? []) as unknown as AnswerRow[],
+        selection: (selection ?? []) as SelectionTraceRow[],
+      };
     },
   });
 
@@ -73,6 +87,11 @@ function ResultadosPage() {
   const dudosas = answers.filter((a) => a.marked_doubt);
   const revisar = answers.filter((a) => a.correcta === false || a.marked_doubt);
   const perfecto = t.fallos === 0 && t.sin_responder === 0;
+  const {
+    counts: selectionCounts,
+    previousOverlap,
+    overlapException,
+  } = summarizeSelection(data.selection);
 
   const byDif: Record<string, { ok: number; tot: number }> = {};
   const byTopic: Record<string, { ok: number; tot: number }> = {};
@@ -308,6 +327,30 @@ function ResultadosPage() {
           </div>
         )}
       </Card>
+
+      {data.selection.length > 0 && (
+        <Card className="p-4">
+          <div className="text-xs uppercase text-muted-foreground font-medium mb-2">
+            Cómo se eligieron
+          </div>
+          <div className="space-y-1 text-sm">
+            {Object.entries(selectionCounts).map(([group, count]) => (
+              <div key={group} className="flex justify-between gap-2">
+                <span>{SELECTION_LABELS[group] ?? group}</span>
+                <span className="font-medium">{count}</span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            {previousOverlap === 0
+              ? "Ninguna pregunta coincide con el test anterior."
+              : `${previousOverlap} ${previousOverlap === 1 ? "pregunta coincide" : "preguntas coinciden"} con el test anterior.`}
+            {overlapException
+              ? " Se utilizaron más repeticiones porque no había suficientes alternativas con esos filtros."
+              : " Se ha respetado el límite máximo orientativo del 30 %."}
+          </p>
+        </Card>
+      )}
 
       {sinFallosDuros ? (
         <div className="space-y-2">
