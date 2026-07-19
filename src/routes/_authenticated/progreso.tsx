@@ -1,6 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, BookOpenCheck, Flag, Gauge, History, Loader2, XCircle } from "lucide-react";
+import {
+  AlertCircle,
+  BookOpenCheck,
+  Flag,
+  Gauge,
+  History,
+  Loader2,
+  RotateCcw,
+  ShieldCheck,
+  TrendingUp,
+  XCircle,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +26,12 @@ import {
   type EvidenceState,
   type TopicProgressRow,
 } from "@/lib/progress-evidence";
+import {
+  comparisonMessage,
+  comparisonState,
+  verifiedProgressTotals,
+  type VerifiedProgressRow,
+} from "@/lib/verified-progress";
 
 export const Route = createFileRoute("/_authenticated/progreso")({
   component: ProgresoPage,
@@ -29,15 +46,25 @@ const EVIDENCE_STYLES: Record<EvidenceState, string> = {
 
 function ProgresoPage() {
   const { data, isLoading, error } = useQuery({
-    queryKey: ["topic-progress", "progress-v1.0"],
+    queryKey: ["topic-progress", "progress-v1.0", "verified-progress-v1.0"],
     queryFn: async () => {
-      const { data: rows, error: queryError } = await supabase.rpc("get_topic_progress_summary");
-      if (queryError) throw queryError;
-      return rows ?? [];
+      const [progressResult, verifiedResult] = await Promise.all([
+        supabase.rpc("get_topic_progress_summary"),
+        supabase.rpc("get_verified_progress_summary"),
+      ]);
+      if (progressResult.error) throw progressResult.error;
+      if (verifiedResult.error) throw verifiedResult.error;
+      return {
+        progress: progressResult.data ?? [],
+        verified: verifiedResult.data ?? [],
+      };
     },
   });
 
-  const groups = groupProgressBySubject(data ?? []);
+  const groups = groupProgressBySubject(data?.progress ?? []);
+  const verifiedByTopic = new Map(
+    (data?.verified ?? []).map((row) => [row.topic_id, row] as const),
+  );
 
   return (
     <div className="space-y-4">
@@ -65,6 +92,8 @@ function ProgresoPage() {
         </Link>
       </Button>
 
+      {data && <VerifiedProgressOverview rows={data.verified} />}
+
       {isLoading ? (
         <div className="flex justify-center py-12">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -90,7 +119,11 @@ function ProgresoPage() {
           <section key={group.id} className="space-y-3">
             <h2 className="px-1 text-sm font-semibold text-muted-foreground">{group.name}</h2>
             {group.topics.map((topic) => (
-              <TopicProgressCard key={topic.topic_id} topic={topic} />
+              <TopicProgressCard
+                key={topic.topic_id}
+                topic={topic}
+                verified={verifiedByTopic.get(topic.topic_id)}
+              />
             ))}
           </section>
         ))
@@ -99,7 +132,41 @@ function ProgresoPage() {
   );
 }
 
-function TopicProgressCard({ topic }: { topic: TopicProgressRow }) {
+function VerifiedProgressOverview({ rows }: { rows: VerifiedProgressRow[] }) {
+  const totals = verifiedProgressTotals(rows);
+  const hasVerifiedChange =
+    totals.corrected > 0 || totals.retained > 0 || totals.improvedTopics > 0;
+
+  return (
+    <Card className="p-4">
+      <div className="flex items-center gap-2">
+        <ShieldCheck className="h-5 w-5 text-primary" />
+        <div>
+          <p className="text-sm font-semibold">Avances verificados</p>
+          <p className="text-xs text-muted-foreground">Últimos 30 días</p>
+        </div>
+      </div>
+      <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+        <Metric label="Fallos corregidos" value={totals.corrected} />
+        <Metric label="Retenciones" value={totals.retained} />
+        <Metric label="Temas que mejoran" value={totals.improvedTopics} />
+      </div>
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+        {hasVerifiedChange
+          ? "Solo contamos correcciones reales, retención separada en el tiempo y mejoras sobre preguntas comparables."
+          : "Todavía no hay cambios demostrables. La app no convierte la simple actividad en un logro artificial."}
+      </p>
+    </Card>
+  );
+}
+
+function TopicProgressCard({
+  topic,
+  verified,
+}: {
+  topic: TopicProgressRow;
+  verified?: VerifiedProgressRow;
+}) {
   const state = evidenceState(topic.evidence_state);
   const mastery = topic.mastery_percentage;
 
@@ -158,7 +225,49 @@ function TopicProgressCard({ topic }: { topic: TopicProgressRow }) {
           {nextProgressAction(topic)}
         </p>
       </div>
+
+      {verified && <VerifiedTopicProgress row={verified} />}
     </Card>
+  );
+}
+
+function VerifiedTopicProgress({ row }: { row: VerifiedProgressRow }) {
+  const state = comparisonState(row.comparison_state);
+  const comparisonClass =
+    state === "mejora_verificada"
+      ? "border-emerald-500/30 bg-emerald-500/10"
+      : state === "descenso_observado"
+        ? "border-amber-500/30 bg-amber-500/10"
+        : "bg-muted/30";
+
+  return (
+    <div className={`mt-3 rounded-lg border p-3 ${comparisonClass}`}>
+      <div className="flex flex-wrap gap-2 text-xs">
+        {row.corrected_failures_30d > 0 && (
+          <span className="inline-flex items-center gap-1 font-medium">
+            <RotateCcw className="h-3 w-3" /> {row.corrected_failures_30d} fallos corregidos
+          </span>
+        )}
+        {row.retained_questions_30d > 0 && (
+          <span className="inline-flex items-center gap-1 font-medium">
+            <ShieldCheck className="h-3 w-3" /> {row.retained_questions_30d} retenciones
+          </span>
+        )}
+        {state === "mejora_verificada" && (
+          <span className="inline-flex items-center gap-1 font-medium text-emerald-700 dark:text-emerald-300">
+            <TrendingUp className="h-3 w-3" /> Mejora demostrada
+          </span>
+        )}
+      </div>
+      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{comparisonMessage(row)}</p>
+      {state !== "insuficiente" &&
+        row.baseline_accuracy !== null &&
+        row.current_accuracy !== null && (
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Bloque anterior {row.baseline_accuracy}% → bloque reciente {row.current_accuracy}%
+          </p>
+        )}
+    </div>
   );
 }
 

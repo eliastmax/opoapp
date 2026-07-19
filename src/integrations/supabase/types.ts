@@ -639,6 +639,24 @@ export type Database = {
           unique_questions_seen: number;
         }[];
       };
+      get_verified_progress_summary: {
+        Args: never;
+        Returns: {
+          accuracy_change: number | null;
+          baseline_accuracy: number | null;
+          baseline_correct_count: number;
+          baseline_session_count: number;
+          comparable_question_count: number;
+          comparison_state: string;
+          corrected_failures_30d: number;
+          current_accuracy: number | null;
+          current_correct_count: number;
+          current_session_count: number;
+          metric_version: string;
+          retained_questions_30d: number;
+          topic_id: string;
+        }[];
+      };
       import_questions_batch: { Args: { payload: Json }; Returns: Json };
     };
     Enums: {
