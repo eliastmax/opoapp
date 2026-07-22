@@ -805,31 +805,36 @@ function SectionHeading({
   );
 }
 
-const PickerTrigger = React.forwardRef<
-  HTMLButtonElement,
-  {
-    badge?: string;
-    value?: string;
-    placeholder: string;
-  }
->(({ badge, value, placeholder }, ref) => (
-  <Button
-    ref={ref}
-    type="button"
-    variant="outline"
-    className="h-auto min-h-14 w-full justify-between whitespace-normal bg-background px-3 py-2.5 text-left font-normal"
-  >
-    <span className="min-w-0 flex-1">
-      {badge && <span className="block text-[11px] font-bold text-primary">{badge}</span>}
-      <span
-        className={`block leading-snug ${value ? "text-sm font-semibold text-foreground" : "text-sm text-muted-foreground"}`}
-      >
-        {value ?? placeholder}
+type PickerTriggerProps = Omit<
+  React.ComponentPropsWithoutRef<typeof Button>,
+  "children" | "className"
+> & {
+  badge?: string;
+  value?: string;
+  placeholder: string;
+};
+
+const PickerTrigger = React.forwardRef<HTMLButtonElement, PickerTriggerProps>(
+  ({ badge, value, placeholder, ...triggerProps }, ref) => (
+    <Button
+      {...triggerProps}
+      ref={ref}
+      type="button"
+      variant="outline"
+      className="h-auto min-h-14 w-full justify-between whitespace-normal bg-background px-3 py-2.5 text-left font-normal"
+    >
+      <span className="min-w-0 flex-1">
+        {badge && <span className="block text-[11px] font-bold text-primary">{badge}</span>}
+        <span
+          className={`block leading-snug ${value ? "text-sm font-semibold text-foreground" : "text-sm text-muted-foreground"}`}
+        >
+          {value ?? placeholder}
+        </span>
       </span>
-    </span>
-    <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
-  </Button>
-));
+      <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
+    </Button>
+  ),
+);
 PickerTrigger.displayName = "PickerTrigger";
 
 function PickerSheet({

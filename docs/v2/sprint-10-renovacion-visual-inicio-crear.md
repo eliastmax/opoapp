@@ -16,6 +16,7 @@ Hacer la aplicación más atractiva, cercana e intuitiva sin modificar el compor
 - Materias y temas muestran el número en una etiqueta separada y el nombre completo en varias líneas.
 - Los selectores permiten buscar por número o nombre y señalan claramente la opción elegida.
 - El botón «Iniciar test» permanece visible sobre la navegación inferior mientras se configura el test.
+- Corrección posterior: los botones personalizados de Materia y Tema propagan al diálogo sus eventos y atributos de accesibilidad, por lo que ambos selectores se abren correctamente.
 
 ## Decisiones de alcance
 
