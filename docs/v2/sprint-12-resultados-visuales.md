@@ -18,7 +18,7 @@ Hacer que la pantalla de resultados muestre primero lo que el estudiante necesit
 - El banco completo realizado continúa incluido en el informe copiable para ChatGPT.
 - Cuando no existen fallos ni dudas, la revisión completa queda plegada inicialmente.
 - Ajuste posterior: la explicación se presenta como bloque «Por qué», con tamaño y contraste equivalentes a la importancia pedagógica de las respuestas.
-- La primera frase de la explicación se muestra en negrita como justificación decisiva de la respuesta correcta; el desarrollo posterior mantiene peso normal.
+- El bloque «Por qué» utiliza icono, color suave y texto de peso normal para facilitar la lectura sin competir visualmente con las respuestas.
 
 ## Decisiones de alcance
 
@@ -43,4 +43,4 @@ Trabaja exclusivamente sobre `OpoTest Study`; no modifiques `OpoTest: V2`. El Sp
 
 ## Prompt optimizado para el Generador de Preguntas
 
-Mantén exactamente el CSV V2 vigente de 25 columnas y todos sus metadatos. `concepto`, `objetivo_aprendizaje`, `dificultad_conceptual` y `dificultad_examen` continúan siendo necesarios para selección, diagnóstico y análisis aunque no se muestren directamente en la tarjeta de resultados. En `explicacion`, la primera frase debe justificar de forma autónoma y directa por qué la respuesta correcta es válida; la aplicación la mostrará en negrita. Las frases posteriores pueden desarrollar la distinción o el matiz decisivo. No añadas ni elimines columnas.
+Mantén exactamente el CSV V2 vigente de 25 columnas y todos sus metadatos. `concepto`, `objetivo_aprendizaje`, `dificultad_conceptual` y `dificultad_examen` continúan siendo necesarios para selección, diagnóstico y análisis aunque no se muestren directamente en la tarjeta de resultados. En `explicacion`, comienza con una justificación directa de por qué la respuesta correcta es válida y desarrolla después la distinción o el matiz decisivo. Escribe texto plano, sin Markdown ni marcas de formato. No añadas ni elimines columnas.\n\n## Mejora futura aplazada\n\nSi se desea destacar solo el fragmento decisivo de una explicación, el Generador deberá entregarlo con una marca estructurada y la aplicación tendrá que interpretarla de forma segura. No se intenta deducir automáticamente ese fragmento ni se modifica todavía el formato CSV, para mantener la compatibilidad de todos los bancos existentes.
