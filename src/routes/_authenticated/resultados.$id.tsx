@@ -22,6 +22,7 @@ import {
   type DiagnosticAnswer,
   type DiagnosticQuestion,
 } from "@/lib/result-diagnostics";
+import { LEARNING_STAGE_LABELS, learningStage } from "@/lib/learning-stages";
 
 export const Route = createFileRoute("/_authenticated/resultados/$id")({
   component: ResultadosPage,
@@ -35,7 +36,10 @@ type AnswerRow = {
   question_id: string;
   marked_doubt: boolean;
   questions: {
+    codigo: string;
     dificultad: string;
+    dificultad_examen: string | null;
+    nivel_pedagogico: string | null;
     pregunta: string;
     opcion_a: string;
     opcion_b: string;
@@ -151,6 +155,8 @@ function ResultadosPage() {
       .insert({
         user_id: userId,
         tipo: "falladas",
+        learning_stage: t.learning_stage,
+        stage_free_mode: t.stage_free_mode,
         numero_preguntas: qids.length,
         sin_responder: qids.length,
       })
@@ -204,6 +210,8 @@ function ResultadosPage() {
       .insert({
         user_id: userId,
         tipo: "dudas",
+        learning_stage: t.learning_stage,
+        stage_free_mode: t.stage_free_mode,
         numero_preguntas: qids.length,
         sin_responder: qids.length,
       })
@@ -244,6 +252,7 @@ function ResultadosPage() {
       unanswered: t.sin_responder,
       questionCount: t.numero_preguntas,
       groups: diagnosticGroups,
+      answers: answers as unknown as Parameters<typeof buildTestExport>[0]["answers"],
     });
     try {
       await navigator.clipboard.writeText(report);
@@ -362,7 +371,11 @@ function ResultadosPage() {
     <div className="space-y-4">
       <header className="pt-2">
         <h1 className="text-2xl font-bold">{perfecto ? "Test completado" : "Resultados"}</h1>
-        <p className="text-sm text-muted-foreground capitalize">{t.tipo}</p>
+        <p className="text-sm text-muted-foreground">
+          <span className="capitalize">{t.tipo}</span>
+          {t.learning_stage ? ` · ${LEARNING_STAGE_LABELS[learningStage(t.learning_stage)]}` : ""}
+          {t.stage_free_mode ? " · modo libre" : ""}
+        </p>
       </header>
 
       <Card className="p-4 text-center">
@@ -436,8 +449,8 @@ function ResultadosPage() {
             Exportar resultado
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Copia un resumen con el resultado, los conceptos a repasar y sus referencias. No incluye
-            el banco completo.
+            Copia el resultado, los contenidos a repasar y el banco completo realizado, con
+            opciones, respuestas, explicaciones y referencias.
           </p>
         </div>
         <Button type="button" variant="outline" className="w-full" onClick={copyTestReport}>

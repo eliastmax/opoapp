@@ -1,8 +1,13 @@
 export type AnswerLetter = "A" | "B" | "C" | "D";
 
 export type DiagnosticQuestion = {
+  codigo: string;
+  pregunta: string;
   concepto: string | null;
+  objetivo_aprendizaje: string | null;
   perspectiva: string | null;
+  nivel_pedagogico: string | null;
+  dificultad_examen: string | null;
   apartado: string | null;
   documento_referencia: string | null;
   pagina_inicio: number | null;
@@ -12,6 +17,8 @@ export type DiagnosticQuestion = {
   opcion_b: string;
   opcion_c: string;
   opcion_d: string;
+  respuesta_correcta: string;
+  explicacion: string | null;
   subtopics: { nombre: string } | null;
 };
 
@@ -19,6 +26,11 @@ export type DiagnosticAnswer = {
   correcta: boolean | null;
   marked_doubt: boolean;
   questions: DiagnosticQuestion | null;
+};
+
+export type ExportAnswer = DiagnosticAnswer & {
+  orden: number;
+  respuesta_usuario: string | null;
 };
 
 export type DiagnosticGroup = {
@@ -115,6 +127,7 @@ export function buildTestExport(input: {
   unanswered: number;
   questionCount: number;
   groups: DiagnosticGroup[];
+  answers: ExportAnswer[];
 }): string {
   const lines = [
     "INFORME OPOTEST STUDY — RESULTADO DE UN TEST",
@@ -129,21 +142,62 @@ export function buildTestExport(input: {
 
   if (input.groups.length === 0) {
     lines.push("", "No se registraron fallos ni dudas en este test.");
-    return lines.join("\n");
+  } else {
+    lines.push("", "CONTENIDOS A REPASAR");
+    input.groups.forEach((group, index) => {
+      lines.push(
+        "",
+        `${index + 1}. ${group.concept}`,
+        `Fallos: ${group.failures} · Dudas: ${group.doubts}`,
+      );
+      if (group.perspectives.length > 0) {
+        lines.push(`Perspectivas: ${group.perspectives.join(", ")}`);
+      }
+      group.references.forEach((reference) => lines.push(`Referencia: ${reference}`));
+    });
   }
 
-  lines.push("", "CONTENIDOS A REPASAR");
-  input.groups.forEach((group, index) => {
-    lines.push(
-      "",
-      `${index + 1}. ${group.concept}`,
-      `Fallos: ${group.failures} · Dudas: ${group.doubts}`,
-    );
-    if (group.perspectives.length > 0) {
-      lines.push(`Perspectivas: ${group.perspectives.join(", ")}`);
-    }
-    group.references.forEach((reference) => lines.push(`Referencia: ${reference}`));
-  });
+  lines.push("", "BANCO COMPLETO REALIZADO");
+  [...input.answers]
+    .sort((a, b) => a.orden - b.orden)
+    .forEach((answer) => {
+      const question = answer.questions;
+      if (!question) return;
+      const status =
+        answer.correcta === true
+          ? answer.marked_doubt
+            ? "Correcta con duda"
+            : "Correcta"
+          : answer.correcta === false
+            ? answer.marked_doubt
+              ? "Fallada con duda"
+              : "Fallada"
+            : answer.marked_doubt
+              ? "Sin responder, marcada como duda"
+              : "Sin responder";
+      const reference = questionReference(question);
+
+      lines.push("", `PREGUNTA ${answer.orden} — ${question.codigo}`, `Estado: ${status}`);
+      if (question.nivel_pedagogico) lines.push(`Nivel: ${question.nivel_pedagogico}`);
+      if (question.concepto) lines.push(`Concepto: ${question.concepto}`);
+      if (question.perspectiva) lines.push(`Perspectiva: ${question.perspectiva}`);
+      lines.push(
+        `Enunciado: ${question.pregunta}`,
+        `A. ${question.opcion_a}`,
+        `B. ${question.opcion_b}`,
+        `C. ${question.opcion_c}`,
+        `D. ${question.opcion_d}`,
+        `Respuesta elegida: ${answerWithText(question, answer.respuesta_usuario) ?? "Sin responder"}`,
+        `Respuesta correcta: ${answerWithText(question, question.respuesta_correcta)}`,
+      );
+      if (question.explicacion) lines.push(`Explicación: ${question.explicacion}`);
+      if (reference) lines.push(`Referencia: ${reference}`);
+    });
+
+  lines.push(
+    "",
+    "INSTRUCCIÓN PARA CHATGPT: analiza el resultado y el banco completo sin asumir dominio por un único test. Prioriza patrones de error, dudas, reglas concretas a repasar y propuestas de refuerzo sin inventar contenido externo.",
+  );
 
   return lines.join("\n");
 }

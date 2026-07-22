@@ -9,8 +9,13 @@ import {
 } from "../result-diagnostics";
 
 const question: DiagnosticQuestion = {
+  codigo: "SMS-CEL-T06-0001",
+  pregunta: "¿Cómo debe realizarse el traslado?",
   concepto: "Movilización de pacientes",
+  objetivo_aprendizaje: "Aplicar un traslado seguro",
   perspectiva: "caso_practico",
+  nivel_pedagogico: "consolidacion",
+  dificultad_examen: "medio",
   apartado: "Funciones del celador",
   documento_referencia: "Temario Celador.pdf",
   pagina_inicio: 12,
@@ -20,6 +25,8 @@ const question: DiagnosticQuestion = {
   opcion_b: "Aplicar la técnica indicada con seguridad.",
   opcion_c: "Delegar siempre la actuación.",
   opcion_d: "Actuar sin comprobar el entorno.",
+  respuesta_correcta: "B",
+  explicacion: "Debe aplicarse la técnica indicada con seguridad.",
   subtopics: { nombre: "Traslado seguro" },
 };
 
@@ -63,11 +70,25 @@ describe("result diagnostics", () => {
       groups: buildDiagnosticGroups([
         { correcta: false, marked_doubt: false, questions: question },
       ]),
+      answers: [
+        {
+          orden: 1,
+          respuesta_usuario: "A",
+          correcta: false,
+          marked_doubt: false,
+          questions: question,
+        },
+      ],
     });
 
     expect(report).toContain("Resultado: 80%");
     expect(report).toContain("no constituye por sí solo un diagnóstico robusto");
     expect(report).toContain("Movilización de pacientes");
     expect(report).toContain("Temario Celador.pdf");
+    expect(report).toContain("BANCO COMPLETO REALIZADO");
+    expect(report).toContain("A. Avisar y esperar instrucciones.");
+    expect(report).toContain("Respuesta elegida: A. Avisar y esperar instrucciones.");
+    expect(report).toContain("Respuesta correcta: B. Aplicar la técnica indicada con seguridad.");
+    expect(report).toContain("Explicación: Debe aplicarse la técnica indicada con seguridad.");
   });
 });

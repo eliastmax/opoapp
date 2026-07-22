@@ -427,9 +427,11 @@ export type Database = {
           fecha_finalizacion: string | null;
           fecha_inicio: string;
           id: string;
+          learning_stage: string | null;
           numero_preguntas: number;
           porcentaje: number;
           sin_responder: number;
+          stage_free_mode: boolean;
           tipo: string;
           user_id: string;
         };
@@ -441,9 +443,11 @@ export type Database = {
           fecha_finalizacion?: string | null;
           fecha_inicio?: string;
           id?: string;
+          learning_stage?: string | null;
           numero_preguntas: number;
           porcentaje?: number;
           sin_responder?: number;
+          stage_free_mode?: boolean;
           tipo: string;
           user_id: string;
         };
@@ -455,9 +459,11 @@ export type Database = {
           fecha_finalizacion?: string | null;
           fecha_inicio?: string;
           id?: string;
+          learning_stage?: string | null;
           numero_preguntas?: number;
           porcentaje?: number;
           sin_responder?: number;
+          stage_free_mode?: boolean;
           tipo?: string;
           user_id?: string;
         };
@@ -627,6 +633,56 @@ export type Database = {
           weak_count: number;
         }[];
       };
+      create_level_test: {
+        Args: {
+          p_difficulties?: Database["public"]["Enums"]["dificultad_enum"][];
+          p_free_mode?: boolean;
+          p_learning_stage: string;
+          p_question_count?: number;
+          p_subtopic_ids?: string[];
+          p_topic_id: string;
+        };
+        Returns: {
+          free_mode: boolean;
+          requested_stage: string;
+          selected_count: number;
+          test_id: string;
+          was_locked_override: boolean;
+        }[];
+      };
+      get_learning_stage_progress: {
+        Args: never;
+        Returns: {
+          consolidation_mastery: number | null;
+          consolidation_perspective_coverage: number;
+          consolidation_question_coverage: number;
+          consolidation_questions: number;
+          consolidation_seen: number;
+          consolidation_sessions: number;
+          consolidation_unlocked: boolean;
+          critical_concepts: number;
+          global_mastery: number | null;
+          learning_critical_concepts: number;
+          learning_mastery: number | null;
+          learning_perspective_coverage: number;
+          learning_question_coverage: number;
+          learning_questions: number;
+          learning_seen: number;
+          learning_sessions: number;
+          metric_version: string;
+          recommended_stage: string;
+          retention_evidence: number;
+          robustness_percentage: number | null;
+          stage_message: string;
+          subject_id: string;
+          subject_name: string;
+          topic_id: string;
+          topic_name: string;
+          topic_number: number;
+          tribunal_questions: number;
+          tribunal_unlocked: boolean;
+        }[];
+      };
       get_topic_progress_summary: {
         Args: never;
         Returns: {
@@ -691,12 +747,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -716,13 +772,12 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -741,13 +796,12 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -766,13 +820,12 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -783,13 +836,12 @@ export type Enums<
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    keyof DefaultSchema["CompositeTypes"] | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }

@@ -11,14 +11,11 @@ Este índice registra qué partes de la V2 están realmente implementadas y vali
 - [Diagnóstico de resultados y exportación útil](sprint-04-diagnostico-resultados.md): implementado y validado en uso real; la revisión prioriza los fallos y muestra el repaso exacto dentro de cada tarjeta.
 - [Centro de progreso y estados de evidencia](sprint-05-centro-progreso.md): implementado y validado en uso real.
 - [Progreso real y motivación veraz](sprint-06-progreso-verificado.md): implementado y validado técnicamente.
+- [Sesión recomendada automática](sprint-07-sesion-recomendada.md): implementada y validada en uso real.
 
 ## Sprint en implementación
 
-- [Sesión recomendada automática](sprint-07-sesion-recomendada.md): selección global explicable y sin configuración compleja.
-
-## Próximo bloque
-
-- Progresión Aprendizaje, Consolidación y Tribunal.
+- [Progresión Aprendizaje, Consolidación y Tribunal](sprint-08-niveles-pedagogicos.md): niveles por tema, desbloqueo por evidencia y modo libre explícito.
 
 ## Bloques posteriores opcionales
 

@@ -15,6 +15,16 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -24,10 +34,19 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { ChevronDown, Loader2, Search } from "lucide-react";
+import { Check, ChevronDown, Loader2, LockKeyhole, Search } from "lucide-react";
 import type { Dificultad } from "@/lib/csv-parser";
 import { keepActiveFailureIds } from "@/lib/active-failures";
 import { keepActiveDoubtIds } from "@/lib/active-doubts";
+import {
+  LEARNING_STAGE_DESCRIPTIONS,
+  LEARNING_STAGE_LABELS,
+  LEARNING_STAGES,
+  isStageUnlocked,
+  learningStage,
+  stageRequirements,
+  type LearningStage,
+} from "@/lib/learning-stages";
 
 export const Route = createFileRoute("/_authenticated/crear")({
   component: CrearPage,
@@ -48,6 +67,9 @@ function CrearPage() {
   const [difs, setDifs] = useState<Dificultad[]>([...DIFICULTADES]);
   const [cantidad, setCantidad] = useState<number>(10);
   const [modalidad, setModalidad] = useState<Modalidad>("mezcladas");
+  const [selectedStage, setSelectedStage] = useState<LearningStage>("aprendizaje");
+  const [stageFreeMode, setStageFreeMode] = useState(false);
+  const [pendingLockedStage, setPendingLockedStage] = useState<LearningStage | null>(null);
   const [starting, setStarting] = useState(false);
 
   const { data: subjects } = useQuery({
@@ -78,6 +100,15 @@ function CrearPage() {
           .eq("topic_id", topicId)
           .order("nombre")
       ).data ?? [],
+  });
+  const { data: stageProgress } = useQuery({
+    queryKey: ["learning-stage-progress", topicId],
+    enabled: !!topicId,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_learning_stage_progress");
+      if (error) throw error;
+      return (data ?? []).find((row) => row.topic_id === topicId) ?? null;
+    },
   });
 
   const canStart = useMemo(
@@ -118,6 +149,12 @@ function CrearPage() {
     }
   }, [topicId, subtopics, subtopicIds.length]);
 
+  useEffect(() => {
+    const recommended = learningStage(stageProgress?.recommended_stage);
+    setSelectedStage(recommended);
+    setStageFreeMode(false);
+  }, [topicId, stageProgress?.recommended_stage]);
+
   const hideSubject = !!subjects && subjects.length === 1;
   const hideTopic = !!topics && topics.length === 1;
   const hideSubtopic = !!subtopics && subtopics.length <= 1;
@@ -130,6 +167,15 @@ function CrearPage() {
     setSubtopicDialogOpen(open);
   }
 
+  function chooseStage(stage: LearningStage) {
+    if (!stageProgress || isStageUnlocked(stageProgress, stage)) {
+      setSelectedStage(stage);
+      setStageFreeMode(false);
+      return;
+    }
+    setPendingLockedStage(stage);
+  }
+
   async function iniciar() {
     if (!canStart) return;
     setStarting(true);
@@ -138,8 +184,10 @@ function CrearPage() {
       const userId = userData.user!.id;
 
       if (modalidad === "mezcladas") {
-        const { data: smartTest, error: smartError } = await supabase.rpc("create_smart_test", {
+        const { data: smartTest, error: smartError } = await supabase.rpc("create_level_test", {
           p_topic_id: topicId,
+          p_learning_stage: selectedStage,
+          p_free_mode: stageFreeMode,
           p_subtopic_ids: subtopicIds.length > 0 ? subtopicIds : undefined,
           p_difficulties: difs,
           p_question_count: cantidad,
@@ -163,6 +211,10 @@ function CrearPage() {
         .eq("activa", true)
         .eq("topic_id", topicId)
         .in("dificultad", difs);
+      q =
+        selectedStage === "aprendizaje"
+          ? q.or("nivel_pedagogico.eq.aprendizaje,nivel_pedagogico.is.null")
+          : q.eq("nivel_pedagogico", selectedStage);
       if (subtopicIds.length > 0) q = q.in("subtopic_id", subtopicIds);
       const { data: pool, error: e1 } = await q;
       if (e1) throw e1;
@@ -217,6 +269,8 @@ function CrearPage() {
         .insert({
           user_id: userId,
           tipo: modalidad,
+          learning_stage: selectedStage,
+          stage_free_mode: stageFreeMode,
           numero_preguntas: chosen.length,
           sin_responder: chosen.length,
         })
@@ -408,6 +462,51 @@ function CrearPage() {
           </div>
         )}
 
+        {topicId && stageProgress && (
+          <div className="space-y-2">
+            <div>
+              <Label>Nivel de preparación</Label>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Avanzas cuando demuestras conocimiento; repetir tests no desbloquea por sí solo.
+              </p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {LEARNING_STAGES.map((stage) => {
+                const unlocked = isStageUnlocked(stageProgress, stage);
+                const active = selectedStage === stage;
+                return (
+                  <button
+                    key={stage}
+                    type="button"
+                    onClick={() => chooseStage(stage)}
+                    className={`rounded-lg border p-3 text-left transition-colors ${
+                      active ? "border-primary bg-primary/10" : "bg-background hover:bg-muted/60"
+                    }`}
+                  >
+                    <span className="flex items-center justify-between gap-2 text-sm font-semibold">
+                      {LEARNING_STAGE_LABELS[stage]}
+                      {active ? (
+                        <Check className="h-4 w-4 text-primary" />
+                      ) : !unlocked ? (
+                        <LockKeyhole className="h-4 w-4 text-muted-foreground" />
+                      ) : null}
+                    </span>
+                    <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">
+                      {LEARNING_STAGE_DESCRIPTIONS[stage]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {stageFreeMode && (
+              <p className="rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-800 dark:text-amber-200">
+                Modo libre: este test quedará en el historial, pero no contará para desbloquear
+                fases.
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="space-y-1.5">
           <Label>Dificultad</Label>
           <div className="flex gap-2">
@@ -494,6 +593,10 @@ function CrearPage() {
             Preguntas: <span className="font-medium">{cantidad}</span>
           </li>
           <li>
+            Nivel: <span className="font-medium">{LEARNING_STAGE_LABELS[selectedStage]}</span>
+            {stageFreeMode ? " · modo libre" : ""}
+          </li>
+          <li>
             Modalidad:{" "}
             <span className="font-medium">
               {modalidad === "mezcladas" ? "Selección inteligente" : modalidad}
@@ -509,6 +612,45 @@ function CrearPage() {
       >
         {starting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Iniciar test"}
       </Button>
+
+      <AlertDialog
+        open={pendingLockedStage !== null}
+        onOpenChange={(open) => !open && setPendingLockedStage(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Nivel aún no desbloqueado</AlertDialogTitle>
+            <AlertDialogDescription>
+              Puedes practicarlo en modo libre. El test quedará en tu historial, pero no contará
+              para desbloquear fases.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {pendingLockedStage && stageProgress && (
+            <div className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
+              <p className="font-medium text-foreground">Para desbloquearlo normalmente:</p>
+              <ul className="mt-1 list-disc space-y-1 pl-4">
+                {stageRequirements(stageProgress, pendingLockedStage).map((requirement) => (
+                  <li key={requirement}>{requirement}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Seguir en mi nivel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingLockedStage) {
+                  setSelectedStage(pendingLockedStage);
+                  setStageFreeMode(true);
+                }
+                setPendingLockedStage(null);
+              }}
+            >
+              Entrar en modo libre
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
