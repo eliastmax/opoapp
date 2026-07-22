@@ -14,10 +14,11 @@ Este índice registra qué partes de la V2 están realmente implementadas y vali
 - [Sesión recomendada automática](sprint-07-sesion-recomendada.md): implementada y validada en uso real.
 - [Progresión Aprendizaje, Consolidación y Tribunal](sprint-08-niveles-pedagogicos.md): implementada y validada en uso real.
 - [Simplificación de Crear test y bienvenida personalizada](sprint-09-simplificacion-crear.md): implementada y validada en uso real.
+- [Renovación visual de Inicio y Crear test](sprint-10-renovacion-visual-inicio-crear.md): implementada y validada en uso real.
 
 ## Sprint en implementación
 
-- [Renovación visual de Inicio y Crear test](sprint-10-renovacion-visual-inicio-crear.md): sistema visual común, jerarquía más clara y selectores adaptados a móvil.
+- [Experiencia de realización de test](sprint-11-experiencia-realizacion-test.md): mayor aprovechamiento del espacio, menos distracciones y controles móviles persistentes.
 
 ## Bloques posteriores opcionales
 
