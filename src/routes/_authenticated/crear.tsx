@@ -35,7 +35,6 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Check, ChevronDown, Loader2, LockKeyhole, Search } from "lucide-react";
-import type { Dificultad } from "@/lib/csv-parser";
 import { keepActiveFailureIds } from "@/lib/active-failures";
 import { keepActiveDoubtIds } from "@/lib/active-doubts";
 import {
@@ -53,7 +52,6 @@ export const Route = createFileRoute("/_authenticated/crear")({
 });
 
 type Modalidad = "mezcladas" | "nuevas" | "falladas" | "dudas";
-const DIFICULTADES: Dificultad[] = ["facil", "medio", "dificil"];
 const CANTIDADES = [5, 10, 20, 30, 50] as const;
 
 function CrearPage() {
@@ -64,7 +62,6 @@ function CrearPage() {
   const [subtopicDialogOpen, setSubtopicDialogOpen] = useState(false);
   const [draftSubtopicIds, setDraftSubtopicIds] = useState<string[]>([]);
   const [subtopicSearch, setSubtopicSearch] = useState("");
-  const [difs, setDifs] = useState<Dificultad[]>([...DIFICULTADES]);
   const [cantidad, setCantidad] = useState<number>(10);
   const [modalidad, setModalidad] = useState<Modalidad>("mezcladas");
   const [selectedStage, setSelectedStage] = useState<LearningStage>("aprendizaje");
@@ -111,10 +108,7 @@ function CrearPage() {
     },
   });
 
-  const canStart = useMemo(
-    () => subjectId && topicId && difs.length > 0,
-    [subjectId, topicId, difs],
-  );
+  const canStart = useMemo(() => subjectId && topicId, [subjectId, topicId]);
 
   const filteredSubtopics = useMemo(() => {
     const normalize = (value: string) =>
@@ -189,7 +183,6 @@ function CrearPage() {
           p_learning_stage: selectedStage,
           p_free_mode: stageFreeMode,
           p_subtopic_ids: subtopicIds.length > 0 ? subtopicIds : undefined,
-          p_difficulties: difs,
           p_question_count: cantidad,
         });
         if (smartError) throw smartError;
@@ -205,12 +198,7 @@ function CrearPage() {
       }
 
       // Query pool
-      let q = supabase
-        .from("questions")
-        .select("id")
-        .eq("activa", true)
-        .eq("topic_id", topicId)
-        .in("dificultad", difs);
+      let q = supabase.from("questions").select("id").eq("activa", true).eq("topic_id", topicId);
       q =
         selectedStage === "aprendizaje"
           ? q.or("nivel_pedagogico.eq.aprendizaje,nivel_pedagogico.is.null")
@@ -231,8 +219,7 @@ function CrearPage() {
           .from("active_failed_questions")
           .select("question_id")
           .eq("user_id", userId)
-          .eq("topic_id", topicId)
-          .in("dificultad", difs);
+          .eq("topic_id", topicId);
         if (subtopicIds.length > 0) failedQuery = failedQuery.in("subtopic_id", subtopicIds);
         const { data: activeFailures, error: activeFailuresError } = await failedQuery;
         if (activeFailuresError) throw activeFailuresError;
@@ -242,8 +229,7 @@ function CrearPage() {
           .from("active_doubt_questions")
           .select("question_id")
           .eq("user_id", userId)
-          .eq("topic_id", topicId)
-          .in("dificultad", difs);
+          .eq("topic_id", topicId);
         if (subtopicIds.length > 0) doubtQuery = doubtQuery.in("subtopic_id", subtopicIds);
         const { data: activeDoubts, error: activeDoubtsError } = await doubtQuery;
         if (activeDoubtsError) throw activeDoubtsError;
@@ -508,27 +494,6 @@ function CrearPage() {
         )}
 
         <div className="space-y-1.5">
-          <Label>Dificultad</Label>
-          <div className="flex gap-2">
-            {DIFICULTADES.map((d) => {
-              const active = difs.includes(d);
-              return (
-                <button
-                  type="button"
-                  key={d}
-                  onClick={() =>
-                    setDifs((prev) => (active ? prev.filter((x) => x !== d) : [...prev, d]))
-                  }
-                  className={`flex-1 h-11 rounded-md border text-sm font-medium capitalize ${active ? "bg-primary text-primary-foreground border-primary" : "bg-background"}`}
-                >
-                  {d}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
           <Label>Nº de preguntas</Label>
           <div className="grid grid-cols-5 gap-2">
             {CANTIDADES.map((n) => (
@@ -585,9 +550,6 @@ function CrearPage() {
             <span className="font-medium">
               {subtopicIds.length === 0 ? "Todos" : subtopicIds.length}
             </span>
-          </li>
-          <li>
-            Dificultad: <span className="font-medium capitalize">{difs.join(", ") || "—"}</span>
           </li>
           <li>
             Preguntas: <span className="font-medium">{cantidad}</span>

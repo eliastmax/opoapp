@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { uniqueActiveFailureIds } from "@/lib/active-failures";
 import { uniqueActiveDoubtIds } from "@/lib/active-doubts";
 import { describeRecommendedSession, RECOMMENDED_SESSION_SIZES } from "@/lib/recommended-session";
+import { displayName } from "@/lib/user-greeting";
 
 export const Route = createFileRoute("/_authenticated/inicio")({
   component: InicioPage,
@@ -38,8 +39,9 @@ function InicioPage() {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError || !userData.user) throw userError ?? new Error("Sesión no válida");
 
-      const [activas, completados, ultimo, aciertosTotal, falladasActivas, dudasActivas] =
+      const [profile, activas, completados, ultimo, aciertosTotal, falladasActivas, dudasActivas] =
         await Promise.all([
+          supabase.from("profiles").select("nombre").eq("id", userData.user.id).maybeSingle(),
           supabase
             .from("questions")
             .select("id", { count: "exact", head: true })
@@ -69,6 +71,11 @@ function InicioPage() {
       const aciertos = aciertosTotal.data?.filter((r) => r.correcta === true).length ?? 0;
       const pct = totalRespuestas > 0 ? Math.round((aciertos / totalRespuestas) * 100) : 0;
       return {
+        userName: displayName({
+          profileName: profile.data?.nombre,
+          metadataName: userData.user.user_metadata?.nombre,
+          email: userData.user.email,
+        }),
         activas: activas.count ?? 0,
         completados: completados.count ?? 0,
         ultimo: ultimo.data,
@@ -207,7 +214,7 @@ function InicioPage() {
   return (
     <div className="space-y-4">
       <header className="pt-2">
-        <h1 className="text-2xl font-bold">Inicio</h1>
+        <h1 className="text-2xl font-bold">Te damos la bienvenida, {data?.userName ?? "…"}</h1>
         <p className="text-sm text-muted-foreground">Resumen de tu progreso</p>
       </header>
 
