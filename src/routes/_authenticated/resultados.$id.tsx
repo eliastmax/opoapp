@@ -345,9 +345,9 @@ function ResultadosPage() {
           </div>
         )}
         {q.explicacion && (
-          <div className="border-t border-border/70 pt-3">
-            <div className="mb-1 text-xs font-bold text-foreground">Explicación</div>
-            <p className="text-sm leading-relaxed text-muted-foreground">{q.explicacion}</p>
+          <div className="rounded-xl border border-border/70 bg-muted/35 p-3">
+            <div className="mb-1.5 text-sm font-bold text-foreground">Por qué</div>
+            <ExplanationText text={q.explicacion} />
           </div>
         )}
         {q.referencia_fuente && (
@@ -621,5 +621,19 @@ function ResultStat({
       <div className="font-bold leading-none">{value}</div>
       <div className="mt-1 text-[11px] text-muted-foreground">{label}</div>
     </div>
+  );
+}
+
+function ExplanationText({ text }: { text: string }) {
+  const firstSentence = text.match(/^(.+?[.!?])(?:\s+|$)(.*)$/s);
+  if (!firstSentence) {
+    return <p className="text-[0.95rem] font-semibold leading-relaxed text-foreground">{text}</p>;
+  }
+
+  return (
+    <p className="text-[0.95rem] leading-relaxed text-foreground/80">
+      <strong className="font-semibold text-foreground">{firstSentence[1]}</strong>
+      {firstSentence[2] ? ` ${firstSentence[2]}` : ""}
+    </p>
   );
 }

@@ -17,6 +17,8 @@ Hacer que la pantalla de resultados muestre primero lo que el estudiante necesit
 - Desglose por tema, explicación de la selección e informe para ChatGPT pasan a apartados desplegables.
 - El banco completo realizado continúa incluido en el informe copiable para ChatGPT.
 - Cuando no existen fallos ni dudas, la revisión completa queda plegada inicialmente.
+- Ajuste posterior: la explicación se presenta como bloque «Por qué», con tamaño y contraste equivalentes a la importancia pedagógica de las respuestas.
+- La primera frase de la explicación se muestra en negrita como justificación decisiva de la respuesta correcta; el desarrollo posterior mantiene peso normal.
 
 ## Decisiones de alcance
 
@@ -41,4 +43,4 @@ Trabaja exclusivamente sobre `OpoTest Study`; no modifiques `OpoTest: V2`. El Sp
 
 ## Prompt optimizado para el Generador de Preguntas
 
-Este sprint no requiere cambios en el generador. Mantén exactamente el CSV V2 vigente de 25 columnas y todos sus metadatos. `concepto`, `objetivo_aprendizaje`, `dificultad_conceptual` y `dificultad_examen` continúan siendo necesarios para selección, diagnóstico y análisis aunque no se muestren directamente en la tarjeta de resultados. No añadas ni elimines columnas.
+Mantén exactamente el CSV V2 vigente de 25 columnas y todos sus metadatos. `concepto`, `objetivo_aprendizaje`, `dificultad_conceptual` y `dificultad_examen` continúan siendo necesarios para selección, diagnóstico y análisis aunque no se muestren directamente en la tarjeta de resultados. En `explicacion`, la primera frase debe justificar de forma autónoma y directa por qué la respuesta correcta es válida; la aplicación la mostrará en negrita. Las frases posteriores pueden desarrollar la distinción o el matiz decisivo. No añadas ni elimines columnas.
