@@ -1,9 +1,13 @@
 export function subjectLabel(subjectName: string, topicNumbers: number[]): string {
-  const numbers = [...new Set(topicNumbers)].sort((left, right) => left - right);
-  if (numbers.length === 0) return subjectName;
+  const prefix = subjectTopicPrefix(topicNumbers);
+  return prefix ? `${prefix} · ${subjectName}` : subjectName;
+}
 
-  const prefix = numbers.length === 1 ? `Tema ${numbers[0]}` : `Temas ${compactNumbers(numbers)}`;
-  return `${prefix} · ${subjectName}`;
+export function subjectTopicPrefix(topicNumbers: number[]): string {
+  const numbers = [...new Set(topicNumbers)].sort((left, right) => left - right);
+  if (numbers.length === 0) return "";
+
+  return numbers.length === 1 ? `Tema ${numbers[0]}` : `Temas ${compactNumbers(numbers)}`;
 }
 
 function compactNumbers(numbers: number[]): string {

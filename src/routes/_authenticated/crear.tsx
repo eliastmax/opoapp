@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Check, ChevronDown, Loader2, LockKeyhole, Search } from "lucide-react";
+import {
+  BookOpenText,
+  Check,
+  ChevronDown,
+  Layers3,
+  Loader2,
+  LockKeyhole,
+  Search,
+  SlidersHorizontal,
+} from "lucide-react";
 import { keepActiveFailureIds } from "@/lib/active-failures";
 import { keepActiveDoubtIds } from "@/lib/active-doubts";
 import {
@@ -47,7 +56,7 @@ import {
   type LearningStage,
 } from "@/lib/learning-stages";
 import { topicLabel } from "@/lib/topic-label";
-import { subjectLabel } from "@/lib/subject-label";
+import { subjectLabel, subjectTopicPrefix } from "@/lib/subject-label";
 
 export const Route = createFileRoute("/_authenticated/crear")({
   component: CrearPage,
@@ -60,6 +69,10 @@ function CrearPage() {
   const navigate = useNavigate();
   const [subjectId, setSubjectId] = useState<string>("");
   const [topicId, setTopicId] = useState<string>("");
+  const [subjectDialogOpen, setSubjectDialogOpen] = useState(false);
+  const [topicDialogOpen, setTopicDialogOpen] = useState(false);
+  const [subjectSearch, setSubjectSearch] = useState("");
+  const [topicSearch, setTopicSearch] = useState("");
   const [subtopicIds, setSubtopicIds] = useState<string[]>([]);
   const [subtopicDialogOpen, setSubtopicDialogOpen] = useState(false);
   const [draftSubtopicIds, setDraftSubtopicIds] = useState<string[]>([]);
@@ -118,15 +131,27 @@ function CrearPage() {
   const canStart = useMemo(() => subjectId && topicId, [subjectId, topicId]);
 
   const filteredSubtopics = useMemo(() => {
-    const normalize = (value: string) =>
-      value
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLocaleLowerCase("es");
-    const query = normalize(subtopicSearch.trim());
+    const query = normalizeSearch(subtopicSearch);
     if (!query) return subtopics ?? [];
-    return (subtopics ?? []).filter((subtopic) => normalize(subtopic.nombre).includes(query));
+    return (subtopics ?? []).filter((subtopic) => normalizeSearch(subtopic.nombre).includes(query));
   }, [subtopics, subtopicSearch]);
+
+  const filteredSubjects = useMemo(() => {
+    const query = normalizeSearch(subjectSearch);
+    if (!query) return subjects ?? [];
+    return (subjects ?? []).filter((subject) => {
+      const numbers = subject.topics.map((topic) => topic.numero);
+      return normalizeSearch(`${subjectTopicPrefix(numbers)} ${subject.nombre}`).includes(query);
+    });
+  }, [subjects, subjectSearch]);
+
+  const filteredTopics = useMemo(() => {
+    const query = normalizeSearch(topicSearch);
+    if (!query) return topics ?? [];
+    return (topics ?? []).filter((topic) =>
+      normalizeSearch(topicLabel(topic.numero, topic.nombre)).includes(query),
+    );
+  }, [topics, topicSearch]);
 
   // Auto-select when only one option exists
   useEffect(() => {
@@ -290,38 +315,88 @@ function CrearPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <header className="pt-2">
-        <h1 className="text-2xl font-bold">Crear test</h1>
-        <p className="text-sm text-muted-foreground">Configura tu test personalizado</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+          Práctica a tu medida
+        </p>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight">Crear test</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Elige qué quieres practicar y la app prepara el resto.
+        </p>
       </header>
 
-      <Card className="p-4 space-y-4">
+      <Card className="space-y-4 bg-card/90 p-4">
+        <SectionHeading
+          icon={BookOpenText}
+          step="1"
+          title="Contenido"
+          description="Selecciona la materia y el tema."
+        />
         {!hideSubject && (
           <div className="space-y-1.5">
             <Label>Materia</Label>
-            <Select
-              value={subjectId}
-              onValueChange={(v) => {
-                setSubjectId(v);
-                setTopicId("");
-                setSubtopicIds([]);
+            <Dialog
+              open={subjectDialogOpen}
+              onOpenChange={(open) => {
+                setSubjectDialogOpen(open);
+                if (open) setSubjectSearch("");
               }}
             >
-              <SelectTrigger className="h-12">
-                <SelectValue placeholder="Selecciona materia" />
-              </SelectTrigger>
-              <SelectContent>
-                {(subjects ?? []).map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {subjectLabel(
-                      s.nombre,
-                      s.topics.map((topic) => topic.numero),
-                    )}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <DialogTrigger asChild>
+                <PickerTrigger
+                  badge={
+                    selectedSubject
+                      ? subjectTopicPrefix(selectedSubject.topics.map((topic) => topic.numero))
+                      : undefined
+                  }
+                  value={selectedSubject?.nombre}
+                  placeholder="Selecciona una materia"
+                />
+              </DialogTrigger>
+              <PickerSheet
+                title="Elegir materia"
+                description="Busca por número de tema o por nombre."
+              >
+                <PickerSearch
+                  value={subjectSearch}
+                  onChange={setSubjectSearch}
+                  placeholder="Buscar materia o tema"
+                />
+                <div className="max-h-[56vh] space-y-1 overflow-y-auto p-3">
+                  {filteredSubjects.map((subject) => {
+                    const numbers = subject.topics.map((topic) => topic.numero);
+                    const selected = subject.id === subjectId;
+                    return (
+                      <button
+                        key={subject.id}
+                        type="button"
+                        onClick={() => {
+                          setSubjectId(subject.id);
+                          setTopicId("");
+                          setSubtopicIds([]);
+                          setSubjectDialogOpen(false);
+                        }}
+                        className={`flex min-h-16 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${selected ? "bg-primary/10" : "hover:bg-muted"}`}
+                      >
+                        <span className="min-w-0 flex-1">
+                          {subjectTopicPrefix(numbers) && (
+                            <span className="mb-1 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">
+                              {subjectTopicPrefix(numbers)}
+                            </span>
+                          )}
+                          <span className="block text-sm font-semibold leading-snug">
+                            {subject.nombre}
+                          </span>
+                        </span>
+                        {selected && <Check className="h-5 w-5 shrink-0 text-primary" />}
+                      </button>
+                    );
+                  })}
+                  {filteredSubjects.length === 0 && <EmptyPickerResult />}
+                </div>
+              </PickerSheet>
+            </Dialog>
             {subjects && subjects.length === 0 && (
               <p className="text-xs text-muted-foreground">
                 Aún no tienes materias. Importa un CSV primero.
@@ -333,24 +408,61 @@ function CrearPage() {
         {subjectId && !hideTopic && (
           <div className="space-y-1.5">
             <Label>Tema</Label>
-            <Select
-              value={topicId}
-              onValueChange={(v) => {
-                setTopicId(v);
-                setSubtopicIds([]);
+            <Dialog
+              open={topicDialogOpen}
+              onOpenChange={(open) => {
+                setTopicDialogOpen(open);
+                if (open) setTopicSearch("");
               }}
             >
-              <SelectTrigger className="h-12">
-                <SelectValue placeholder="Selecciona tema" />
-              </SelectTrigger>
-              <SelectContent>
-                {(topics ?? []).map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {topicLabel(t.numero, t.nombre)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <DialogTrigger asChild>
+                <PickerTrigger
+                  badge={selectedTopic ? `Tema ${selectedTopic.numero}` : undefined}
+                  value={selectedTopic?.nombre}
+                  placeholder="Selecciona un tema"
+                />
+              </DialogTrigger>
+              <PickerSheet
+                title="Elegir tema"
+                description="El nombre completo se muestra sin recortes."
+              >
+                {(topics?.length ?? 0) > 5 && (
+                  <PickerSearch
+                    value={topicSearch}
+                    onChange={setTopicSearch}
+                    placeholder="Buscar tema"
+                  />
+                )}
+                <div className="max-h-[56vh] space-y-1 overflow-y-auto p-3">
+                  {filteredTopics.map((topic) => {
+                    const selected = topic.id === topicId;
+                    return (
+                      <button
+                        key={topic.id}
+                        type="button"
+                        onClick={() => {
+                          setTopicId(topic.id);
+                          setSubtopicIds([]);
+                          setTopicDialogOpen(false);
+                        }}
+                        className={`flex min-h-16 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${selected ? "bg-primary/10" : "hover:bg-muted"}`}
+                      >
+                        <span className="min-w-0 flex-1">
+                          <span className="mb-1 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">
+                            Tema {topic.numero}
+                          </span>
+                          <span className="block text-sm font-semibold leading-snug">
+                            {topic.nombre}
+                          </span>
+                        </span>
+                        {selected && <Check className="h-5 w-5 shrink-0 text-primary" />}
+                      </button>
+                    );
+                  })}
+                  {filteredTopics.length === 0 && <EmptyPickerResult />}
+                </div>
+              </PickerSheet>
+            </Dialog>
           </div>
         )}
 
@@ -459,52 +571,64 @@ function CrearPage() {
             </p>
           </div>
         )}
+      </Card>
 
-        {topicId && stageProgress && (
-          <div className="space-y-2">
-            <div>
-              <Label>Nivel de preparación</Label>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Avanzas cuando demuestras conocimiento; repetir tests no desbloquea por sí solo.
-              </p>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-3">
-              {LEARNING_STAGES.map((stage) => {
-                const unlocked = isStageUnlocked(stageProgress, stage);
-                const active = selectedStage === stage;
-                return (
-                  <button
-                    key={stage}
-                    type="button"
-                    onClick={() => chooseStage(stage)}
-                    className={`rounded-lg border p-3 text-left transition-colors ${
-                      active ? "border-primary bg-primary/10" : "bg-background hover:bg-muted/60"
-                    }`}
-                  >
-                    <span className="flex items-center justify-between gap-2 text-sm font-semibold">
-                      {LEARNING_STAGE_LABELS[stage]}
-                      {active ? (
-                        <Check className="h-4 w-4 text-primary" />
-                      ) : !unlocked ? (
-                        <LockKeyhole className="h-4 w-4 text-muted-foreground" />
-                      ) : null}
-                    </span>
-                    <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">
-                      {LEARNING_STAGE_DESCRIPTIONS[stage]}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            {stageFreeMode && (
-              <p className="rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-800 dark:text-amber-200">
-                Modo libre: este test quedará en el historial, pero no contará para desbloquear
-                fases.
-              </p>
-            )}
+      {topicId && stageProgress && (
+        <Card className="space-y-3 bg-card/90 p-4">
+          <SectionHeading
+            icon={Layers3}
+            step="2"
+            title="Nivel de preparación"
+            description="Trabaja en tu fase actual o practica otra en modo libre."
+          />
+          <div>
+            <p className="text-xs text-muted-foreground">
+              Avanzas cuando demuestras conocimiento; repetir tests no desbloquea por sí solo.
+            </p>
           </div>
-        )}
+          <div className="grid gap-2 sm:grid-cols-3">
+            {LEARNING_STAGES.map((stage) => {
+              const unlocked = isStageUnlocked(stageProgress, stage);
+              const active = selectedStage === stage;
+              return (
+                <button
+                  key={stage}
+                  type="button"
+                  onClick={() => chooseStage(stage)}
+                  className={`rounded-lg border p-3 text-left transition-colors ${
+                    active ? "border-primary bg-primary/10" : "bg-background hover:bg-muted/60"
+                  }`}
+                >
+                  <span className="flex items-center justify-between gap-2 text-sm font-semibold">
+                    {LEARNING_STAGE_LABELS[stage]}
+                    {active ? (
+                      <Check className="h-4 w-4 text-primary" />
+                    ) : !unlocked ? (
+                      <LockKeyhole className="h-4 w-4 text-muted-foreground" />
+                    ) : null}
+                  </span>
+                  <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">
+                    {LEARNING_STAGE_DESCRIPTIONS[stage]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {stageFreeMode && (
+            <p className="rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-800 dark:text-amber-200">
+              Modo libre: este test quedará en el historial, pero no contará para desbloquear fases.
+            </p>
+          )}
+        </Card>
+      )}
 
+      <Card className="space-y-4 bg-card/90 p-4">
+        <SectionHeading
+          icon={SlidersHorizontal}
+          step={topicId && stageProgress ? "3" : "2"}
+          title="Formato del test"
+          description="Decide la extensión y el tipo de práctica."
+        />
         <div className="space-y-1.5">
           <Label>Nº de preguntas</Label>
           <div className="grid grid-cols-5 gap-2">
@@ -513,7 +637,7 @@ function CrearPage() {
                 key={n}
                 type="button"
                 onClick={() => setCantidad(n)}
-                className={`h-11 rounded-md border text-sm font-semibold ${cantidad === n ? "bg-primary text-primary-foreground border-primary" : "bg-background"}`}
+                className={`h-11 rounded-xl border text-sm font-semibold transition-colors ${cantidad === n ? "border-primary bg-primary text-primary-foreground shadow-sm" : "bg-background hover:bg-muted"}`}
               >
                 {n}
               </button>
@@ -542,55 +666,65 @@ function CrearPage() {
         </div>
       </Card>
 
-      <Card className="p-4">
-        <div className="text-xs uppercase text-muted-foreground font-medium mb-2">Resumen</div>
-        <ul className="text-sm space-y-1">
-          <li>
-            Materia:{" "}
-            <span className="font-medium">
-              {selectedSubject
-                ? subjectLabel(
-                    selectedSubject.nombre,
-                    selectedSubject.topics.map((topic) => topic.numero),
-                  )
-                : "—"}
-            </span>
-          </li>
-          <li>
-            Tema:{" "}
-            <span className="font-medium">
-              {selectedTopic ? topicLabel(selectedTopic.numero, selectedTopic.nombre) : "—"}
-            </span>
-          </li>
-          <li>
-            Subapartados:{" "}
-            <span className="font-medium">
-              {subtopicIds.length === 0 ? "Todos" : subtopicIds.length}
-            </span>
-          </li>
-          <li>
-            Preguntas: <span className="font-medium">{cantidad}</span>
-          </li>
-          <li>
-            Nivel: <span className="font-medium">{LEARNING_STAGE_LABELS[selectedStage]}</span>
-            {stageFreeMode ? " · modo libre" : ""}
-          </li>
-          <li>
-            Modalidad:{" "}
-            <span className="font-medium">
-              {modalidad === "mezcladas" ? "Selección inteligente" : modalidad}
-            </span>
-          </li>
-        </ul>
-      </Card>
+      {topicId && (
+        <Card className="bg-card/90 p-4">
+          <div className="text-xs uppercase text-muted-foreground font-medium mb-2">Resumen</div>
+          <ul className="text-sm space-y-1">
+            <li>
+              Materia:{" "}
+              <span className="font-medium">
+                {selectedSubject
+                  ? subjectLabel(
+                      selectedSubject.nombre,
+                      selectedSubject.topics.map((topic) => topic.numero),
+                    )
+                  : "—"}
+              </span>
+            </li>
+            <li>
+              Tema:{" "}
+              <span className="font-medium">
+                {selectedTopic ? topicLabel(selectedTopic.numero, selectedTopic.nombre) : "—"}
+              </span>
+            </li>
+            <li>
+              Subapartados:{" "}
+              <span className="font-medium">
+                {subtopicIds.length === 0 ? "Todos" : subtopicIds.length}
+              </span>
+            </li>
+            <li>
+              Preguntas: <span className="font-medium">{cantidad}</span>
+            </li>
+            <li>
+              Nivel: <span className="font-medium">{LEARNING_STAGE_LABELS[selectedStage]}</span>
+              {stageFreeMode ? " · modo libre" : ""}
+            </li>
+            <li>
+              Modalidad:{" "}
+              <span className="font-medium">
+                {modalidad === "mezcladas" ? "Selección inteligente" : modalidad}
+              </span>
+            </li>
+          </ul>
+        </Card>
+      )}
 
-      <Button
-        onClick={iniciar}
-        disabled={!canStart || starting}
-        className="w-full h-14 text-base font-semibold"
-      >
-        {starting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Iniciar test"}
-      </Button>
+      <div className="sticky bottom-20 z-30 -mx-1 rounded-2xl border border-border/80 bg-background/90 p-2 shadow-[0_16px_40px_-16px_oklch(0.28_0.08_250/0.5)] backdrop-blur-xl">
+        <Button
+          onClick={iniciar}
+          disabled={!canStart || starting}
+          className="h-13 w-full text-base"
+        >
+          {starting ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" /> Preparando test…
+            </>
+          ) : (
+            "Iniciar test"
+          )}
+        </Button>
+      </div>
 
       <AlertDialog
         open={pendingLockedStage !== null}
@@ -631,5 +765,122 @@ function CrearPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+function normalizeSearch(value: string): string {
+  return value
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es");
+}
+
+function SectionHeading({
+  icon: Icon,
+  step,
+  title,
+  description,
+}: {
+  icon: React.ElementType;
+  step: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex items-start gap-3 border-b border-border/70 pb-3">
+      <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        <Icon className="h-5 w-5" />
+        <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">
+          {step}
+        </span>
+      </span>
+      <span>
+        <span className="block text-sm font-bold">{title}</span>
+        <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+          {description}
+        </span>
+      </span>
+    </div>
+  );
+}
+
+const PickerTrigger = React.forwardRef<
+  HTMLButtonElement,
+  {
+    badge?: string;
+    value?: string;
+    placeholder: string;
+  }
+>(({ badge, value, placeholder }, ref) => (
+  <Button
+    ref={ref}
+    type="button"
+    variant="outline"
+    className="h-auto min-h-14 w-full justify-between whitespace-normal bg-background px-3 py-2.5 text-left font-normal"
+  >
+    <span className="min-w-0 flex-1">
+      {badge && <span className="block text-[11px] font-bold text-primary">{badge}</span>}
+      <span
+        className={`block leading-snug ${value ? "text-sm font-semibold text-foreground" : "text-sm text-muted-foreground"}`}
+      >
+        {value ?? placeholder}
+      </span>
+    </span>
+    <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
+  </Button>
+));
+PickerTrigger.displayName = "PickerTrigger";
+
+function PickerSheet({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: ReactNode;
+}) {
+  return (
+    <DialogContent className="bottom-0 left-0 top-auto w-full max-w-none translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-b-none rounded-t-3xl border-x-0 border-b-0 p-0 sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:border">
+      <DialogHeader className="border-b p-4 pr-10 text-left">
+        <DialogTitle>{title}</DialogTitle>
+        <DialogDescription>{description}</DialogDescription>
+      </DialogHeader>
+      {children}
+    </DialogContent>
+  );
+}
+
+function PickerSearch({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <div className="border-b p-3">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          aria-label={placeholder}
+          className="h-11 rounded-xl pl-9"
+        />
+      </div>
+    </div>
+  );
+}
+
+function EmptyPickerResult() {
+  return (
+    <p className="px-3 py-10 text-center text-sm text-muted-foreground">
+      No hay resultados para esa búsqueda.
+    </p>
   );
 }

@@ -1,6 +1,6 @@
 // @ts-expect-error bun:test provided by bun runtime
 import { describe, expect, it } from "bun:test";
-import { subjectLabel } from "../subject-label";
+import { subjectLabel, subjectTopicPrefix } from "../subject-label";
 
 describe("subject label", () => {
   it("prefixes a subject containing one topic", () => {
@@ -19,5 +19,10 @@ describe("subject label", () => {
 
   it("preserves subjects without topics", () => {
     expect(subjectLabel("Sin preguntas", [])).toBe("Sin preguntas");
+  });
+
+  it("returns a reusable topic prefix for two-line selectors", () => {
+    expect(subjectTopicPrefix([14, 13, 14])).toBe("Temas 13–14");
+    expect(subjectTopicPrefix([])).toBe("");
   });
 });

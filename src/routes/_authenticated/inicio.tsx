@@ -212,47 +212,58 @@ function InicioPage() {
   const dudas = data?.distintasDudosas ?? 0;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <header className="pt-2">
-        <h1 className="text-2xl font-bold">Te damos la bienvenida, {data?.userName ?? "…"}</h1>
-        <p className="text-sm text-muted-foreground">Resumen de tu progreso</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+          OpoTest Study
+        </p>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight">
+          Te damos la bienvenida, {data?.userName ?? "…"}
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">Hoy seguimos avanzando paso a paso.</p>
       </header>
 
-      <Card className="border-primary/25 bg-primary/5 p-4">
+      <Card className="overflow-hidden border-0 bg-gradient-to-br from-primary via-primary to-[oklch(0.48_0.12_225)] p-5 text-primary-foreground shadow-[0_22px_50px_-28px_oklch(0.32_0.14_250/0.85)]">
         <div className="flex items-start gap-3">
-          <div className="rounded-full bg-primary/10 p-2 text-primary">
+          <div className="rounded-xl bg-white/15 p-2.5 text-white ring-1 ring-white/20">
             <Sparkles className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="font-semibold">Sesión recomendada</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Mezcla tus fallos y dudas, el tema actual, puntos débiles y repaso de retención.
+            <p className="text-xs font-semibold uppercase tracking-wider text-white/70">
+              Siguiente paso
+            </p>
+            <h2 className="mt-0.5 text-lg font-bold">Sesión recomendada</h2>
+            <p className="mt-1 text-sm leading-relaxed text-white/80">
+              La app combina tus fallos, dudas y puntos débiles para elegir qué practicar ahora.
             </p>
           </div>
         </div>
 
         <div className="mt-4">
-          <div className="mb-2 text-xs font-medium text-muted-foreground">Número de preguntas</div>
+          <div className="mb-2 text-xs font-medium text-white/75">Número de preguntas</div>
           <div className="grid grid-cols-3 gap-2" aria-label="Número de preguntas recomendadas">
             {RECOMMENDED_SESSION_SIZES.map((size) => (
-              <Button
+              <button
                 key={size}
                 type="button"
-                variant={recommendedSize === size ? "default" : "outline"}
-                size="sm"
                 onClick={() => setRecommendedSize(size)}
                 disabled={creatingRecommended}
                 aria-pressed={recommendedSize === size}
+                className={`h-9 rounded-xl border text-sm font-bold transition-colors disabled:opacity-50 ${
+                  recommendedSize === size
+                    ? "border-white bg-white text-primary"
+                    : "border-white/25 bg-white/10 text-white hover:bg-white/15"
+                }`}
               >
                 {size}
-              </Button>
+              </button>
             ))}
           </div>
         </div>
 
         <Button
           type="button"
-          className="mt-3 w-full"
+          className="mt-3 h-11 w-full bg-white text-primary shadow-sm hover:bg-white/90"
           onClick={createRecommendedSession}
           disabled={creatingRecommended || isLoading || (data?.activas ?? 0) === 0}
         >
@@ -266,123 +277,101 @@ function InicioPage() {
             </>
           )}
         </Button>
-        <p className="mt-2 text-center text-xs text-muted-foreground">
+        <p className="mt-2 text-center text-xs text-white/65">
           Si falta alguna categoría, la app redistribuye las preguntas sin repetirlas.
         </p>
       </Card>
 
       <Link to="/crear" className="block">
-        <Button variant="outline" className="h-12 w-full text-base font-semibold">
-          Crear test personalizado
+        <Button variant="outline" className="h-12 w-full border-primary/20 bg-card/90 text-base">
+          <BookOpen className="h-4 w-4" /> Crear test personalizado
         </Button>
       </Link>
 
-      <div className="grid grid-cols-2 gap-3">
-        <StatCard
-          icon={BookOpen}
-          label="Preguntas activas"
-          value={isLoading ? undefined : (data?.activas ?? 0)}
-        />
-        <StatCard
-          icon={Trophy}
-          label="Tests completados"
-          value={isLoading ? undefined : (data?.completados ?? 0)}
-        />
-        <StatCard
-          icon={Target}
-          label="% Acierto histórico"
-          value={isLoading ? undefined : `${data?.pctGlobal ?? 0}%`}
-        />
-        {hasFalladas ? (
-          <button
-            type="button"
-            onClick={repasarFallos}
-            disabled={repasando}
-            aria-label={`Repasar ${falladas} preguntas falladas`}
-            className="text-left rounded-lg border bg-card p-4 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-70"
-          >
-            <XCircle className="w-5 h-5 text-primary mb-2" />
-            <div className="text-xs text-muted-foreground">Preguntas falladas</div>
-            <div className="text-xl font-bold mt-0.5">{falladas}</div>
-            <div className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary">
-              {repasando ? (
-                <>
-                  <Loader2 className="w-3 h-3 animate-spin" /> Preparando…
-                </>
-              ) : (
-                <>
-                  Repasar fallos <ArrowRight className="w-3 h-3" />
-                </>
-              )}
-            </div>
-          </button>
-        ) : (
-          <Card className="p-4">
-            <XCircle className="w-5 h-5 text-primary mb-2" />
-            <div className="text-xs text-muted-foreground">Preguntas falladas</div>
-            {isLoading ? (
-              <Skeleton className="h-7 w-16 mt-1" />
-            ) : (
-              <div className="text-xl font-bold mt-0.5">0</div>
-            )}
-            {!isLoading && (
-              <div className="text-xs text-muted-foreground mt-1">No tienes fallos pendientes</div>
-            )}
-          </Card>
-        )}
-      </div>
+      <section aria-labelledby="activity-heading">
+        <div className="mb-2 flex items-center justify-between">
+          <h2 id="activity-heading" className="text-sm font-bold">
+            Tu actividad
+          </h2>
+          <Link to="/progreso" className="text-xs font-semibold text-primary">
+            Ver progreso
+          </Link>
+        </div>
+        <Card className="grid grid-cols-3 divide-x overflow-hidden bg-card/90 p-0">
+          <StatItem
+            icon={BookOpen}
+            label="Preguntas"
+            value={isLoading ? undefined : (data?.activas ?? 0)}
+          />
+          <StatItem
+            icon={Trophy}
+            label="Tests"
+            value={isLoading ? undefined : (data?.completados ?? 0)}
+          />
+          <StatItem
+            icon={Target}
+            label="Acierto"
+            value={isLoading ? undefined : `${data?.pctGlobal ?? 0}%`}
+          />
+        </Card>
+      </section>
 
-      {dudas > 0 && (
-        <button
-          type="button"
+      <section className="space-y-2" aria-labelledby="review-heading">
+        <h2 id="review-heading" className="text-sm font-bold">
+          Repaso pendiente
+        </h2>
+        <ReviewCard
+          icon={XCircle}
+          title="Preguntas falladas"
+          count={falladas}
+          emptyText="No tienes fallos pendientes"
+          actionText="Repasar fallos"
+          loading={isLoading || repasando}
+          disabled={!hasFalladas || isLoading}
+          onClick={repasarFallos}
+          tone="error"
+        />
+        <ReviewCard
+          icon={Flag}
+          title="Preguntas con duda"
+          count={dudas}
+          emptyText="No tienes dudas pendientes"
+          actionText="Repasar dudas"
+          loading={isLoading || repasandoDudas}
+          disabled={dudas === 0 || isLoading}
           onClick={repasarDudas}
-          disabled={repasandoDudas}
-          aria-label={`Repasar ${dudas} preguntas marcadas como duda`}
-          className="w-full text-left rounded-lg border bg-card p-4 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-70"
-        >
-          <div className="flex items-center gap-3">
-            <Flag className="w-5 h-5 text-primary" />
-            <div className="flex-1">
-              <div className="text-xs text-muted-foreground">Preguntas con duda</div>
-              <div className="text-xl font-bold">{dudas}</div>
-            </div>
-            <div className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
-              {repasandoDudas ? (
-                <>
-                  <Loader2 className="w-3 h-3 animate-spin" /> Preparando…
-                </>
-              ) : (
-                <>
-                  Repasar dudas <ArrowRight className="w-3 h-3" />
-                </>
-              )}
-            </div>
-          </div>
-        </button>
-      )}
+          tone="warning"
+        />
+      </section>
 
       {data?.ultimo && (
-        <Card className="p-4">
-          <div className="text-xs uppercase text-muted-foreground font-medium">
-            Último resultado
+        <Card className="flex items-center gap-4 bg-card/90 p-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-success/10 text-xl font-bold text-success">
+            {Number(data.ultimo.porcentaje)}%
           </div>
-          <div className="mt-1 text-2xl font-bold">{Number(data.ultimo.porcentaje)}%</div>
-          <div className="text-sm text-muted-foreground">
-            {data.ultimo.aciertos}/{data.ultimo.numero_preguntas} correctas
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Último resultado
+            </div>
+            <div className="mt-0.5 text-sm font-semibold">
+              {data.ultimo.aciertos}/{data.ultimo.numero_preguntas} respuestas correctas
+            </div>
+            <Link
+              to="/resultados/$id"
+              params={{ id: data.ultimo.id }}
+              className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-primary"
+            >
+              Ver detalle <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
-          <Link
-            to="/resultados/$id"
-            params={{ id: data.ultimo.id }}
-            className="mt-3 inline-flex items-center gap-1 text-sm text-primary font-medium"
-          >
-            Ver detalle <ArrowRight className="w-4 h-4" />
-          </Link>
         </Card>
       )}
 
       <Link to="/progreso" className="block">
-        <Card className="flex items-center gap-3 p-4 transition-colors hover:bg-accent/50">
-          <Gauge className="h-5 w-5 text-primary" />
+        <Card className="flex items-center gap-3 bg-card/90 p-4 transition-colors hover:bg-accent/50">
+          <div className="rounded-xl bg-primary/10 p-2 text-primary">
+            <Gauge className="h-5 w-5" />
+          </div>
           <div className="flex-1">
             <div className="text-sm font-semibold">Ver progreso por temas</div>
             <div className="text-xs text-muted-foreground">
@@ -396,7 +385,7 @@ function InicioPage() {
   );
 }
 
-function StatCard({
+function StatItem({
   icon: Icon,
   label,
   value,
@@ -406,14 +395,71 @@ function StatCard({
   value: number | string | undefined;
 }) {
   return (
-    <Card className="p-4">
-      <Icon className="w-5 h-5 text-primary mb-2" />
-      <div className="text-xs text-muted-foreground">{label}</div>
+    <div className="min-w-0 px-2 py-4 text-center">
+      <Icon className="mx-auto mb-1.5 h-4 w-4 text-primary" />
       {value === undefined ? (
-        <Skeleton className="h-7 w-16 mt-1" />
+        <Skeleton className="mx-auto h-6 w-10" />
       ) : (
-        <div className="text-xl font-bold mt-0.5">{value}</div>
+        <div className="text-lg font-bold leading-none">{value}</div>
       )}
-    </Card>
+      <div className="mt-1 truncate text-[11px] text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+function ReviewCard({
+  icon: Icon,
+  title,
+  count,
+  emptyText,
+  actionText,
+  loading,
+  disabled,
+  onClick,
+  tone,
+}: {
+  icon: React.ElementType;
+  title: string;
+  count: number;
+  emptyText: string;
+  actionText: string;
+  loading: boolean;
+  disabled: boolean;
+  onClick: () => void;
+  tone: "error" | "warning";
+}) {
+  const iconClass =
+    tone === "error"
+      ? "bg-destructive/10 text-destructive"
+      : "bg-warning/15 text-warning-foreground";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="flex w-full items-center gap-3 rounded-2xl border bg-card/90 p-3.5 text-left shadow-[0_10px_32px_-24px_oklch(0.28_0.08_250/0.45)] transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-80"
+    >
+      <span className={`rounded-xl p-2.5 ${iconClass}`}>
+        <Icon className="h-5 w-5" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold">{title}</span>
+        <span className="block text-xs text-muted-foreground">
+          {count > 0 ? `${count} pendientes` : emptyText}
+        </span>
+      </span>
+      {count > 0 && (
+        <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
+          {loading ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <>
+              {actionText}
+              <ArrowRight className="h-3.5 w-3.5" />
+            </>
+          )}
+        </span>
+      )}
+    </button>
   );
 }
