@@ -16,6 +16,7 @@ Reducir decisiones redundantes en la creación de tests y hacer la entrada a la 
 - No se pregunta sexo o género: la fórmula de bienvenida es neutral.
 - El selector y el resumen muestran siempre «Tema N. Nombre» usando el campo estructurado `numero`.
 - Si el nombre almacenado contiene un prefijo «Tema N» duplicado o incorrecto, se elimina antes de mostrarlo.
+- La lista inicial de materias antepone sus temas: «Tema 19 · Materia» o «Temas 13–14 · Materia».
 
 ## Decisiones de alcance
 
@@ -33,6 +34,7 @@ Reducir decisiones redundantes en la creación de tests y hacer la entrada a la 
 5. La bienvenida funciona aunque falte el perfil y no utiliza género.
 6. El CSV V2 mantiene exactamente sus 25 columnas.
 7. El número mostrado en Crear test procede de `topics.numero` y no del texto libre del nombre.
+8. Los números se ven ya en la selección inicial de Materia, incluso cuando una materia agrupa varios temas.
 
 ## Prompt optimizado para Lovable
 
