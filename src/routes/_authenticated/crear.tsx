@@ -46,6 +46,7 @@ import {
   stageRequirements,
   type LearningStage,
 } from "@/lib/learning-stages";
+import { topicLabel } from "@/lib/topic-label";
 
 export const Route = createFileRoute("/_authenticated/crear")({
   component: CrearPage,
@@ -152,6 +153,7 @@ function CrearPage() {
   const hideSubject = !!subjects && subjects.length === 1;
   const hideTopic = !!topics && topics.length === 1;
   const hideSubtopic = !!subtopics && subtopics.length <= 1;
+  const selectedTopic = topics?.find((topic) => topic.id === topicId);
 
   function handleSubtopicDialogOpenChange(open: boolean) {
     if (open) {
@@ -334,7 +336,7 @@ function CrearPage() {
               <SelectContent>
                 {(topics ?? []).map((t) => (
                   <SelectItem key={t.id} value={t.id}>
-                    {t.numero}. {t.nombre}
+                    {topicLabel(t.numero, t.nombre)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -542,7 +544,7 @@ function CrearPage() {
           <li>
             Tema:{" "}
             <span className="font-medium">
-              {topics?.find((t) => t.id === topicId)?.nombre ?? "—"}
+              {selectedTopic ? topicLabel(selectedTopic.numero, selectedTopic.nombre) : "—"}
             </span>
           </li>
           <li>
