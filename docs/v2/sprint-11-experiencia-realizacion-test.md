@@ -15,6 +15,7 @@ Aprovechar mejor el espacio móvil durante un test, reducir distracciones y faci
 - Las respuestas utilizan letras más claras, separación contenida y un estado seleccionado inequívoco.
 - Anterior y Siguiente permanecen fijos al pie de la pantalla.
 - En la última pregunta, el botón principal cambia a «Finalizar».
+- La cabecera incluye una salida pequeña y visible, protegida por confirmación para evitar abandonos accidentales.
 - Se mantienen áreas táctiles cómodas y estados de foco accesibles.
 
 ## Decisiones de alcance
@@ -22,6 +23,7 @@ Aprovechar mejor el espacio móvil durante un test, reducir distracciones y faci
 - No se modifica la selección de preguntas, el guardado de respuestas ni la finalización del test.
 - No se introduce corrección inmediata: el usuario continúa viendo los resultados al finalizar.
 - No se modifica Supabase ni se requiere migración.
+- Salir no corrige el test ni altera los fallos activos; simplemente devuelve al usuario a Inicio.
 - No se cambia el CSV V2 ni ningún banco existente.
 - El progreso superior sigue representando la posición dentro del test; el texto lateral informa de las preguntas aún sin responder.
 
@@ -34,10 +36,11 @@ Aprovechar mejor el espacio móvil durante un test, reducir distracciones y faci
 5. Anterior y Siguiente permanecen accesibles en pantallas móviles.
 6. Llegar a la última pregunta mantiene el diálogo de confirmación existente.
 7. No se modifica ningún dato ni contrato de importación.
+8. El botón «Salir» pide confirmación y permite continuar el test si se pulsó por error.
 
 ## Prompt optimizado para Lovable
 
-Trabaja exclusivamente sobre `OpoTest Study`; no modifiques `OpoTest: V2`. El Sprint 11 ya está sincronizado desde GitHub. No regeneres código ni cambies lógica. Actualiza y publica, y verifica en móvil: (1) la navegación general desaparece solo durante un test; (2) el progreso compacto permanece arriba; (3) no se muestra dificultad; (4) el botón de duda funciona y cambia de estado; (5) las cuatro respuestas se pueden seleccionar y la elegida queda destacada; (6) Anterior y Siguiente permanecen fijos abajo sin tapar respuestas; (7) la última pregunta muestra `Finalizar` y abre el diálogo existente; y (8) al terminar vuelve a funcionar la navegación normal. No cambies Supabase, el motor, el CSV ni los bancos.
+Trabaja exclusivamente sobre `OpoTest Study`; no modifiques `OpoTest: V2`. El Sprint 11 ya está sincronizado desde GitHub. No regeneres código ni cambies lógica. Actualiza y publica, y verifica en móvil: (1) la navegación general desaparece solo durante un test; (2) el progreso compacto permanece arriba; (3) `Salir` es visible pero secundario y pide confirmación; (4) cancelar la salida permite continuar sin cambios; (5) confirmar la salida vuelve a Inicio sin corregir el test; (6) el botón de duda funciona y cambia de estado; (7) las cuatro respuestas se pueden seleccionar; (8) Anterior y Siguiente permanecen fijos abajo; y (9) `Finalizar` conserva su confirmación y corrección. No cambies Supabase, el motor, el CSV ni los bancos.
 
 ## Prompt optimizado para el Generador de Preguntas
 

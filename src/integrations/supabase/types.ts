@@ -728,6 +728,13 @@ export type Database = {
         }[];
       };
       import_questions_batch: { Args: { payload: Json }; Returns: Json };
+      reset_learning_progress: {
+        Args: never;
+        Returns: {
+          deleted_statistics: number;
+          deleted_tests: number;
+        }[];
+      };
     };
     Enums: {
       dificultad_enum: "facil" | "medio" | "dificil";

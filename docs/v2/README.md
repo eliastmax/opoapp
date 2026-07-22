@@ -16,6 +16,7 @@ Este índice registra qué partes de la V2 están realmente implementadas y vali
 - [Simplificación de Crear test y bienvenida personalizada](sprint-09-simplificacion-crear.md): implementada y validada en uso real.
 - [Renovación visual de Inicio y Crear test](sprint-10-renovacion-visual-inicio-crear.md): implementada y validada en uso real.
 - [Experiencia de realización de test](sprint-11-experiencia-realizacion-test.md): implementada y validada en uso real.
+- [Controles de salida y reinicio](sprint-13-controles-usuario.md): salida segura del test y reinicio del progreso sin borrar preguntas.
 
 ## Sprint en implementación
 

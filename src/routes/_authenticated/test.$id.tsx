@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, Flag, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Flag, Loader2, LogOut } from "lucide-react";
 import type { Respuesta } from "@/lib/csv-parser";
 import {
   AlertDialog,
@@ -29,6 +29,7 @@ function TestPage() {
   const qc = useQueryClient();
   const [current, setCurrent] = useState(0);
   const [confirmFinish, setConfirmFinish] = useState(false);
+  const [confirmExit, setConfirmExit] = useState(false);
   const [finishing, setFinishing] = useState(false);
 
   const { data, isLoading, error } = useQuery({
@@ -158,16 +159,28 @@ function TestPage() {
   return (
     <div className="space-y-3 pb-20">
       <header className="sticky top-0 z-20 -mx-4 -mt-4 border-b border-border/60 bg-background/90 px-4 pb-3 pt-4 backdrop-blur-xl">
-        <div className="mb-2 flex items-center justify-between text-xs">
+        <div className="flex items-center justify-between text-xs">
           <div className="flex items-baseline gap-1">
             <span className="text-lg font-bold text-foreground">{current + 1}</span>
             <span className="font-medium text-muted-foreground">de {total}</span>
           </div>
-          <span className="font-medium text-muted-foreground" aria-live="polite">
-            {remaining === 0 ? "Todo respondido" : `${remaining} por responder`}
+          <button
+            type="button"
+            onClick={() => setConfirmExit(true)}
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <LogOut className="h-3.5 w-3.5" /> Salir
+          </button>
+        </div>
+        <div className="mt-1.5 flex items-center gap-3">
+          <Progress value={((current + 1) / total) * 100} className="h-1.5 flex-1" />
+          <span
+            className="shrink-0 text-[11px] font-medium text-muted-foreground"
+            aria-live="polite"
+          >
+            {remaining === 0 ? "Todo respondido" : `${remaining} pendientes`}
           </span>
         </div>
-        <Progress value={((current + 1) / total) * 100} className="h-1.5" />
       </header>
 
       <Card className="border-primary/15 bg-gradient-to-br from-card to-primary/5 p-4">
@@ -256,6 +269,26 @@ function TestPage() {
             <AlertDialogCancel onClick={revisarRespuestas}>Revisar respuestas</AlertDialogCancel>
             <AlertDialogAction onClick={finish} disabled={finishing}>
               {finishing ? <Loader2 className="w-4 h-4 animate-spin" /> : "Finalizar y corregir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmExit} onOpenChange={setConfirmExit}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Salir del test?</AlertDialogTitle>
+            <AlertDialogDescription>
+              El test no se corregirá y las respuestas dadas no afectarán a tus fallos activos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuar test</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => navigate({ to: "/inicio", replace: true })}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Salir del test
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
