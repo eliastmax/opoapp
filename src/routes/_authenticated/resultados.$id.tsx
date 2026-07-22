@@ -5,15 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  BookOpen,
-  CheckCircle2,
-  ClipboardCopy,
-  Flag,
-  Loader2,
-  MinusCircle,
-  XCircle,
-} from "lucide-react";
+import { CheckCircle2, ClipboardCopy, Flag, Loader2, MinusCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { keepActiveFailureIds } from "@/lib/active-failures";
 import { keepActiveDoubtIds } from "@/lib/active-doubts";
@@ -26,6 +18,7 @@ import {
   answerWithText,
   buildDiagnosticGroups,
   buildTestExport,
+  questionReference,
   type DiagnosticAnswer,
   type DiagnosticQuestion,
 } from "@/lib/result-diagnostics";
@@ -67,7 +60,7 @@ function ResultadosPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const reviewRef = useRef<HTMLDivElement | null>(null);
-  const [tab, setTab] = useState<"revisar" | "todas">("revisar");
+  const [tab, setTab] = useState<"fallos" | "dudas" | "todas">("fallos");
 
   const { data, isLoading } = useQuery({
     queryKey: ["resultados", id],
@@ -105,7 +98,7 @@ function ResultadosPage() {
   const answers = data.answers;
   const falladas = answers.filter((a) => a.correcta === false);
   const dudosas = answers.filter((a) => a.marked_doubt);
-  const revisar = answers.filter((a) => a.correcta === false || a.marked_doubt);
+  const revisar = [...falladas, ...answers.filter((a) => a.correcta !== false && a.marked_doubt)];
   const diagnosticGroups = buildDiagnosticGroups(answers as unknown as DiagnosticAnswer[]);
   const perfecto = t.fallos === 0 && t.sin_responder === 0;
   const {
@@ -238,7 +231,7 @@ function ResultadosPage() {
     setTimeout(() => reviewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }
 
-  function goReview(target: "revisar" | "todas") {
+  function goReview(target: "fallos" | "dudas" | "todas") {
     setTab(target);
     scrollToReview();
   }
@@ -265,6 +258,7 @@ function ResultadosPage() {
     if (!q) return null;
     const userAnswer = answerWithText(q as DiagnosticQuestion, a.respuesta_usuario);
     const correctAnswer = answerWithText(q as DiagnosticQuestion, q.respuesta_correcta);
+    const reviewTarget = questionReference(q as DiagnosticQuestion);
     const estado =
       a.respuesta_usuario === null
         ? {
@@ -309,16 +303,58 @@ function ResultadosPage() {
         {q.explicacion && (
           <p className="text-xs text-muted-foreground border-t pt-2">{q.explicacion}</p>
         )}
+        {reviewTarget && (a.correcta === false || a.marked_doubt) && (
+          <p className="text-xs text-primary">
+            <span className="font-medium">Qué repasar:</span> {reviewTarget}
+          </p>
+        )}
         {q.referencia_fuente && (
           <p className="text-xs text-muted-foreground">Fuente: {q.referencia_fuente}</p>
-        )}
-        {q.concepto && <p className="text-xs text-muted-foreground">Concepto: {q.concepto}</p>}
-        {q.objetivo_aprendizaje && (
-          <p className="text-xs text-muted-foreground">Objetivo: {q.objetivo_aprendizaje}</p>
         )}
       </Card>
     );
   };
+
+  const reviewBlock = (
+    <div ref={reviewRef}>
+      <h2 className="mb-2 font-semibold">
+        {falladas.length > 0 ? "Tus fallos" : dudosas.length > 0 ? "Tus dudas" : "Revisión"}
+      </h2>
+      {revisar.length === 0 ? (
+        <div className="space-y-3">{answers.map(renderAnswer)}</div>
+      ) : (
+        <Tabs
+          value={falladas.length === 0 && tab === "fallos" ? "dudas" : tab}
+          onValueChange={(value) => setTab(value as "fallos" | "dudas" | "todas")}
+        >
+          <TabsList
+            className={`grid w-full ${falladas.length > 0 && dudosas.length > 0 ? "grid-cols-3" : "grid-cols-2"}`}
+          >
+            {falladas.length > 0 && (
+              <TabsTrigger value="fallos">Fallos ({falladas.length})</TabsTrigger>
+            )}
+            {dudosas.length > 0 && (
+              <TabsTrigger value="dudas">Dudas ({dudosas.length})</TabsTrigger>
+            )}
+            <TabsTrigger value="todas">Todas ({answers.length})</TabsTrigger>
+          </TabsList>
+          {falladas.length > 0 && (
+            <TabsContent value="fallos" className="mt-3 space-y-3">
+              {falladas.map(renderAnswer)}
+            </TabsContent>
+          )}
+          {dudosas.length > 0 && (
+            <TabsContent value="dudas" className="mt-3 space-y-3">
+              {dudosas.map(renderAnswer)}
+            </TabsContent>
+          )}
+          <TabsContent value="todas" className="mt-3 space-y-3">
+            {answers.map(renderAnswer)}
+          </TabsContent>
+        </Tabs>
+      )}
+    </div>
+  );
 
   const sinFallosDuros = t.fallos === 0;
 
@@ -368,6 +404,8 @@ function ResultadosPage() {
         )}
       </Card>
 
+      {revisar.length > 0 && reviewBlock}
+
       {data.selection.length > 0 && (
         <Card className="p-4">
           <div className="text-xs uppercase text-muted-foreground font-medium mb-2">
@@ -389,39 +427,6 @@ function ResultadosPage() {
               ? " Se utilizaron más repeticiones porque no había suficientes alternativas con esos filtros."
               : " Se ha respetado el límite máximo orientativo del 30 %."}
           </p>
-        </Card>
-      )}
-
-      {diagnosticGroups.length > 0 && (
-        <Card className="p-4">
-          <div className="mb-3 flex items-center gap-2">
-            <BookOpen className="h-4 w-4 text-primary" />
-            <div className="text-xs font-medium uppercase text-muted-foreground">Qué repasar</div>
-          </div>
-          <div className="space-y-4">
-            {diagnosticGroups.map((group) => (
-              <div
-                key={group.concept}
-                className="space-y-1 border-t pt-3 first:border-t-0 first:pt-0"
-              >
-                <div className="text-sm font-semibold">{group.concept}</div>
-                <div className="text-xs text-muted-foreground">
-                  {group.failures} {group.failures === 1 ? "fallo" : "fallos"} · {group.doubts}{" "}
-                  {group.doubts === 1 ? "duda" : "dudas"}
-                </div>
-                {group.perspectives.length > 0 && (
-                  <div className="text-xs text-muted-foreground">
-                    Enfoques: {group.perspectives.join(", ")}
-                  </div>
-                )}
-                {group.references.map((reference) => (
-                  <div key={reference} className="text-xs text-primary">
-                    Repasa: {reference}
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
         </Card>
       )}
 
@@ -475,7 +480,7 @@ function ResultadosPage() {
               Repetir dudas
             </Button>
           )}
-          <Button variant="outline" className="w-full h-12" onClick={() => goReview("revisar")}>
+          <Button variant="outline" className="w-full h-12" onClick={() => goReview("fallos")}>
             Ver corrección
           </Button>
           <Button variant="outline" className="w-full h-12" onClick={() => goReview("todas")}>
@@ -519,25 +524,7 @@ function ResultadosPage() {
         </div>
       </Card>
 
-      <div ref={reviewRef}>
-        <h2 className="font-semibold mb-2">Revisión</h2>
-        {revisar.length === 0 ? (
-          <div className="space-y-3">{answers.map(renderAnswer)}</div>
-        ) : (
-          <Tabs value={tab} onValueChange={(v) => setTab(v as "revisar" | "todas")}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="revisar">Fallos y dudas ({revisar.length})</TabsTrigger>
-              <TabsTrigger value="todas">Todas ({answers.length})</TabsTrigger>
-            </TabsList>
-            <TabsContent value="revisar" className="space-y-3 mt-3">
-              {revisar.map(renderAnswer)}
-            </TabsContent>
-            <TabsContent value="todas" className="space-y-3 mt-3">
-              {answers.map(renderAnswer)}
-            </TabsContent>
-          </Tabs>
-        )}
-      </div>
+      {revisar.length === 0 && reviewBlock}
     </div>
   );
 }
