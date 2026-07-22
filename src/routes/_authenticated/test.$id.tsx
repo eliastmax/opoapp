@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { Flag, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Flag, Loader2 } from "lucide-react";
 import type { Respuesta } from "@/lib/csv-parser";
 import {
   AlertDialog,
@@ -156,68 +156,89 @@ function TestPage() {
   ];
 
   return (
-    <div className="space-y-3">
-      <div className="pt-1">
-        <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-          <span>
-            Pregunta {current + 1} de {total}
+    <div className="space-y-3 pb-20">
+      <header className="sticky top-0 z-20 -mx-4 -mt-4 border-b border-border/60 bg-background/90 px-4 pb-3 pt-4 backdrop-blur-xl">
+        <div className="mb-2 flex items-center justify-between text-xs">
+          <div className="flex items-baseline gap-1">
+            <span className="text-lg font-bold text-foreground">{current + 1}</span>
+            <span className="font-medium text-muted-foreground">de {total}</span>
+          </div>
+          <span className="font-medium text-muted-foreground" aria-live="polite">
+            {remaining === 0 ? "Todo respondido" : `${remaining} por responder`}
           </span>
-          <span>Quedan {remaining}</span>
         </div>
-        <Progress value={((current + 1) / total) * 100} />
-      </div>
+        <Progress value={((current + 1) / total) * 100} className="h-1.5" />
+      </header>
 
-      <Card className="p-3">
-        <div className="text-xs text-muted-foreground mb-1 capitalize">{question.dificultad}</div>
-        <p className="text-base font-medium leading-snug">{question.pregunta}</p>
+      <Card className="border-primary/15 bg-gradient-to-br from-card to-primary/5 p-4">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">
+            Pregunta
+          </span>
+          <button
+            type="button"
+            onClick={toggleDoubt}
+            aria-pressed={item.marked_doubt}
+            className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              item.marked_doubt
+                ? "border-warning/40 bg-warning/15 text-warning-foreground"
+                : "border-border bg-background/80 text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            <Flag className={`h-3.5 w-3.5 ${item.marked_doubt ? "fill-current" : ""}`} />
+            {item.marked_doubt ? "Con duda" : "Marcar duda"}
+          </button>
+        </div>
+        <h1 className="text-[1.05rem] font-semibold leading-relaxed tracking-[-0.01em]">
+          {question.pregunta}
+        </h1>
       </Card>
 
-      <div className="space-y-2">
+      <div className="space-y-2" role="radiogroup" aria-label="Opciones de respuesta">
         {options.map(([letter, text]) => {
           const active = item.respuesta_usuario === letter;
           return (
             <button
               key={letter}
+              type="button"
               onClick={() => selectOption(letter)}
-              className={`w-full text-left p-2.5 rounded-lg border transition-colors min-h-12 ${active ? "border-primary bg-primary/10" : "bg-card"}`}
+              role="radio"
+              aria-checked={active}
+              className={`min-h-14 w-full rounded-2xl border px-3 py-2.5 text-left shadow-[0_8px_24px_-22px_oklch(0.28_0.08_250/0.5)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                active
+                  ? "border-primary bg-primary/10 ring-1 ring-primary/20"
+                  : "border-border/90 bg-card/90 hover:border-primary/30 hover:bg-accent/30"
+              }`}
             >
-              <div className="flex gap-3 items-center">
+              <div className="flex items-center gap-2.5">
                 <span
-                  className={`flex-none w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${active ? "bg-primary text-primary-foreground" : "bg-muted"}`}
+                  className={`flex h-9 w-9 flex-none items-center justify-center rounded-xl text-sm font-bold transition-colors ${active ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-foreground"}`}
                 >
                   {letter}
                 </span>
-                <span className="flex-1 text-sm leading-snug">{text}</span>
+                <span className="flex-1 text-[0.94rem] leading-relaxed">{text}</span>
               </div>
             </button>
           );
         })}
       </div>
 
-      <Button
-        type="button"
-        variant={item.marked_doubt ? "default" : "outline"}
-        className="w-full h-11"
-        onClick={toggleDoubt}
-        aria-pressed={item.marked_doubt}
-      >
-        <Flag className="w-4 h-4 mr-2" />
-        {item.marked_doubt ? "Marcada como duda" : "Marcar como duda"}
-      </Button>
-
-      <div className="flex gap-2 pt-1">
-        <Button
-          variant="outline"
-          className="flex-1 h-12"
-          disabled={current === 0}
-          onClick={() => setCurrent((c) => c - 1)}
-        >
-          Anterior
-        </Button>
-        <Button className="flex-1 h-12" onClick={handleNext}>
-          Siguiente
-        </Button>
-      </div>
+      <footer className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-background/90 shadow-[0_-12px_32px_-24px_oklch(0.28_0.08_250/0.55)] backdrop-blur-xl">
+        <div className="safe-bottom mx-auto grid max-w-md grid-cols-[0.8fr_1.2fr] gap-2 px-4 py-3">
+          <Button
+            variant="outline"
+            className="h-12 bg-card/90"
+            disabled={current === 0}
+            onClick={() => setCurrent((c) => c - 1)}
+          >
+            <ArrowLeft className="h-4 w-4" /> Anterior
+          </Button>
+          <Button className="h-12" onClick={handleNext}>
+            {current === total - 1 ? "Finalizar" : "Siguiente"}
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </footer>
 
       <AlertDialog open={confirmFinish} onOpenChange={setConfirmFinish}>
         <AlertDialogContent>
