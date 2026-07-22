@@ -264,6 +264,12 @@ function InicioPage() {
         </p>
       </Card>
 
+      <Link to="/crear" className="block">
+        <Button variant="outline" className="h-12 w-full text-base font-semibold">
+          Crear test personalizado
+        </Button>
+      </Link>
+
       <div className="grid grid-cols-2 gap-3">
         <StatCard
           icon={BookOpen}
@@ -379,14 +385,6 @@ function InicioPage() {
           <ArrowRight className="h-4 w-4 text-muted-foreground" />
         </Card>
       </Link>
-
-      <div className="pt-2">
-        <Link to="/crear">
-          <Button variant="outline" className="w-full h-12 text-base font-semibold">
-            Crear test personalizado
-          </Button>
-        </Link>
-      </div>
     </div>
   );
 }

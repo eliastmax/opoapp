@@ -10,6 +10,8 @@ import {
   RotateCcw,
   ShieldCheck,
   TrendingUp,
+  CheckCircle2,
+  LockKeyhole,
   XCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +34,14 @@ import {
   verifiedProgressTotals,
   type VerifiedProgressRow,
 } from "@/lib/verified-progress";
+import {
+  LEARNING_STAGE_LABELS,
+  LEARNING_STAGES,
+  isStageUnlocked,
+  learningStage,
+  stageRequirements,
+  type LearningStageProgress,
+} from "@/lib/learning-stages";
 
 export const Route = createFileRoute("/_authenticated/progreso")({
   component: ProgresoPage,
@@ -46,17 +56,20 @@ const EVIDENCE_STYLES: Record<EvidenceState, string> = {
 
 function ProgresoPage() {
   const { data, isLoading, error } = useQuery({
-    queryKey: ["topic-progress", "progress-v1.0", "verified-progress-v1.0"],
+    queryKey: ["topic-progress", "progress-v1.0", "verified-progress-v1.0", "learning-stages-v1.0"],
     queryFn: async () => {
-      const [progressResult, verifiedResult] = await Promise.all([
+      const [progressResult, verifiedResult, stagesResult] = await Promise.all([
         supabase.rpc("get_topic_progress_summary"),
         supabase.rpc("get_verified_progress_summary"),
+        supabase.rpc("get_learning_stage_progress"),
       ]);
       if (progressResult.error) throw progressResult.error;
       if (verifiedResult.error) throw verifiedResult.error;
+      if (stagesResult.error) throw stagesResult.error;
       return {
         progress: progressResult.data ?? [],
         verified: verifiedResult.data ?? [],
+        stages: stagesResult.data ?? [],
       };
     },
   });
@@ -65,6 +78,7 @@ function ProgresoPage() {
   const verifiedByTopic = new Map(
     (data?.verified ?? []).map((row) => [row.topic_id, row] as const),
   );
+  const stagesByTopic = new Map((data?.stages ?? []).map((row) => [row.topic_id, row] as const));
 
   return (
     <div className="space-y-4">
@@ -123,6 +137,7 @@ function ProgresoPage() {
                 key={topic.topic_id}
                 topic={topic}
                 verified={verifiedByTopic.get(topic.topic_id)}
+                stages={stagesByTopic.get(topic.topic_id)}
               />
             ))}
           </section>
@@ -163,9 +178,11 @@ function VerifiedProgressOverview({ rows }: { rows: VerifiedProgressRow[] }) {
 function TopicProgressCard({
   topic,
   verified,
+  stages,
 }: {
   topic: TopicProgressRow;
   verified?: VerifiedProgressRow;
+  stages?: LearningStageProgress;
 }) {
   const state = evidenceState(topic.evidence_state);
   const mastery = topic.mastery_percentage;
@@ -226,8 +243,63 @@ function TopicProgressCard({
         </p>
       </div>
 
+      {stages && <LearningStagesProgress row={stages} />}
+
       {verified && <VerifiedTopicProgress row={verified} />}
     </Card>
+  );
+}
+
+function LearningStagesProgress({ row }: { row: LearningStageProgress }) {
+  const recommended = learningStage(row.recommended_stage);
+  const nextLocked = LEARNING_STAGES.find((stage) => !isStageUnlocked(row, stage));
+  const requirements = nextLocked ? stageRequirements(row, nextLocked) : [];
+
+  return (
+    <div className="mt-3 rounded-lg border p-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold">Ruta de preparación</p>
+        <Badge variant="secondary" className="text-[10px]">
+          Ahora: {LEARNING_STAGE_LABELS[recommended]}
+        </Badge>
+      </div>
+      <div className="mt-3 grid grid-cols-3 gap-1.5">
+        {LEARNING_STAGES.map((stage) => {
+          const unlocked = isStageUnlocked(row, stage);
+          const current = stage === recommended;
+          return (
+            <div
+              key={stage}
+              className={`rounded-md border px-2 py-2 text-center ${
+                current ? "border-primary bg-primary/10" : "bg-muted/30"
+              }`}
+            >
+              {unlocked ? (
+                <CheckCircle2 className="mx-auto h-4 w-4 text-primary" />
+              ) : (
+                <LockKeyhole className="mx-auto h-4 w-4 text-muted-foreground" />
+              )}
+              <p className="mt-1 truncate text-[10px] font-medium">
+                {LEARNING_STAGE_LABELS[stage]}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{row.stage_message}</p>
+      {requirements.length > 0 && (
+        <div className="mt-2 border-t pt-2">
+          <p className="text-[11px] font-medium">
+            Para desbloquear {LEARNING_STAGE_LABELS[nextLocked!]}:
+          </p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[11px] text-muted-foreground">
+            {requirements.map((requirement) => (
+              <li key={requirement}>{requirement}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 }
 

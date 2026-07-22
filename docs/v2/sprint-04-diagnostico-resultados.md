@@ -14,7 +14,8 @@ Convertir el resultado de un test en una acción de estudio concreta sin present
 - La revisión no muestra al usuario los campos internos `concepto` ni `objetivo_aprendizaje`.
 - La referencia combina documento, apartado, subapartado y páginas sin inventar campos ausentes.
 - Se puede copiar un informe textual del test para ChatGPT.
-- El informe no exporta el banco completo y advierte que un único test no constituye un diagnóstico robusto.
+- El informe exporta el banco completo realizado: enunciados, cuatro opciones, respuesta elegida y correcta completas, explicaciones y referencias.
+- El informe advierte que un único test no constituye un diagnóstico robusto.
 
 ## Decisiones de alcance
 
@@ -32,12 +33,12 @@ Convertir el resultado de un test en una acción de estudio concreta sin present
 4. Cada tarjeta muestra «Qué repasar» y «Fuente», pero no «Concepto» ni «Objetivo».
 5. Las páginas solo se muestran cuando existen en la pregunta.
 6. Las dudas y la revisión completa siguen disponibles sin desplazar a los fallos de la primera posición.
-7. El informe copiado contiene resultado, incidencias y referencias.
+7. El informe copiado contiene resultado, incidencias, referencias y todas las preguntas realizadas con sus opciones y respuestas completas.
 8. El informe declara expresamente su nivel limitado de evidencia.
 
 ## Prompt optimizado para Lovable
 
-Trabaja exclusivamente sobre `OpoTest Study`; no modifiques `OpoTest: V2`. Verifica la versión sincronizada desde GitHub sin regenerar código. En Resultados, después del resumen numérico, muestra directamente «Tus fallos». Separa Fallos, Dudas y Todas en pestañas y abre Fallos por defecto cuando existan. Dentro de cada tarjeta conserva la pregunta, la respuesta elegida completa, la respuesta correcta completa, la explicación y la fuente. Elimina de la vista las líneas «Concepto» y «Objetivo» y sustitúyelas por una única línea «Qué repasar» construida con documento, apartado, subapartado y páginas disponibles. No muestres un bloque general de «Qué repasar» antes de los fallos. No cambies Supabase, el CSV ni el motor de selección.
+Trabaja exclusivamente sobre `OpoTest Study`; no modifiques `OpoTest: V2`. Verifica la versión sincronizada desde GitHub sin regenerar código. En Resultados, después del resumen numérico, muestra directamente «Tus fallos». Separa Fallos, Dudas y Todas en pestañas y abre Fallos por defecto cuando existan. Dentro de cada tarjeta conserva la pregunta, la respuesta elegida completa, la respuesta correcta completa, la explicación y la fuente. Elimina de la vista las líneas «Concepto» y «Objetivo» y sustitúyelas por una única línea «Qué repasar» construida con documento, apartado, subapartado y páginas disponibles. No muestres un bloque general de «Qué repasar» antes de los fallos. El botón «Copiar informe para ChatGPT» debe incluir también todas las preguntas realizadas, sus cuatro opciones, la respuesta elegida completa, la correcta completa, la explicación y la referencia. No cambies el CSV ni el generador.
 
 ## Prompt optimizado para el Generador de Preguntas
 
