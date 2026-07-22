@@ -8,7 +8,7 @@ Este índice registra qué partes de la V2 están realmente implementadas y vali
 - Fallos activos: implementado y validado en uso real.
 - [Dudas activas y estadísticas por pregunta](sprint-02-dudas-estadisticas.md): implementado y validado en uso real.
 - [Motor de selección inteligente V2](sprint-03-seleccion-inteligente.md): implementado y validado en uso real; selector de subapartados compactado posteriormente.
-- [Diagnóstico de resultados y exportación útil](sprint-04-diagnostico-resultados.md): implementado y validado en uso real.
+- [Diagnóstico de resultados y exportación útil](sprint-04-diagnostico-resultados.md): implementado y validado en uso real; la revisión prioriza los fallos y muestra el repaso exacto dentro de cada tarjeta.
 - [Centro de progreso y estados de evidencia](sprint-05-centro-progreso.md): implementado y validado en uso real.
 
 ## Sprint en implementación
