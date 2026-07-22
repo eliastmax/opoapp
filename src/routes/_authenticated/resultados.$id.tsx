@@ -345,9 +345,9 @@ function ResultadosPage() {
           </div>
         )}
         {q.explicacion && (
-          <div className="border-t border-border/70 pt-3">
-            <div className="mb-1 text-xs font-bold text-foreground">Explicación</div>
-            <p className="text-sm leading-relaxed text-muted-foreground">{q.explicacion}</p>
+          <div className="rounded-xl border border-border/70 bg-muted/35 p-3">
+            <div className="mb-1.5 text-sm font-bold text-foreground">Por qué</div>
+            <p className="text-[0.95rem] leading-relaxed text-foreground/80">{q.explicacion}</p>
           </div>
         )}
         {q.referencia_fuente && (

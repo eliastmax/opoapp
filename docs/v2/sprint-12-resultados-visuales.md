@@ -17,6 +17,7 @@ Hacer que la pantalla de resultados muestre primero lo que el estudiante necesit
 - Desglose por tema, explicación de la selección e informe para ChatGPT pasan a apartados desplegables.
 - El banco completo realizado continúa incluido en el informe copiable para ChatGPT.
 - Cuando no existen fallos ni dudas, la revisión completa queda plegada inicialmente.
+- Ajuste posterior: la explicación se presenta como bloque «Por qué», con tamaño y contraste equivalentes a la importancia pedagógica de las respuestas.
 
 ## Decisiones de alcance
 
