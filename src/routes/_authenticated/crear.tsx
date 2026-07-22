@@ -47,6 +47,7 @@ import {
   type LearningStage,
 } from "@/lib/learning-stages";
 import { topicLabel } from "@/lib/topic-label";
+import { subjectLabel } from "@/lib/subject-label";
 
 export const Route = createFileRoute("/_authenticated/crear")({
   component: CrearPage,
@@ -73,7 +74,12 @@ function CrearPage() {
   const { data: subjects } = useQuery({
     queryKey: ["subjects"],
     queryFn: async () =>
-      (await supabase.from("subjects").select("id, nombre").order("nombre")).data ?? [],
+      (
+        await supabase
+          .from("subjects")
+          .select("id, nombre, topics!topics_subject_id_fkey(numero)")
+          .order("nombre")
+      ).data ?? [],
   });
   const { data: topics } = useQuery({
     queryKey: ["topics", subjectId],
@@ -153,6 +159,7 @@ function CrearPage() {
   const hideSubject = !!subjects && subjects.length === 1;
   const hideTopic = !!topics && topics.length === 1;
   const hideSubtopic = !!subtopics && subtopics.length <= 1;
+  const selectedSubject = subjects?.find((subject) => subject.id === subjectId);
   const selectedTopic = topics?.find((topic) => topic.id === topicId);
 
   function handleSubtopicDialogOpenChange(open: boolean) {
@@ -307,7 +314,10 @@ function CrearPage() {
               <SelectContent>
                 {(subjects ?? []).map((s) => (
                   <SelectItem key={s.id} value={s.id}>
-                    {s.nombre}
+                    {subjectLabel(
+                      s.nombre,
+                      s.topics.map((topic) => topic.numero),
+                    )}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -538,7 +548,12 @@ function CrearPage() {
           <li>
             Materia:{" "}
             <span className="font-medium">
-              {subjects?.find((s) => s.id === subjectId)?.nombre ?? "—"}
+              {selectedSubject
+                ? subjectLabel(
+                    selectedSubject.nombre,
+                    selectedSubject.topics.map((topic) => topic.numero),
+                  )
+                : "—"}
             </span>
           </li>
           <li>
