@@ -613,6 +613,20 @@ export type Database = {
           used_overlap_exception: boolean;
         }[];
       };
+      create_recommended_test: {
+        Args: { p_question_count?: number };
+        Returns: {
+          current_topic_count: number;
+          current_topic_id: string | null;
+          current_topic_name: string | null;
+          fallback_count: number;
+          retention_new_count: number;
+          review_count: number;
+          selected_count: number;
+          test_id: string;
+          weak_count: number;
+        }[];
+      };
       get_topic_progress_summary: {
         Args: never;
         Returns: {
