@@ -14,6 +14,8 @@ Reducir decisiones redundantes en la creación de tests y hacer la entrada a la 
 - El título «Inicio» se sustituye por «Te damos la bienvenida, Nombre».
 - El nombre procede del perfil; como alternativas se utilizan los metadatos de registro, la parte anterior al `@` del correo y, finalmente, «estudiante».
 - No se pregunta sexo o género: la fórmula de bienvenida es neutral.
+- El selector y el resumen muestran siempre «Tema N. Nombre» usando el campo estructurado `numero`.
+- Si el nombre almacenado contiene un prefijo «Tema N» duplicado o incorrecto, se elimina antes de mostrarlo.
 
 ## Decisiones de alcance
 
@@ -30,10 +32,11 @@ Reducir decisiones redundantes en la creación de tests y hacer la entrada a la 
 4. Inicio muestra el nombre del usuario registrado.
 5. La bienvenida funciona aunque falte el perfil y no utiliza género.
 6. El CSV V2 mantiene exactamente sus 25 columnas.
+7. El número mostrado en Crear test procede de `topics.numero` y no del texto libre del nombre.
 
 ## Prompt optimizado para Lovable
 
-Trabaja exclusivamente sobre `OpoTest Study`; no modifiques `OpoTest: V2`. Sin regenerar la implementación sincronizada desde GitHub, publica y verifica en móvil: (1) que Crear test ya no muestre «Fácil / Medio / Difícil» ni una línea de dificultad en el resumen; (2) que los tests sigan creándose con Tema, Subapartados, Nivel de preparación, Número de preguntas y Modalidad; (3) que Inicio muestre «Te damos la bienvenida, Nombre» usando el nombre de la cuenta; y (4) que una cuenta sin nombre tenga una alternativa legible. No preguntes sexo o género, no cambies Supabase y no alteres el CSV ni los bancos existentes.
+Trabaja exclusivamente sobre `OpoTest Study`; no modifiques `OpoTest: V2`. Sin regenerar la implementación sincronizada desde GitHub, publica y verifica en móvil: (1) que Crear test ya no muestre «Fácil / Medio / Difícil» ni una línea de dificultad en el resumen; (2) que los tests sigan creándose con Tema, Subapartados, Nivel de preparación, Número de preguntas y Modalidad; (3) que el selector y el resumen muestren siempre «Tema N. Nombre» usando el número estructurado, sin prefijos duplicados; (4) que Inicio muestre «Te damos la bienvenida, Nombre» usando el nombre de la cuenta; y (5) que una cuenta sin nombre tenga una alternativa legible. No preguntes sexo o género, no cambies Supabase y no alteres el CSV ni los bancos existentes.
 
 ## Prompt optimizado para el Generador de Preguntas
 
