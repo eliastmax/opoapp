@@ -1,11 +1,27 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { CheckCircle2, ClipboardCopy, Flag, Loader2, MinusCircle, XCircle } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpenCheck,
+  CheckCircle2,
+  ClipboardCopy,
+  Flag,
+  Loader2,
+  MinusCircle,
+  RefreshCcw,
+  XCircle,
+} from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { toast } from "sonner";
 import { keepActiveFailureIds } from "@/lib/active-failures";
 import { keepActiveDoubtIds } from "@/lib/active-doubts";
@@ -63,7 +79,6 @@ type AnswerRow = {
 function ResultadosPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const reviewRef = useRef<HTMLDivElement | null>(null);
   const [tab, setTab] = useState<"fallos" | "dudas" | "todas">("fallos");
 
   const { data, isLoading } = useQuery({
@@ -111,14 +126,10 @@ function ResultadosPage() {
     overlapException,
   } = summarizeSelection(data.selection);
 
-  const byDif: Record<string, { ok: number; tot: number }> = {};
   const byTopic: Record<string, { ok: number; tot: number }> = {};
   answers.forEach((a) => {
     const q = a.questions;
     if (!q) return;
-    byDif[q.dificultad] ??= { ok: 0, tot: 0 };
-    byDif[q.dificultad].tot++;
-    if (a.correcta) byDif[q.dificultad].ok++;
     const topicName = q.topics?.nombre ?? "—";
     byTopic[topicName] ??= { ok: 0, tot: 0 };
     byTopic[topicName].tot++;
@@ -235,15 +246,6 @@ function ResultadosPage() {
     navigate({ to: "/test/$id", params: { id: newTest.id } });
   }
 
-  function scrollToReview() {
-    setTimeout(() => reviewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-  }
-
-  function goReview(target: "fallos" | "dudas" | "todas") {
-    setTab(target);
-    scrollToReview();
-  }
-
   async function copyTestReport() {
     const report = buildTestExport({
       percentage: Number(t.porcentaje),
@@ -272,63 +274,105 @@ function ResultadosPage() {
       a.respuesta_usuario === null
         ? {
             label: a.marked_doubt ? "Sin responder · Con duda" : "Sin responder",
-            cls: "text-muted-foreground",
+            cls: "border-border bg-muted text-muted-foreground",
             Icon: MinusCircle,
           }
         : a.correcta
           ? {
               label: a.marked_doubt ? "Correcta · Con duda" : "Correcta",
-              cls: a.marked_doubt ? "text-primary" : "text-success",
+              cls: a.marked_doubt
+                ? "border-warning/30 bg-warning/15 text-warning-foreground"
+                : "border-success/20 bg-success/10 text-success",
               Icon: a.marked_doubt ? Flag : CheckCircle2,
             }
           : {
               label: a.marked_doubt ? "Fallada · Con duda" : "Fallada",
-              cls: "text-destructive",
+              cls: "border-destructive/20 bg-destructive/10 text-destructive",
               Icon: XCircle,
             };
     const EstIcon = estado.Icon;
     return (
-      <Card key={a.id} className="p-4 space-y-2">
+      <Card key={a.id} className="space-y-3 overflow-hidden bg-card/90 p-4">
         <div className="flex items-center justify-between gap-2">
-          <div className="text-xs text-muted-foreground capitalize">{q.dificultad}</div>
-          <div className={`inline-flex items-center gap-1 text-xs font-medium ${estado.cls}`}>
-            <EstIcon className="w-3.5 h-3.5" /> {estado.label}
+          <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+            Pregunta {a.orden}
+          </div>
+          <div
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold ${estado.cls}`}
+          >
+            <EstIcon className="h-3.5 w-3.5" /> {estado.label}
           </div>
         </div>
-        <p className="text-sm font-medium">{q.pregunta}</p>
-        <div className="text-sm space-y-1">
-          <div>
-            Tu respuesta:{" "}
-            <span
-              className={`font-medium ${a.correcta ? "text-success" : a.respuesta_usuario === null ? "text-muted-foreground" : "text-destructive"}`}
+        <p className="text-[0.98rem] font-semibold leading-relaxed">{q.pregunta}</p>
+        <div className="grid gap-2 text-sm">
+          <div
+            className={`rounded-xl border p-3 ${
+              a.correcta
+                ? "border-success/20 bg-success/5"
+                : a.respuesta_usuario === null
+                  ? "bg-muted/50"
+                  : "border-destructive/20 bg-destructive/5"
+            }`}
+          >
+            <div className="mb-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+              Tu respuesta
+            </div>
+            <div
+              className={`font-medium leading-relaxed ${
+                a.correcta
+                  ? "text-success"
+                  : a.respuesta_usuario === null
+                    ? "text-muted-foreground"
+                    : "text-destructive"
+              }`}
             >
               {userAnswer ?? "Sin responder"}
-            </span>
+            </div>
           </div>
-          <div>
-            Respuesta correcta: <span className="text-success font-medium">{correctAnswer}</span>
+          <div className="rounded-xl border border-success/20 bg-success/5 p-3">
+            <div className="mb-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+              Respuesta correcta
+            </div>
+            <div className="font-medium leading-relaxed text-success">{correctAnswer}</div>
           </div>
         </div>
-        {q.explicacion && (
-          <p className="text-xs text-muted-foreground border-t pt-2">{q.explicacion}</p>
-        )}
         {reviewTarget && (a.correcta === false || a.marked_doubt) && (
-          <p className="text-xs text-primary">
-            <span className="font-medium">Qué repasar:</span> {reviewTarget}
-          </p>
+          <div className="rounded-xl border border-primary/15 bg-primary/5 p-3 text-sm text-primary">
+            <div className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide">
+              <BookOpenCheck className="h-3.5 w-3.5" /> Qué repasar
+            </div>
+            <p className="leading-relaxed">{reviewTarget}</p>
+          </div>
+        )}
+        {q.explicacion && (
+          <div className="border-t border-border/70 pt-3">
+            <div className="mb-1 text-xs font-bold text-foreground">Explicación</div>
+            <p className="text-sm leading-relaxed text-muted-foreground">{q.explicacion}</p>
+          </div>
         )}
         {q.referencia_fuente && (
-          <p className="text-xs text-muted-foreground">Fuente: {q.referencia_fuente}</p>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            <span className="font-semibold text-foreground">Fuente:</span> {q.referencia_fuente}
+          </p>
         )}
       </Card>
     );
   };
 
   const reviewBlock = (
-    <div ref={reviewRef}>
-      <h2 className="mb-2 font-semibold">
-        {falladas.length > 0 ? "Tus fallos" : dudosas.length > 0 ? "Tus dudas" : "Revisión"}
-      </h2>
+    <section>
+      <div className="mb-3">
+        <h2 className="text-lg font-bold tracking-tight">
+          {falladas.length > 0 ? "Tus fallos" : dudosas.length > 0 ? "Tus dudas" : "Revisión"}
+        </h2>
+        <p className="text-xs text-muted-foreground">
+          {falladas.length > 0
+            ? "Empieza por comprender qué ha fallado y qué debes repasar."
+            : dudosas.length > 0
+              ? "Revisa las respuestas que no contestaste con seguridad."
+              : "Consulta las respuestas completas del test."}
+        </p>
+      </div>
       {revisar.length === 0 ? (
         <div className="space-y-3">{answers.map(renderAnswer)}</div>
       ) : (
@@ -337,7 +381,7 @@ function ResultadosPage() {
           onValueChange={(value) => setTab(value as "fallos" | "dudas" | "todas")}
         >
           <TabsList
-            className={`grid w-full ${falladas.length > 0 && dudosas.length > 0 ? "grid-cols-3" : "grid-cols-2"}`}
+            className={`grid h-11 w-full rounded-xl ${falladas.length > 0 && dudosas.length > 0 ? "grid-cols-3" : "grid-cols-2"}`}
           >
             {falladas.length > 0 && (
               <TabsTrigger value="fallos">Fallos ({falladas.length})</TabsTrigger>
@@ -362,182 +406,220 @@ function ResultadosPage() {
           </TabsContent>
         </Tabs>
       )}
-    </div>
+    </section>
   );
 
   const sinFallosDuros = t.fallos === 0;
+  const percentage = Number(t.porcentaje);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <header className="pt-2">
-        <h1 className="text-2xl font-bold">{perfecto ? "Test completado" : "Resultados"}</h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+          Test completado
+        </p>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight">
+          {perfecto ? "Resultado perfecto" : "Tus resultados"}
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           <span className="capitalize">{t.tipo}</span>
           {t.learning_stage ? ` · ${LEARNING_STAGE_LABELS[learningStage(t.learning_stage)]}` : ""}
           {t.stage_free_mode ? " · modo libre" : ""}
         </p>
       </header>
 
-      <Card className="p-4 text-center">
-        <div className="text-5xl font-bold text-primary">{Number(t.porcentaje)}%</div>
-        {sinFallosDuros ? (
-          <div className="mt-3 space-y-1">
-            <div className="text-sm">
-              {t.aciertos} de {t.numero_preguntas} respuestas correctas
-            </div>
-            {t.sin_responder === 0 ? (
-              <div className="text-sm font-medium text-success">
-                Sin fallos
-                {dudosas.length > 0
-                  ? ` · ${dudosas.length} ${dudosas.length === 1 ? "duda" : "dudas"}`
-                  : ""}
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground">{t.sin_responder} sin responder</div>
-            )}
+      <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-card via-card to-primary/8 p-0">
+        <div className="flex items-center gap-4 p-5">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-primary text-2xl font-bold text-primary-foreground shadow-lg shadow-primary/15">
+            {percentage}%
           </div>
-        ) : (
-          <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
-            <div>
-              <CheckCircle2 className="w-4 h-4 mx-auto text-success" />
-              <div className="font-semibold">{t.aciertos}</div>
-              <div className="text-xs text-muted-foreground">Aciertos</div>
+          <div className="min-w-0">
+            <div className="text-lg font-bold">
+              {perfecto
+                ? "Has respondido todo correctamente"
+                : t.fallos > 0
+                  ? `${t.fallos} ${t.fallos === 1 ? "respuesta necesita" : "respuestas necesitan"} repaso`
+                  : "No hay respuestas incorrectas"}
             </div>
-            <div>
-              <XCircle className="w-4 h-4 mx-auto text-destructive" />
-              <div className="font-semibold">{t.fallos}</div>
-              <div className="text-xs text-muted-foreground">Fallos</div>
-            </div>
-            <div>
-              <MinusCircle className="w-4 h-4 mx-auto text-muted-foreground" />
-              <div className="font-semibold">{t.sin_responder}</div>
-              <div className="text-xs text-muted-foreground">Sin responder</div>
-            </div>
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+              {dudosas.length > 0
+                ? `${dudosas.length} ${dudosas.length === 1 ? "respuesta quedó marcada" : "respuestas quedaron marcadas"} como duda.`
+                : "No has dejado respuestas marcadas como duda."}
+            </p>
           </div>
-        )}
+        </div>
+        <div className="grid grid-cols-3 divide-x border-t border-border/70 bg-background/45">
+          <ResultStat icon={CheckCircle2} value={t.aciertos} label="Aciertos" tone="success" />
+          <ResultStat icon={XCircle} value={t.fallos} label="Fallos" tone="error" />
+          <ResultStat
+            icon={MinusCircle}
+            value={t.sin_responder}
+            label="Sin responder"
+            tone="muted"
+          />
+        </div>
       </Card>
 
       {revisar.length > 0 && reviewBlock}
 
-      {data.selection.length > 0 && (
-        <Card className="p-4">
-          <div className="text-xs uppercase text-muted-foreground font-medium mb-2">
-            Cómo se eligieron
+      <Card className="space-y-3 bg-card/90 p-4">
+        <div>
+          <div className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
+            Siguiente paso
           </div>
-          <div className="space-y-1 text-sm">
-            {Object.entries(selectionCounts).map(([group, count]) => (
-              <div key={group} className="flex justify-between gap-2">
-                <span>{SELECTION_LABELS[group] ?? group}</span>
-                <span className="font-medium">{count}</span>
+          <h2 className="mt-1 font-bold">
+            {t.fallos > 0
+              ? "Refuerza ahora las respuestas falladas"
+              : dudosas.length > 0
+                ? "Aclara las respuestas que dejaste con duda"
+                : "Continúa con una nueva sesión"}
+          </h2>
+        </div>
+        {sinFallosDuros ? (
+          <>
+            {dudosas.length > 0 && (
+              <Button className="h-12 w-full" onClick={repetirDudas}>
+                <RefreshCcw className="h-4 w-4" /> Repetir dudas
+              </Button>
+            )}
+            <Link to="/crear" className="block">
+              <Button variant={dudosas.length > 0 ? "outline" : "default"} className="h-12 w-full">
+                Hacer otro test <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </>
+        ) : (
+          <>
+            <Button className="h-12 w-full" onClick={repetirFalladas}>
+              <RefreshCcw className="h-4 w-4" /> Repetir falladas
+            </Button>
+            {dudosas.length > 0 && (
+              <Button variant="outline" className="h-12 w-full" onClick={repetirDudas}>
+                Repetir dudas
+              </Button>
+            )}
+            <Link to="/crear" className="block">
+              <Button variant="outline" className="h-12 w-full">
+                Crear otro test
+              </Button>
+            </Link>
+          </>
+        )}
+        <Link to="/inicio" className="block">
+          <Button variant="ghost" className="h-10 w-full text-muted-foreground">
+            Volver al inicio
+          </Button>
+        </Link>
+      </Card>
+
+      <Card className="bg-card/90 px-4">
+        <Accordion type="multiple" className="w-full">
+          <AccordionItem value="topics">
+            <AccordionTrigger className="hover:no-underline">Desglose por tema</AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-2 text-sm">
+                {Object.entries(byTopic).map(([k, v]) => (
+                  <div
+                    key={k}
+                    className="flex items-start justify-between gap-3 rounded-lg bg-muted/50 p-2.5"
+                  >
+                    <span className="leading-snug">{k}</span>
+                    <span className="shrink-0 font-bold">
+                      {v.ok}/{v.tot}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <p className="mt-3 text-xs text-muted-foreground">
-            {previousOverlap === 0
-              ? "Ninguna pregunta coincide con el test anterior."
-              : `${previousOverlap} ${previousOverlap === 1 ? "pregunta coincide" : "preguntas coinciden"} con el test anterior.`}
-            {overlapException
-              ? " Se utilizaron más repeticiones porque no había suficientes alternativas con esos filtros."
-              : " Se ha respetado el límite máximo orientativo del 30 %."}
-          </p>
+            </AccordionContent>
+          </AccordionItem>
+
+          {data.selection.length > 0 && (
+            <AccordionItem value="selection">
+              <AccordionTrigger className="hover:no-underline">
+                Cómo se eligieron las preguntas
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-1 text-sm">
+                  {Object.entries(selectionCounts).map(([group, count]) => (
+                    <div key={group} className="flex justify-between gap-2">
+                      <span>{SELECTION_LABELS[group] ?? group}</span>
+                      <span className="font-medium">{count}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                  {previousOverlap === 0
+                    ? "Ninguna pregunta coincide con el test anterior."
+                    : `${previousOverlap} ${previousOverlap === 1 ? "pregunta coincide" : "preguntas coinciden"} con el test anterior.`}
+                  {overlapException
+                    ? " Se utilizaron más repeticiones porque no había suficientes alternativas."
+                    : " Se ha respetado el límite orientativo de coincidencia."}
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+          )}
+
+          <AccordionItem value="tools" className="border-b-0">
+            <AccordionTrigger className="hover:no-underline">
+              Informe y herramientas
+            </AccordionTrigger>
+            <AccordionContent className="space-y-3">
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Copia el resultado, los contenidos a repasar y el banco completo realizado, con
+                opciones, respuestas, explicaciones y referencias.
+              </p>
+              <Button type="button" variant="outline" className="w-full" onClick={copyTestReport}>
+                <ClipboardCopy className="h-4 w-4" /> Copiar informe para ChatGPT
+              </Button>
+              <Link
+                to="/historial"
+                className="block text-center text-sm font-semibold text-primary"
+              >
+                Ver historial
+              </Link>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </Card>
+
+      {revisar.length === 0 && (
+        <Card className="bg-card/90 px-4">
+          <Accordion type="single" collapsible>
+            <AccordionItem value="all" className="border-b-0">
+              <AccordionTrigger className="hover:no-underline">
+                Revisar todas las respuestas
+              </AccordionTrigger>
+              <AccordionContent>{reviewBlock}</AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </Card>
       )}
+    </div>
+  );
+}
 
-      <Card className="space-y-3 p-4">
-        <div>
-          <div className="text-xs font-medium uppercase text-muted-foreground">
-            Exportar resultado
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Copia el resultado, los contenidos a repasar y el banco completo realizado, con
-            opciones, respuestas, explicaciones y referencias.
-          </p>
-        </div>
-        <Button type="button" variant="outline" className="w-full" onClick={copyTestReport}>
-          <ClipboardCopy className="mr-2 h-4 w-4" />
-          Copiar informe para ChatGPT
-        </Button>
-      </Card>
-
-      {sinFallosDuros ? (
-        <div className="space-y-2">
-          {dudosas.length > 0 && (
-            <Button className="w-full h-12" onClick={repetirDudas}>
-              Repetir dudas
-            </Button>
-          )}
-          <Link to="/crear">
-            <Button className="w-full h-12">Hacer otro test</Button>
-          </Link>
-          <Button variant="outline" className="w-full h-12" onClick={() => goReview("todas")}>
-            Revisar respuestas
-          </Button>
-          <Link to="/inicio">
-            <Button variant="outline" className="w-full h-12">
-              Volver al inicio
-            </Button>
-          </Link>
-          <Link to="/historial">
-            <Button variant="ghost" className="w-full h-12">
-              Ver historial
-            </Button>
-          </Link>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          <Button className="w-full h-12" onClick={repetirFalladas}>
-            Repetir falladas
-          </Button>
-          {dudosas.length > 0 && (
-            <Button variant="outline" className="w-full h-12" onClick={repetirDudas}>
-              Repetir dudas
-            </Button>
-          )}
-          <Button variant="outline" className="w-full h-12" onClick={() => goReview("fallos")}>
-            Ver corrección
-          </Button>
-          <Button variant="outline" className="w-full h-12" onClick={() => goReview("todas")}>
-            Revisar todas
-          </Button>
-          <Link to="/inicio">
-            <Button variant="ghost" className="w-full h-12">
-              Volver al inicio
-            </Button>
-          </Link>
-        </div>
-      )}
-
-      <Card className="p-4">
-        <div className="text-xs uppercase text-muted-foreground font-medium mb-2">
-          Por dificultad
-        </div>
-        <div className="space-y-1 text-sm">
-          {Object.entries(byDif).map(([k, v]) => (
-            <div key={k} className="flex justify-between">
-              <span className="capitalize">{k}</span>
-              <span>
-                {v.ok}/{v.tot}
-              </span>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      <Card className="p-4">
-        <div className="text-xs uppercase text-muted-foreground font-medium mb-2">Por tema</div>
-        <div className="space-y-1 text-sm">
-          {Object.entries(byTopic).map(([k, v]) => (
-            <div key={k} className="flex justify-between gap-2">
-              <span className="truncate">{k}</span>
-              <span className="flex-none">
-                {v.ok}/{v.tot}
-              </span>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {revisar.length === 0 && reviewBlock}
+function ResultStat({
+  icon: Icon,
+  value,
+  label,
+  tone,
+}: {
+  icon: React.ElementType;
+  value: number;
+  label: string;
+  tone: "success" | "error" | "muted";
+}) {
+  const color =
+    tone === "success"
+      ? "text-success"
+      : tone === "error"
+        ? "text-destructive"
+        : "text-muted-foreground";
+  return (
+    <div className="px-2 py-3 text-center">
+      <Icon className={`mx-auto mb-1 h-4 w-4 ${color}`} />
+      <div className="font-bold leading-none">{value}</div>
+      <div className="mt-1 text-[11px] text-muted-foreground">{label}</div>
     </div>
   );
 }
