@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   ClipboardCopy,
   Flag,
+  Lightbulb,
   Loader2,
   MinusCircle,
   RefreshCcw,
@@ -345,9 +346,18 @@ function ResultadosPage() {
           </div>
         )}
         {q.explicacion && (
-          <div className="rounded-xl border border-border/70 bg-muted/35 p-3">
-            <div className="mb-1.5 text-sm font-bold text-foreground">Por qué</div>
-            <ExplanationText text={q.explicacion} />
+          <div className="rounded-xl border border-primary/15 bg-gradient-to-br from-primary/7 to-primary/3 p-3.5">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Lightbulb className="h-4 w-4" />
+              </span>
+              <div className="text-xs font-bold uppercase tracking-[0.12em] text-primary">
+                Por qué
+              </div>
+            </div>
+            <p className="text-[0.95rem] font-normal leading-7 text-foreground/85">
+              {q.explicacion}
+            </p>
           </div>
         )}
         {q.referencia_fuente && (
@@ -624,16 +634,3 @@ function ResultStat({
   );
 }
 
-function ExplanationText({ text }: { text: string }) {
-  const firstSentence = text.match(/^(.+?[.!?])(?:\s+|$)(.*)$/s);
-  if (!firstSentence) {
-    return <p className="text-[0.95rem] font-semibold leading-relaxed text-foreground">{text}</p>;
-  }
-
-  return (
-    <p className="text-[0.95rem] leading-relaxed text-foreground/80">
-      <strong className="font-semibold text-foreground">{firstSentence[1]}</strong>
-      {firstSentence[2] ? ` ${firstSentence[2]}` : ""}
-    </p>
-  );
-}
