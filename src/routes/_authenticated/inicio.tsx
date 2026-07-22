@@ -4,11 +4,22 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Trophy, Target, XCircle, ArrowRight, Loader2, Flag, Gauge } from "lucide-react";
+import {
+  BookOpen,
+  Trophy,
+  Target,
+  XCircle,
+  ArrowRight,
+  Loader2,
+  Flag,
+  Gauge,
+  Sparkles,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { uniqueActiveFailureIds } from "@/lib/active-failures";
 import { uniqueActiveDoubtIds } from "@/lib/active-doubts";
+import { describeRecommendedSession, RECOMMENDED_SESSION_SIZES } from "@/lib/recommended-session";
 
 export const Route = createFileRoute("/_authenticated/inicio")({
   component: InicioPage,
@@ -18,6 +29,8 @@ function InicioPage() {
   const navigate = useNavigate();
   const [repasando, setRepasando] = useState(false);
   const [repasandoDudas, setRepasandoDudas] = useState(false);
+  const [recommendedSize, setRecommendedSize] = useState<number>(10);
+  const [creatingRecommended, setCreatingRecommended] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
@@ -168,6 +181,25 @@ function InicioPage() {
     }
   }
 
+  async function createRecommendedSession() {
+    setCreatingRecommended(true);
+    try {
+      const { data: rows, error } = await supabase.rpc("create_recommended_test", {
+        p_question_count: recommendedSize,
+      });
+      if (error) throw error;
+
+      const session = rows?.[0];
+      if (!session) throw new Error("No se pudo preparar la sesión recomendada");
+
+      toast.success(describeRecommendedSession(session));
+      navigate({ to: "/test/$id", params: { id: session.test_id } });
+    } catch (error) {
+      toast.error((error as Error).message);
+      setCreatingRecommended(false);
+    }
+  }
+
   const falladas = data?.distintasFalladas ?? 0;
   const hasFalladas = falladas > 0;
   const dudas = data?.distintasDudosas ?? 0;
@@ -178,6 +210,59 @@ function InicioPage() {
         <h1 className="text-2xl font-bold">Inicio</h1>
         <p className="text-sm text-muted-foreground">Resumen de tu progreso</p>
       </header>
+
+      <Card className="border-primary/25 bg-primary/5 p-4">
+        <div className="flex items-start gap-3">
+          <div className="rounded-full bg-primary/10 p-2 text-primary">
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-semibold">Sesión recomendada</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Mezcla tus fallos y dudas, el tema actual, puntos débiles y repaso de retención.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <div className="mb-2 text-xs font-medium text-muted-foreground">Número de preguntas</div>
+          <div className="grid grid-cols-3 gap-2" aria-label="Número de preguntas recomendadas">
+            {RECOMMENDED_SESSION_SIZES.map((size) => (
+              <Button
+                key={size}
+                type="button"
+                variant={recommendedSize === size ? "default" : "outline"}
+                size="sm"
+                onClick={() => setRecommendedSize(size)}
+                disabled={creatingRecommended}
+                aria-pressed={recommendedSize === size}
+              >
+                {size}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        <Button
+          type="button"
+          className="mt-3 w-full"
+          onClick={createRecommendedSession}
+          disabled={creatingRecommended || isLoading || (data?.activas ?? 0) === 0}
+        >
+          {creatingRecommended ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Preparando…
+            </>
+          ) : (
+            <>
+              Empezar sesión recomendada <ArrowRight className="ml-2 h-4 w-4" />
+            </>
+          )}
+        </Button>
+        <p className="mt-2 text-center text-xs text-muted-foreground">
+          Si falta alguna categoría, la app redistribuye las preguntas sin repetirlas.
+        </p>
+      </Card>
 
       <div className="grid grid-cols-2 gap-3">
         <StatCard
@@ -297,7 +382,9 @@ function InicioPage() {
 
       <div className="pt-2">
         <Link to="/crear">
-          <Button className="w-full h-14 text-base font-semibold">Crear test</Button>
+          <Button variant="outline" className="w-full h-12 text-base font-semibold">
+            Crear test personalizado
+          </Button>
         </Link>
       </div>
     </div>
