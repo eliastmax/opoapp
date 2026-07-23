@@ -17,6 +17,7 @@ Hacer la aplicación más atractiva, cercana e intuitiva sin modificar el compor
 - Los selectores permiten buscar por número o nombre y señalan claramente la opción elegida.
 - El botón «Iniciar test» permanece visible sobre la navegación inferior mientras se configura el test.
 - Corrección posterior: los botones personalizados de Materia y Tema propagan al diálogo sus eventos y atributos de accesibilidad, por lo que ambos selectores se abren correctamente.
+- Ajuste móvil posterior: los selectores de Materia y Tema se abren en la zona superior de la pantalla y muestran primero la lista completa. El buscador permanece cerrado y no activa el teclado hasta que el usuario pulsa expresamente «Buscar».
 
 ## Decisiones de alcance
 
@@ -35,10 +36,11 @@ Hacer la aplicación más atractiva, cercana e intuitiva sin modificar el compor
 5. Los niveles bloqueados, el modo libre, las modalidades y los subapartados mantienen su funcionamiento.
 6. El botón final es accesible en móvil y no queda oculto por la navegación.
 7. No existen cambios de base de datos ni del contrato CSV.
+8. Abrir Materia o Tema en móvil no abre el teclado ni oculta las primeras opciones; la búsqueda se activa solo mediante su botón.
 
 ## Prompt optimizado para Lovable
 
-Trabaja exclusivamente sobre `OpoTest Study`; no modifiques `OpoTest: V2`. El código del Sprint 10 ya está sincronizado desde GitHub. No lo regeneres ni cambies lógica. Actualiza el proyecto y publica. Verifica en móvil: (1) Inicio muestra una sesión recomendada destacada, actividad compacta y acciones separadas para fallos y dudas; (2) Crear test está dividido en Contenido, Nivel de preparación y Formato; (3) los selectores de Materia y Tema se abren como hojas móviles, permiten buscar y muestran una etiqueta `Tema N` o `Temas N–M` junto al nombre completo sin recortes; (4) seleccionar materia, tema, subapartados, nivel, cantidad y modalidad sigue funcionando; (5) el botón `Iniciar test` permanece visible sobre la barra inferior; y (6) no hay solapamientos a 360 px de ancho. No cambies Supabase, el motor, las 25 columnas del CSV ni los bancos existentes.
+Trabaja exclusivamente sobre `OpoTest Study`; no modifiques `OpoTest: V2`. El código del Sprint 10 ya está sincronizado desde GitHub. No lo regeneres ni cambies lógica. Actualiza el proyecto y publica. Verifica en móvil: (1) Inicio muestra una sesión recomendada destacada, actividad compacta y acciones separadas para fallos y dudas; (2) Crear test está dividido en Contenido, Nivel de preparación y Formato; (3) los selectores de Materia y Tema aparecen en la zona superior, muestran primero las opciones sin abrir el teclado y activan el campo únicamente al pulsar `Buscar`; (4) cada materia o tema muestra una etiqueta `Tema N` o `Temas N–M` junto al nombre completo sin recortes; (5) seleccionar materia, tema, subapartados, nivel, cantidad y modalidad sigue funcionando; (6) el botón `Iniciar test` permanece visible sobre la barra inferior; y (7) no hay solapamientos a 360 px de ancho. No cambies Supabase, el motor, las 25 columnas del CSV ni los bancos existentes.
 
 ## Prompt optimizado para el Generador de Preguntas
 
