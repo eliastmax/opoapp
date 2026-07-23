@@ -43,6 +43,7 @@ import {
   LockKeyhole,
   Search,
   SlidersHorizontal,
+  X,
 } from "lucide-react";
 import { keepActiveFailureIds } from "@/lib/active-failures";
 import { keepActiveDoubtIds } from "@/lib/active-doubts";
@@ -73,6 +74,8 @@ function CrearPage() {
   const [topicDialogOpen, setTopicDialogOpen] = useState(false);
   const [subjectSearch, setSubjectSearch] = useState("");
   const [topicSearch, setTopicSearch] = useState("");
+  const [subjectSearchOpen, setSubjectSearchOpen] = useState(false);
+  const [topicSearchOpen, setTopicSearchOpen] = useState(false);
   const [subtopicIds, setSubtopicIds] = useState<string[]>([]);
   const [subtopicDialogOpen, setSubtopicDialogOpen] = useState(false);
   const [draftSubtopicIds, setDraftSubtopicIds] = useState<string[]>([]);
@@ -340,7 +343,8 @@ function CrearPage() {
               open={subjectDialogOpen}
               onOpenChange={(open) => {
                 setSubjectDialogOpen(open);
-                if (open) setSubjectSearch("");
+                setSubjectSearch("");
+                setSubjectSearchOpen(false);
               }}
             >
               <DialogTrigger asChild>
@@ -359,6 +363,8 @@ function CrearPage() {
                 description="Busca por número de tema o por nombre."
               >
                 <PickerSearch
+                  open={subjectSearchOpen}
+                  onOpenChange={setSubjectSearchOpen}
                   value={subjectSearch}
                   onChange={setSubjectSearch}
                   placeholder="Buscar materia o tema"
@@ -412,7 +418,8 @@ function CrearPage() {
               open={topicDialogOpen}
               onOpenChange={(open) => {
                 setTopicDialogOpen(open);
-                if (open) setTopicSearch("");
+                setTopicSearch("");
+                setTopicSearchOpen(false);
               }}
             >
               <DialogTrigger asChild>
@@ -428,6 +435,8 @@ function CrearPage() {
               >
                 {(topics?.length ?? 0) > 5 && (
                   <PickerSearch
+                    open={topicSearchOpen}
+                    onOpenChange={setTopicSearchOpen}
                     value={topicSearch}
                     onChange={setTopicSearch}
                     placeholder="Buscar tema"
@@ -847,7 +856,10 @@ function PickerSheet({
   children: ReactNode;
 }) {
   return (
-    <DialogContent className="bottom-0 left-0 top-auto w-full max-w-none translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-b-none rounded-t-3xl border-x-0 border-b-0 p-0 sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:border">
+    <DialogContent
+      onOpenAutoFocus={(event) => event.preventDefault()}
+      className="bottom-auto left-1/2 top-[7dvh] max-h-[86dvh] w-[calc(100%-1rem)] max-w-md -translate-x-1/2 translate-y-0 gap-0 overflow-hidden rounded-2xl p-0 sm:top-1/2 sm:-translate-y-1/2"
+    >
       <DialogHeader className="border-b p-4 pr-10 text-left">
         <DialogTitle>{title}</DialogTitle>
         <DialogDescription>{description}</DialogDescription>
@@ -858,26 +870,56 @@ function PickerSheet({
 }
 
 function PickerSearch({
+  open,
+  onOpenChange,
   value,
   onChange,
   placeholder,
 }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
 }) {
   return (
     <div className="border-b p-3">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          placeholder={placeholder}
-          aria-label={placeholder}
-          className="h-11 rounded-xl pl-9"
-        />
-      </div>
+      {open ? (
+        <div className="flex items-center gap-2">
+          <div className="relative min-w-0 flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              autoFocus
+              value={value}
+              onChange={(event) => onChange(event.target.value)}
+              placeholder={placeholder}
+              aria-label={placeholder}
+              className="h-11 rounded-xl pl-9"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Cerrar búsqueda"
+            onClick={() => {
+              onChange("");
+              onOpenChange(false);
+            }}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 w-full justify-start rounded-xl text-muted-foreground"
+          onClick={() => onOpenChange(true)}
+        >
+          <Search className="h-4 w-4" /> Buscar
+        </Button>
+      )}
     </div>
   );
 }
