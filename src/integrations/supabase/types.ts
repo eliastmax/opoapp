@@ -42,6 +42,7 @@ export type Database = {
           last_seen_at: string | null;
           next_review_at: string | null;
           question_id: string;
+          retention_level: number;
           updated_at: string;
           user_id: string;
         };
@@ -60,6 +61,7 @@ export type Database = {
           last_seen_at?: string | null;
           next_review_at?: string | null;
           question_id: string;
+          retention_level?: number;
           updated_at?: string;
           user_id: string;
         };
@@ -78,6 +80,7 @@ export type Database = {
           last_seen_at?: string | null;
           next_review_at?: string | null;
           question_id?: string;
+          retention_level?: number;
           updated_at?: string;
           user_id?: string;
         };
@@ -604,6 +607,19 @@ export type Database = {
           sin_responder: number;
         }[];
       };
+      calculate_retention_state: {
+        Args: {
+          p_answered_at: string;
+          p_correct: boolean | null;
+          p_current_level: number;
+          p_current_next_review_at: string | null;
+          p_marked_doubt: boolean;
+        };
+        Returns: {
+          next_review_at: string | null;
+          retention_level: number;
+        }[];
+      };
       create_smart_test: {
         Args: {
           p_difficulties?: Database["public"]["Enums"]["dificultad_enum"][];
@@ -681,6 +697,14 @@ export type Database = {
           topic_number: number;
           tribunal_questions: number;
           tribunal_unlocked: boolean;
+        }[];
+      };
+      get_retention_review_summary: {
+        Args: never;
+        Returns: {
+          due_count: number;
+          next_review_at: string | null;
+          topic_id: string;
         }[];
       };
       get_topic_progress_summary: {

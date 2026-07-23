@@ -19,6 +19,7 @@ Este índice registra qué partes de la V2 están realmente implementadas y vali
 - [Controles de salida y reinicio](sprint-13-controles-usuario.md): salida segura del test y reinicio del progreso sin borrar preguntas.
 - [Resultados visuales y orientados al repaso](sprint-12-resultados-visuales.md): implementados y ajustados tras validación visual en uso real.
 - [Continuidad de tests y feedback contextual](sprint-15-continuidad-feedback.md): implementado técnicamente; pendiente de validación en uso real.
+- [Retención programada](sprint-16-retencion-programada.md): implementada técnicamente; pendiente de validación en uso real.
 
 ## Sprint en implementación
 

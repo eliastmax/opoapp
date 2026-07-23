@@ -17,6 +17,8 @@ import {
   Sparkles,
   PlayCircle,
   Trash2,
+  Clock3,
+  Info,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -48,6 +50,7 @@ function InicioPage() {
   const [creatingRecommended, setCreatingRecommended] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [discarding, setDiscarding] = useState(false);
+  const [retentionInfoOpen, setRetentionInfoOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
@@ -64,6 +67,7 @@ function InicioPage() {
         falladasActivas,
         dudasActivas,
         unfinishedTest,
+        retentionSummary,
       ] = await Promise.all([
         supabase.from("profiles").select("nombre").eq("id", userData.user.id).maybeSingle(),
         supabase.from("questions").select("id", { count: "exact", head: true }).eq("activa", true),
@@ -92,8 +96,10 @@ function InicioPage() {
           .order("fecha_inicio", { ascending: false })
           .limit(1)
           .maybeSingle(),
+        supabase.rpc("get_retention_review_summary"),
       ]);
       if (unfinishedTest.error) throw unfinishedTest.error;
+      if (retentionSummary.error) throw retentionSummary.error;
 
       let unfinished = null;
       if (unfinishedTest.data) {
@@ -125,6 +131,7 @@ function InicioPage() {
         pctGlobal: pct,
         distintasFalladas: falladasActivas.count ?? 0,
         distintasDudosas: dudasActivas.count ?? 0,
+        dueReviews: retentionSummary.data?.reduce((total, row) => total + row.due_count, 0) ?? 0,
         unfinished,
       };
     },
@@ -302,6 +309,22 @@ function InicioPage() {
             <p className="mt-1 text-sm leading-relaxed text-white/80">
               La app combina tus fallos, dudas y puntos débiles para elegir qué practicar ahora.
             </p>
+            <div className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full bg-white/12 px-2.5 py-1 text-xs text-white/85 ring-1 ring-white/15">
+              <Clock3 className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">
+                {(data?.dueReviews ?? 0) > 0
+                  ? `${data?.dueReviews} ${data?.dueReviews === 1 ? "repaso programado" : "repasos programados"} para hoy`
+                  : "Sin repasos programados pendientes"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setRetentionInfoOpen(true)}
+                className="ml-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-white/85 transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                aria-label="Cómo funciona el sistema de repaso"
+              >
+                <Info className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -525,6 +548,31 @@ function InicioPage() {
               {discarding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Descartar
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={retentionInfoOpen} onOpenChange={setRetentionInfoOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cómo funciona el repaso</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3 text-left">
+              <span className="block">
+                Si aciertas con seguridad, la app volverá a comprobar esa pregunta cada vez más
+                tarde: aproximadamente a los 3, 7, 14 y 30 días.
+              </span>
+              <span className="block">
+                Si fallas o marcas una duda, regresará antes. Repetirla varias veces el mismo día no
+                hace avanzar el intervalo.
+              </span>
+              <span className="block">
+                Esto ayuda a recordar durante más tiempo y evita practicar solo lo que acabas de
+                ver.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction>Entendido</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
