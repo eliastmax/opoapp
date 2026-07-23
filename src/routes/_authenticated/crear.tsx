@@ -1,0 +1,1210 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import React, { useState, useMemo, useEffect, type ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import {
+  BookOpenText,
+  Check,
+  ChevronDown,
+  Layers3,
+  Loader2,
+  LockKeyhole,
+  Search,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
+import { keepActiveFailureIds } from "@/lib/active-failures";
+import { keepActiveDoubtIds } from "@/lib/active-doubts";
+import {
+  LEARNING_STAGE_DESCRIPTIONS,
+  LEARNING_STAGE_LABELS,
+  LEARNING_STAGES,
+  isStageUnlocked,
+  stageRequirements,
+  type LearningStage,
+} from "@/lib/learning-stages";
+import {
+  isStageUnlockedForAll,
+  lockedTopicCount,
+  multiTopicSelectionValid,
+  recommendedStageForScope,
+  type ContentScope,
+} from "@/lib/multi-topic";
+import { topicLabel } from "@/lib/topic-label";
+import { subjectLabel, subjectTopicPrefix } from "@/lib/subject-label";
+
+export const Route = createFileRoute("/_authenticated/crear")({
+  component: CrearPage,
+});
+
+type Modalidad = "mezcladas" | "nuevas" | "falladas" | "dudas";
+const CANTIDADES = [5, 10, 20, 30, 50] as const;
+
+function CrearPage() {
+  const navigate = useNavigate();
+  const [contentScope, setContentScope] = useState<ContentScope>("tema");
+  const [subjectId, setSubjectId] = useState<string>("");
+  const [topicId, setTopicId] = useState<string>("");
+  const [multiTopicIds, setMultiTopicIds] = useState<string[]>([]);
+  const [multiTopicDialogOpen, setMultiTopicDialogOpen] = useState(false);
+  const [multiTopicSearch, setMultiTopicSearch] = useState("");
+  const [multiTopicSearchOpen, setMultiTopicSearchOpen] = useState(false);
+  const [subjectDialogOpen, setSubjectDialogOpen] = useState(false);
+  const [topicDialogOpen, setTopicDialogOpen] = useState(false);
+  const [subjectSearch, setSubjectSearch] = useState("");
+  const [topicSearch, setTopicSearch] = useState("");
+  const [subjectSearchOpen, setSubjectSearchOpen] = useState(false);
+  const [topicSearchOpen, setTopicSearchOpen] = useState(false);
+  const [subtopicIds, setSubtopicIds] = useState<string[]>([]);
+  const [subtopicDialogOpen, setSubtopicDialogOpen] = useState(false);
+  const [draftSubtopicIds, setDraftSubtopicIds] = useState<string[]>([]);
+  const [subtopicSearch, setSubtopicSearch] = useState("");
+  const [cantidad, setCantidad] = useState<number>(10);
+  const [modalidad, setModalidad] = useState<Modalidad>("mezcladas");
+  const [selectedStage, setSelectedStage] = useState<LearningStage>("aprendizaje");
+  const [stageFreeMode, setStageFreeMode] = useState(false);
+  const [pendingLockedStage, setPendingLockedStage] = useState<LearningStage | null>(null);
+  const [starting, setStarting] = useState(false);
+
+  const { data: subjects } = useQuery({
+    queryKey: ["subjects"],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("subjects")
+          .select("id, nombre, topics!topics_subject_id_fkey(numero)")
+          .order("nombre")
+      ).data ?? [],
+  });
+  const { data: topics } = useQuery({
+    queryKey: ["topics", subjectId],
+    enabled: !!subjectId,
+    queryFn: async () =>
+      (
+        await supabase
+          .from("topics")
+          .select("id, numero, nombre")
+          .eq("subject_id", subjectId)
+          .order("numero")
+      ).data ?? [],
+  });
+  const { data: allTopics } = useQuery({
+    queryKey: ["topics", "all"],
+    queryFn: async () =>
+      (await supabase.from("topics").select("id, numero, nombre, subject_id").order("numero"))
+        .data ?? [],
+  });
+  const { data: subtopics } = useQuery({
+    queryKey: ["subtopics", topicId],
+    enabled: !!topicId,
+    queryFn: async () =>
+      (
+        await supabase
+          .from("subtopics")
+          .select("id, nombre")
+          .eq("topic_id", topicId)
+          .order("nombre")
+      ).data ?? [],
+  });
+  const { data: allStageProgress } = useQuery({
+    queryKey: ["learning-stage-progress"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_learning_stage_progress");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const selectedTopicIds = useMemo(
+    () =>
+      contentScope === "tema"
+        ? topicId
+          ? [topicId]
+          : []
+        : contentScope === "todo"
+          ? (allTopics ?? []).map((topic) => topic.id)
+          : multiTopicIds,
+    [allTopics, contentScope, multiTopicIds, topicId],
+  );
+  const selectedStageProgress = useMemo(
+    () => (allStageProgress ?? []).filter((row) => selectedTopicIds.includes(row.topic_id)),
+    [allStageProgress, selectedTopicIds],
+  );
+  const stageProgress =
+    contentScope === "tema"
+      ? (selectedStageProgress.find((row) => row.topic_id === topicId) ?? null)
+      : null;
+  const hasContent =
+    contentScope === "tema"
+      ? Boolean(subjectId && topicId)
+      : multiTopicSelectionValid(selectedTopicIds, cantidad);
+  const canStart = hasContent;
+
+  const filteredSubtopics = useMemo(() => {
+    const query = normalizeSearch(subtopicSearch);
+    if (!query) return subtopics ?? [];
+    return (subtopics ?? []).filter((subtopic) => normalizeSearch(subtopic.nombre).includes(query));
+  }, [subtopics, subtopicSearch]);
+
+  const filteredSubjects = useMemo(() => {
+    const query = normalizeSearch(subjectSearch);
+    if (!query) return subjects ?? [];
+    return (subjects ?? []).filter((subject) => {
+      const numbers = subject.topics.map((topic) => topic.numero);
+      return normalizeSearch(`${subjectTopicPrefix(numbers)} ${subject.nombre}`).includes(query);
+    });
+  }, [subjects, subjectSearch]);
+
+  const filteredTopics = useMemo(() => {
+    const query = normalizeSearch(topicSearch);
+    if (!query) return topics ?? [];
+    return (topics ?? []).filter((topic) =>
+      normalizeSearch(topicLabel(topic.numero, topic.nombre)).includes(query),
+    );
+  }, [topics, topicSearch]);
+  const filteredAllTopics = useMemo(() => {
+    const query = normalizeSearch(multiTopicSearch);
+    if (!query) return allTopics ?? [];
+    return (allTopics ?? []).filter((topic) => {
+      const subject = subjects?.find((item) => item.id === topic.subject_id);
+      return normalizeSearch(
+        `${topicLabel(topic.numero, topic.nombre)} ${subject?.nombre ?? ""}`,
+      ).includes(query);
+    });
+  }, [allTopics, multiTopicSearch, subjects]);
+
+  // Auto-select when only one option exists
+  useEffect(() => {
+    if (subjects && subjects.length === 1 && !subjectId) {
+      setSubjectId(subjects[0].id);
+      setTopicId("");
+      setSubtopicIds([]);
+    }
+  }, [subjects, subjectId]);
+
+  useEffect(() => {
+    if (subjectId && topics && topics.length === 1 && !topicId) {
+      setTopicId(topics[0].id);
+      setSubtopicIds([]);
+    }
+  }, [subjectId, topics, topicId]);
+
+  useEffect(() => {
+    if (topicId && subtopics && subtopics.length === 1 && subtopicIds.length === 0) {
+      setSubtopicIds([subtopics[0].id]);
+    }
+  }, [topicId, subtopics, subtopicIds.length]);
+
+  useEffect(() => {
+    const recommended = recommendedStageForScope(
+      selectedStageProgress,
+      contentScope === "tema" ? topicId : undefined,
+    );
+    setSelectedStage(recommended);
+    setStageFreeMode(false);
+  }, [contentScope, topicId, selectedStageProgress]);
+
+  const hideSubject = !!subjects && subjects.length === 1;
+  const hideTopic = !!topics && topics.length === 1;
+  const hideSubtopic = !!subtopics && subtopics.length <= 1;
+  const selectedSubject = subjects?.find((subject) => subject.id === subjectId);
+  const selectedTopic = topics?.find((topic) => topic.id === topicId);
+  const selectedMultiTopics = (allTopics ?? []).filter((topic) =>
+    selectedTopicIds.includes(topic.id),
+  );
+
+  function handleSubtopicDialogOpenChange(open: boolean) {
+    if (open) {
+      setDraftSubtopicIds(subtopicIds);
+      setSubtopicSearch("");
+    }
+    setSubtopicDialogOpen(open);
+  }
+
+  function chooseStage(stage: LearningStage) {
+    const unlocked =
+      contentScope === "tema"
+        ? !stageProgress || isStageUnlocked(stageProgress, stage)
+        : isStageUnlockedForAll(selectedStageProgress, stage);
+    if (unlocked) {
+      setSelectedStage(stage);
+      setStageFreeMode(false);
+      return;
+    }
+    setPendingLockedStage(stage);
+  }
+
+  async function iniciar() {
+    if (!canStart) return;
+    setStarting(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user!.id;
+
+      if (contentScope !== "tema") {
+        const { data: multiTest, error: multiError } = await supabase.rpc(
+          "create_multi_topic_test",
+          {
+            p_topic_ids: selectedTopicIds,
+            p_learning_stage: selectedStage,
+            p_mode: modalidad,
+            p_question_count: cantidad,
+            p_free_mode: stageFreeMode,
+          },
+        );
+        if (multiError) throw multiError;
+
+        const created = multiTest?.[0];
+        if (!created) throw new Error("No se pudo crear el test de varios temas");
+        if (created.selected_count < cantidad) {
+          toast.warning(`Solo hay ${created.selected_count} preguntas disponibles`);
+        } else if (created.covered_topic_count < created.requested_topic_count) {
+          toast.warning(
+            `El test cubre ${created.covered_topic_count} de ${created.requested_topic_count} temas por falta de preguntas compatibles`,
+          );
+        }
+        navigate({ to: "/test/$id", params: { id: created.test_id } });
+        return;
+      }
+
+      if (modalidad === "mezcladas") {
+        const { data: smartTest, error: smartError } = await supabase.rpc("create_level_test", {
+          p_topic_id: topicId,
+          p_learning_stage: selectedStage,
+          p_free_mode: stageFreeMode,
+          p_subtopic_ids: subtopicIds.length > 0 ? subtopicIds : undefined,
+          p_question_count: cantidad,
+        });
+        if (smartError) throw smartError;
+
+        const created = smartTest?.[0];
+        if (!created) throw new Error("No se pudo crear el test inteligente");
+        if (created.selected_count < cantidad) {
+          toast.warning(`Solo hay ${created.selected_count} preguntas disponibles`);
+        }
+
+        navigate({ to: "/test/$id", params: { id: created.test_id } });
+        return;
+      }
+
+      // Query pool
+      let q = supabase.from("questions").select("id").eq("activa", true).eq("topic_id", topicId);
+      q =
+        selectedStage === "aprendizaje"
+          ? q.or("nivel_pedagogico.eq.aprendizaje,nivel_pedagogico.is.null")
+          : q.eq("nivel_pedagogico", selectedStage);
+      if (subtopicIds.length > 0) q = q.in("subtopic_id", subtopicIds);
+      const { data: pool, error: e1 } = await q;
+      if (e1) throw e1;
+      let ids = (pool ?? []).map((p) => p.id);
+
+      if (modalidad === "nuevas") {
+        const { data: answered } = await supabase
+          .from("test_answers")
+          .select("question_id, correcta");
+        const seen = new Set((answered ?? []).map((a) => a.question_id));
+        ids = ids.filter((id) => !seen.has(id));
+      } else if (modalidad === "falladas") {
+        let failedQuery = supabase
+          .from("active_failed_questions")
+          .select("question_id")
+          .eq("user_id", userId)
+          .eq("topic_id", topicId);
+        if (subtopicIds.length > 0) failedQuery = failedQuery.in("subtopic_id", subtopicIds);
+        const { data: activeFailures, error: activeFailuresError } = await failedQuery;
+        if (activeFailuresError) throw activeFailuresError;
+        ids = keepActiveFailureIds(ids, activeFailures ?? []);
+      } else if (modalidad === "dudas") {
+        let doubtQuery = supabase
+          .from("active_doubt_questions")
+          .select("question_id")
+          .eq("user_id", userId)
+          .eq("topic_id", topicId);
+        if (subtopicIds.length > 0) doubtQuery = doubtQuery.in("subtopic_id", subtopicIds);
+        const { data: activeDoubts, error: activeDoubtsError } = await doubtQuery;
+        if (activeDoubtsError) throw activeDoubtsError;
+        ids = keepActiveDoubtIds(ids, activeDoubts ?? []);
+      }
+
+      if (ids.length === 0) {
+        toast.error("No hay preguntas con esos filtros");
+        setStarting(false);
+        return;
+      }
+      if (ids.length < cantidad) toast.warning(`Solo hay ${ids.length} preguntas disponibles`);
+
+      // shuffle
+      for (let i = ids.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [ids[i], ids[j]] = [ids[j], ids[i]];
+      }
+      const chosen = ids.slice(0, Math.min(cantidad, ids.length));
+
+      const { data: test, error: eTest } = await supabase
+        .from("tests")
+        .insert({
+          user_id: userId,
+          tipo: modalidad,
+          learning_stage: selectedStage,
+          stage_free_mode: stageFreeMode,
+          numero_preguntas: chosen.length,
+          sin_responder: chosen.length,
+        })
+        .select()
+        .single();
+      if (eTest) throw eTest;
+
+      const answers = chosen.map((qid, i) => ({
+        user_id: userId,
+        test_id: test.id,
+        question_id: qid,
+        orden: i + 1,
+      }));
+      const { error: eAns } = await supabase.from("test_answers").insert(answers);
+      if (eAns) throw eAns;
+
+      navigate({ to: "/test/$id", params: { id: test.id } });
+    } catch (e) {
+      toast.error((e as Error).message);
+      setStarting(false);
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      <header className="pt-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+          Práctica a tu medida
+        </p>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight">Crear test</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Elige qué quieres practicar y la app prepara el resto.
+        </p>
+      </header>
+
+      <Card className="space-y-4 bg-card/90 p-4">
+        <SectionHeading
+          icon={BookOpenText}
+          step="1"
+          title="Contenido"
+          description="Practica un tema, varios o todo lo que tienes cargado."
+        />
+        <div className="grid grid-cols-3 gap-2">
+          {(
+            [
+              ["tema", "Un tema"],
+              ["varios", "Varios"],
+              ["todo", "Todo"],
+            ] as const
+          ).map(([scope, label]) => (
+            <button
+              key={scope}
+              type="button"
+              onClick={() => {
+                setContentScope(scope);
+                setStageFreeMode(false);
+              }}
+              className={`min-h-11 rounded-xl border px-2 text-sm font-semibold transition-colors ${
+                contentScope === scope
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "bg-background hover:bg-muted"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {contentScope === "tema" && !hideSubject && (
+          <div className="space-y-1.5">
+            <Label>Materia</Label>
+            <Dialog
+              open={subjectDialogOpen}
+              onOpenChange={(open) => {
+                setSubjectDialogOpen(open);
+                setSubjectSearch("");
+                setSubjectSearchOpen(false);
+              }}
+            >
+              <DialogTrigger asChild>
+                <PickerTrigger
+                  badge={
+                    selectedSubject
+                      ? subjectTopicPrefix(selectedSubject.topics.map((topic) => topic.numero))
+                      : undefined
+                  }
+                  value={selectedSubject?.nombre}
+                  placeholder="Selecciona una materia"
+                />
+              </DialogTrigger>
+              <PickerSheet
+                title="Elegir materia"
+                description="Busca por número de tema o por nombre."
+              >
+                <PickerSearch
+                  open={subjectSearchOpen}
+                  onOpenChange={setSubjectSearchOpen}
+                  value={subjectSearch}
+                  onChange={setSubjectSearch}
+                  placeholder="Buscar materia o tema"
+                />
+                <div className="max-h-[56vh] space-y-1 overflow-y-auto p-3">
+                  {filteredSubjects.map((subject) => {
+                    const numbers = subject.topics.map((topic) => topic.numero);
+                    const selected = subject.id === subjectId;
+                    return (
+                      <button
+                        key={subject.id}
+                        type="button"
+                        onClick={() => {
+                          setSubjectId(subject.id);
+                          setTopicId("");
+                          setSubtopicIds([]);
+                          setSubjectDialogOpen(false);
+                        }}
+                        className={`flex min-h-16 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${selected ? "bg-primary/10" : "hover:bg-muted"}`}
+                      >
+                        <span className="min-w-0 flex-1">
+                          {subjectTopicPrefix(numbers) && (
+                            <span className="mb-1 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">
+                              {subjectTopicPrefix(numbers)}
+                            </span>
+                          )}
+                          <span className="block text-sm font-semibold leading-snug">
+                            {subject.nombre}
+                          </span>
+                        </span>
+                        {selected && <Check className="h-5 w-5 shrink-0 text-primary" />}
+                      </button>
+                    );
+                  })}
+                  {filteredSubjects.length === 0 && <EmptyPickerResult />}
+                </div>
+              </PickerSheet>
+            </Dialog>
+            {subjects && subjects.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                Aún no tienes materias. Importa un CSV primero.
+              </p>
+            )}
+          </div>
+        )}
+
+        {contentScope === "tema" && subjectId && !hideTopic && (
+          <div className="space-y-1.5">
+            <Label>Tema</Label>
+            <Dialog
+              open={topicDialogOpen}
+              onOpenChange={(open) => {
+                setTopicDialogOpen(open);
+                setTopicSearch("");
+                setTopicSearchOpen(false);
+              }}
+            >
+              <DialogTrigger asChild>
+                <PickerTrigger
+                  badge={selectedTopic ? `Tema ${selectedTopic.numero}` : undefined}
+                  value={selectedTopic?.nombre}
+                  placeholder="Selecciona un tema"
+                />
+              </DialogTrigger>
+              <PickerSheet
+                title="Elegir tema"
+                description="El nombre completo se muestra sin recortes."
+              >
+                {(topics?.length ?? 0) > 5 && (
+                  <PickerSearch
+                    open={topicSearchOpen}
+                    onOpenChange={setTopicSearchOpen}
+                    value={topicSearch}
+                    onChange={setTopicSearch}
+                    placeholder="Buscar tema"
+                  />
+                )}
+                <div className="max-h-[56vh] space-y-1 overflow-y-auto p-3">
+                  {filteredTopics.map((topic) => {
+                    const selected = topic.id === topicId;
+                    return (
+                      <button
+                        key={topic.id}
+                        type="button"
+                        onClick={() => {
+                          setTopicId(topic.id);
+                          setSubtopicIds([]);
+                          setTopicDialogOpen(false);
+                        }}
+                        className={`flex min-h-16 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${selected ? "bg-primary/10" : "hover:bg-muted"}`}
+                      >
+                        <span className="min-w-0 flex-1">
+                          <span className="mb-1 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">
+                            Tema {topic.numero}
+                          </span>
+                          <span className="block text-sm font-semibold leading-snug">
+                            {topic.nombre}
+                          </span>
+                        </span>
+                        {selected && <Check className="h-5 w-5 shrink-0 text-primary" />}
+                      </button>
+                    );
+                  })}
+                  {filteredTopics.length === 0 && <EmptyPickerResult />}
+                </div>
+              </PickerSheet>
+            </Dialog>
+          </div>
+        )}
+
+        {contentScope === "tema" &&
+          topicId &&
+          subtopics &&
+          subtopics.length > 0 &&
+          !hideSubtopic && (
+            <div className="space-y-1.5">
+              <Label>Subapartados (opcional)</Label>
+              <Dialog open={subtopicDialogOpen} onOpenChange={handleSubtopicDialogOpenChange}>
+                <DialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-12 w-full justify-between px-3 font-normal"
+                  >
+                    <span className="truncate">
+                      {subtopicIds.length === 0
+                        ? "Todos los subapartados"
+                        : subtopicIds.length === 1
+                          ? "1 seleccionado"
+                          : `${subtopicIds.length} seleccionados`}
+                    </span>
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
+                  </Button>
+                </DialogTrigger>
+
+                <DialogContent className="w-[calc(100%-2rem)] max-w-md gap-0 overflow-hidden rounded-lg p-0">
+                  <DialogHeader className="border-b p-4 pr-10 text-left">
+                    <DialogTitle>Elegir subapartados</DialogTitle>
+                    <DialogDescription>
+                      Si no seleccionas ninguno, se utilizarán todos.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  {subtopics.length > 6 && (
+                    <div className="border-b p-4">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          value={subtopicSearch}
+                          onChange={(event) => setSubtopicSearch(event.target.value)}
+                          placeholder="Buscar subapartado"
+                          aria-label="Buscar subapartado"
+                          className="h-11 pl-9"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="max-h-[50vh] space-y-1 overflow-y-auto p-3">
+                    {filteredSubtopics.map((subtopic) => {
+                      const checked = draftSubtopicIds.includes(subtopic.id);
+                      return (
+                        <label
+                          key={subtopic.id}
+                          className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-muted"
+                        >
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={(selected) =>
+                              setDraftSubtopicIds((previous) =>
+                                selected
+                                  ? previous.includes(subtopic.id)
+                                    ? previous
+                                    : [...previous, subtopic.id]
+                                  : previous.filter((id) => id !== subtopic.id),
+                              )
+                            }
+                          />
+                          <span>{subtopic.nombre}</span>
+                        </label>
+                      );
+                    })}
+                    {filteredSubtopics.length === 0 && (
+                      <p className="px-2 py-8 text-center text-sm text-muted-foreground">
+                        No hay subapartados que coincidan con la búsqueda.
+                      </p>
+                    )}
+                  </div>
+
+                  <DialogFooter className="flex-row gap-2 border-t p-4 sm:space-x-0">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => {
+                        setSubtopicIds([]);
+                        setSubtopicDialogOpen(false);
+                      }}
+                    >
+                      Usar todos
+                    </Button>
+                    <Button
+                      type="button"
+                      className="flex-1"
+                      onClick={() => {
+                        setSubtopicIds(draftSubtopicIds);
+                        setSubtopicDialogOpen(false);
+                      }}
+                    >
+                      Aplicar
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              <p className="text-xs text-muted-foreground">
+                Puedes limitar el test a uno o varios subapartados.
+              </p>
+            </div>
+          )}
+
+        {contentScope === "varios" && (
+          <div className="space-y-1.5">
+            <Label>Temas</Label>
+            <Dialog
+              open={multiTopicDialogOpen}
+              onOpenChange={(open) => {
+                setMultiTopicDialogOpen(open);
+                setMultiTopicSearch("");
+                setMultiTopicSearchOpen(false);
+              }}
+            >
+              <DialogTrigger asChild>
+                <PickerTrigger
+                  badge={
+                    multiTopicIds.length > 0
+                      ? `${multiTopicIds.length} temas seleccionados`
+                      : undefined
+                  }
+                  value={
+                    multiTopicIds.length > 0
+                      ? selectedMultiTopics
+                          .slice(0, 3)
+                          .map((topic) => `T${topic.numero}`)
+                          .join(" · ") + (selectedMultiTopics.length > 3 ? " · …" : "")
+                      : undefined
+                  }
+                  placeholder="Selecciona al menos dos temas"
+                />
+              </DialogTrigger>
+              <PickerSheet
+                title="Elegir varios temas"
+                description="La app repartirá las preguntas de forma equilibrada."
+              >
+                {(allTopics?.length ?? 0) > 6 && (
+                  <PickerSearch
+                    open={multiTopicSearchOpen}
+                    onOpenChange={setMultiTopicSearchOpen}
+                    value={multiTopicSearch}
+                    onChange={setMultiTopicSearch}
+                    placeholder="Buscar tema o materia"
+                  />
+                )}
+                <div className="flex items-center justify-between border-b px-4 py-2">
+                  <span className="text-xs text-muted-foreground">
+                    {multiTopicIds.length} seleccionados
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      setMultiTopicIds(
+                        multiTopicIds.length === (allTopics?.length ?? 0)
+                          ? []
+                          : (allTopics ?? []).map((topic) => topic.id),
+                      )
+                    }
+                  >
+                    {multiTopicIds.length === (allTopics?.length ?? 0)
+                      ? "Limpiar"
+                      : "Seleccionar todos"}
+                  </Button>
+                </div>
+                <div className="max-h-[50vh] space-y-1 overflow-y-auto p-3">
+                  {filteredAllTopics.map((topic) => {
+                    const checked = multiTopicIds.includes(topic.id);
+                    const subject = subjects?.find((item) => item.id === topic.subject_id);
+                    return (
+                      <label
+                        key={topic.id}
+                        className="flex min-h-14 cursor-pointer items-center gap-3 rounded-xl px-3 py-2 hover:bg-muted"
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(selected) =>
+                            setMultiTopicIds((previous) =>
+                              selected
+                                ? previous.includes(topic.id)
+                                  ? previous
+                                  : [...previous, topic.id]
+                                : previous.filter((id) => id !== topic.id),
+                            )
+                          }
+                        />
+                        <span className="min-w-0">
+                          <span className="block text-xs font-bold text-primary">
+                            Tema {topic.numero}
+                          </span>
+                          <span className="block text-sm font-semibold leading-snug">
+                            {topic.nombre}
+                          </span>
+                          {subject && (
+                            <span className="block truncate text-[11px] text-muted-foreground">
+                              {subject.nombre}
+                            </span>
+                          )}
+                        </span>
+                      </label>
+                    );
+                  })}
+                  {filteredAllTopics.length === 0 && <EmptyPickerResult />}
+                </div>
+                <DialogFooter className="border-t p-4">
+                  <Button
+                    type="button"
+                    className="w-full"
+                    disabled={multiTopicIds.length < 2}
+                    onClick={() => setMultiTopicDialogOpen(false)}
+                  >
+                    Usar {multiTopicIds.length || 0} temas
+                  </Button>
+                </DialogFooter>
+              </PickerSheet>
+            </Dialog>
+            {multiTopicIds.length === 1 && (
+              <p className="text-xs text-amber-700">Selecciona al menos un tema más.</p>
+            )}
+          </div>
+        )}
+
+        {contentScope === "todo" && (
+          <div className="rounded-xl border bg-primary/5 p-3">
+            <p className="text-sm font-semibold">
+              Todo lo cargado · {allTopics?.length ?? 0} temas
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              La app combinará y equilibrará preguntas de todos tus temas disponibles.
+            </p>
+          </div>
+        )}
+      </Card>
+
+      {selectedTopicIds.length > 0 && selectedStageProgress.length === selectedTopicIds.length && (
+        <Card className="space-y-3 bg-card/90 p-4">
+          <SectionHeading
+            icon={Layers3}
+            step="2"
+            title="Nivel de preparación"
+            description="Trabaja en tu fase actual o practica otra en modo libre."
+          />
+          <div>
+            <p className="text-xs text-muted-foreground">
+              Avanzas cuando demuestras conocimiento; repetir tests no desbloquea por sí solo.
+            </p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {LEARNING_STAGES.map((stage) => {
+              const unlocked =
+                contentScope === "tema"
+                  ? Boolean(stageProgress && isStageUnlocked(stageProgress, stage))
+                  : isStageUnlockedForAll(selectedStageProgress, stage);
+              const active = selectedStage === stage;
+              return (
+                <button
+                  key={stage}
+                  type="button"
+                  onClick={() => chooseStage(stage)}
+                  className={`rounded-lg border p-3 text-left transition-colors ${
+                    active ? "border-primary bg-primary/10" : "bg-background hover:bg-muted/60"
+                  }`}
+                >
+                  <span className="flex items-center justify-between gap-2 text-sm font-semibold">
+                    {LEARNING_STAGE_LABELS[stage]}
+                    {active ? (
+                      <Check className="h-4 w-4 text-primary" />
+                    ) : !unlocked ? (
+                      <LockKeyhole className="h-4 w-4 text-muted-foreground" />
+                    ) : null}
+                  </span>
+                  <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">
+                    {LEARNING_STAGE_DESCRIPTIONS[stage]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {stageFreeMode && (
+            <p className="rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-800 dark:text-amber-200">
+              Modo libre: este test quedará en el historial, pero no contará para desbloquear fases.
+            </p>
+          )}
+        </Card>
+      )}
+
+      <Card className="space-y-4 bg-card/90 p-4">
+        <SectionHeading
+          icon={SlidersHorizontal}
+          step={selectedTopicIds.length > 0 ? "3" : "2"}
+          title="Formato del test"
+          description="Decide la extensión y el tipo de práctica."
+        />
+        <div className="space-y-1.5">
+          <Label>Nº de preguntas</Label>
+          <div className="grid grid-cols-5 gap-2">
+            {CANTIDADES.map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setCantidad(n)}
+                disabled={contentScope !== "tema" && n < selectedTopicIds.length}
+                className={`h-11 rounded-xl border text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-35 ${cantidad === n ? "border-primary bg-primary text-primary-foreground shadow-sm" : "bg-background hover:bg-muted"}`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+          {contentScope !== "tema" && cantidad < selectedTopicIds.length && (
+            <p className="text-xs text-amber-700">
+              Elige al menos {selectedTopicIds.length} preguntas para incluir todos los temas.
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>Modalidad</Label>
+          <Select value={modalidad} onValueChange={(v) => setModalidad(v as Modalidad)}>
+            <SelectTrigger className="h-12">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="mezcladas">Mezcladas · selección inteligente</SelectItem>
+              <SelectItem value="nuevas">Nunca realizadas</SelectItem>
+              <SelectItem value="falladas">Falladas</SelectItem>
+              <SelectItem value="dudas">Marcadas como duda</SelectItem>
+            </SelectContent>
+          </Select>
+          {modalidad === "mezcladas" && (
+            <p className="text-xs text-muted-foreground">
+              Prioriza preguntas útiles y reduce repeticiones recientes sin salir de tus filtros.
+            </p>
+          )}
+        </div>
+      </Card>
+
+      {selectedTopicIds.length > 0 && (
+        <Card className="bg-card/90 p-4">
+          <div className="text-xs uppercase text-muted-foreground font-medium mb-2">Resumen</div>
+          <ul className="text-sm space-y-1">
+            {contentScope === "tema" ? (
+              <>
+                <li>
+                  Materia:{" "}
+                  <span className="font-medium">
+                    {selectedSubject
+                      ? subjectLabel(
+                          selectedSubject.nombre,
+                          selectedSubject.topics.map((topic) => topic.numero),
+                        )
+                      : "—"}
+                  </span>
+                </li>
+                <li>
+                  Tema:{" "}
+                  <span className="font-medium">
+                    {selectedTopic ? topicLabel(selectedTopic.numero, selectedTopic.nombre) : "—"}
+                  </span>
+                </li>
+                <li>
+                  Subapartados:{" "}
+                  <span className="font-medium">
+                    {subtopicIds.length === 0 ? "Todos" : subtopicIds.length}
+                  </span>
+                </li>
+              </>
+            ) : (
+              <li>
+                Contenido:{" "}
+                <span className="font-medium">
+                  {contentScope === "todo" ? "Todo lo cargado" : "Selección personalizada"} ·{" "}
+                  {selectedTopicIds.length} temas
+                </span>
+              </li>
+            )}
+            <li>
+              Preguntas: <span className="font-medium">{cantidad}</span>
+            </li>
+            <li>
+              Nivel: <span className="font-medium">{LEARNING_STAGE_LABELS[selectedStage]}</span>
+              {stageFreeMode ? " · modo libre" : ""}
+            </li>
+            <li>
+              Modalidad:{" "}
+              <span className="font-medium">
+                {modalidad === "mezcladas" ? "Selección inteligente" : modalidad}
+              </span>
+            </li>
+          </ul>
+        </Card>
+      )}
+
+      <div className="sticky bottom-20 z-30 -mx-1 rounded-2xl border border-border/80 bg-background/90 p-2 shadow-[0_16px_40px_-16px_oklch(0.28_0.08_250/0.5)] backdrop-blur-xl">
+        <Button
+          onClick={iniciar}
+          disabled={!canStart || starting}
+          className="h-13 w-full text-base"
+        >
+          {starting ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" /> Preparando test…
+            </>
+          ) : (
+            "Iniciar test"
+          )}
+        </Button>
+      </div>
+
+      <AlertDialog
+        open={pendingLockedStage !== null}
+        onOpenChange={(open) => !open && setPendingLockedStage(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Nivel aún no desbloqueado</AlertDialogTitle>
+            <AlertDialogDescription>
+              Puedes practicarlo en modo libre. El test quedará en tu historial, pero no contará
+              para desbloquear fases.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {pendingLockedStage &&
+            (contentScope === "tema" && stageProgress ? (
+              <div className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
+                <p className="font-medium text-foreground">Para desbloquearlo normalmente:</p>
+                <ul className="mt-1 list-disc space-y-1 pl-4">
+                  {stageRequirements(stageProgress, pendingLockedStage).map((requirement) => (
+                    <li key={requirement}>{requirement}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
+                Este nivel sigue bloqueado en{" "}
+                <strong className="text-foreground">
+                  {lockedTopicCount(selectedStageProgress, pendingLockedStage)} de{" "}
+                  {selectedTopicIds.length} temas
+                </strong>
+                . Puedes seguir en el nivel común o entrar en modo libre.
+              </div>
+            ))}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Seguir en mi nivel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingLockedStage) {
+                  setSelectedStage(pendingLockedStage);
+                  setStageFreeMode(true);
+                }
+                setPendingLockedStage(null);
+              }}
+            >
+              Entrar en modo libre
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+function normalizeSearch(value: string): string {
+  return value
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es");
+}
+
+function SectionHeading({
+  icon: Icon,
+  step,
+  title,
+  description,
+}: {
+  icon: React.ElementType;
+  step: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex items-start gap-3 border-b border-border/70 pb-3">
+      <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        <Icon className="h-5 w-5" />
+        <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">
+          {step}
+        </span>
+      </span>
+      <span>
+        <span className="block text-sm font-bold">{title}</span>
+        <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+          {description}
+        </span>
+      </span>
+    </div>
+  );
+}
+
+type PickerTriggerProps = Omit<
+  React.ComponentPropsWithoutRef<typeof Button>,
+  "children" | "className"
+> & {
+  badge?: string;
+  value?: string;
+  placeholder: string;
+};
+
+const PickerTrigger = React.forwardRef<HTMLButtonElement, PickerTriggerProps>(
+  ({ badge, value, placeholder, ...triggerProps }, ref) => (
+    <Button
+      {...triggerProps}
+      ref={ref}
+      type="button"
+      variant="outline"
+      className="h-auto min-h-14 w-full justify-between whitespace-normal bg-background px-3 py-2.5 text-left font-normal"
+    >
+      <span className="min-w-0 flex-1">
+        {badge && <span className="block text-[11px] font-bold text-primary">{badge}</span>}
+        <span
+          className={`block leading-snug ${value ? "text-sm font-semibold text-foreground" : "text-sm text-muted-foreground"}`}
+        >
+          {value ?? placeholder}
+        </span>
+      </span>
+      <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
+    </Button>
+  ),
+);
+PickerTrigger.displayName = "PickerTrigger";
+
+function PickerSheet({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: ReactNode;
+}) {
+  return (
+    <DialogContent
+      onOpenAutoFocus={(event) => event.preventDefault()}
+      className="bottom-auto left-1/2 top-[7dvh] max-h-[86dvh] w-[calc(100%-1rem)] max-w-md -translate-x-1/2 translate-y-0 gap-0 overflow-hidden rounded-2xl p-0 sm:top-1/2 sm:-translate-y-1/2"
+    >
+      <DialogHeader className="border-b p-4 pr-10 text-left">
+        <DialogTitle>{title}</DialogTitle>
+        <DialogDescription>{description}</DialogDescription>
+      </DialogHeader>
+      {children}
+    </DialogContent>
+  );
+}
+
+function PickerSearch({
+  open,
+  onOpenChange,
+  value,
+  onChange,
+  placeholder,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <div className="border-b p-3">
+      {open ? (
+        <div className="flex items-center gap-2">
+          <div className="relative min-w-0 flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              autoFocus
+              value={value}
+              onChange={(event) => onChange(event.target.value)}
+              placeholder={placeholder}
+              aria-label={placeholder}
+              className="h-11 rounded-xl pl-9"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Cerrar búsqueda"
+            onClick={() => {
+              onChange("");
+              onOpenChange(false);
+            }}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 w-full justify-start rounded-xl text-muted-foreground"
+          onClick={() => onOpenChange(true)}
+        >
+          <Search className="h-4 w-4" /> Buscar
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function EmptyPickerResult() {
+  return (
+    <p className="px-3 py-10 text-center text-sm text-muted-foreground">
+      No hay resultados para esa búsqueda.
+    </p>
+  );
+}
