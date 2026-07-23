@@ -40,6 +40,7 @@ import {
   type DiagnosticQuestion,
 } from "@/lib/result-diagnostics";
 import { LEARNING_STAGE_LABELS, learningStage } from "@/lib/learning-stages";
+import { resultFeedback } from "@/lib/result-feedback";
 
 export const Route = createFileRoute("/_authenticated/resultados/$id")({
   component: ResultadosPage,
@@ -421,6 +422,14 @@ function ResultadosPage() {
 
   const sinFallosDuros = t.fallos === 0;
   const percentage = Number(t.porcentaje);
+  const feedback = resultFeedback({
+    percentage,
+    correct: t.aciertos,
+    failures: t.fallos,
+    unanswered: t.sin_responder,
+    doubts: dudosas.length,
+    questionCount: t.numero_preguntas,
+  });
 
   return (
     <div className="space-y-5">
@@ -444,18 +453,8 @@ function ResultadosPage() {
             {percentage}%
           </div>
           <div className="min-w-0">
-            <div className="text-lg font-bold">
-              {perfecto
-                ? "Has respondido todo correctamente"
-                : t.fallos > 0
-                  ? `${t.fallos} ${t.fallos === 1 ? "respuesta necesita" : "respuestas necesitan"} repaso`
-                  : "No hay respuestas incorrectas"}
-            </div>
-            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-              {dudosas.length > 0
-                ? `${dudosas.length} ${dudosas.length === 1 ? "respuesta quedó marcada" : "respuestas quedaron marcadas"} como duda.`
-                : "No has dejado respuestas marcadas como duda."}
-            </p>
+            <div className="text-lg font-bold">{feedback.title}</div>
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{feedback.message}</p>
           </div>
         </div>
         <div className="grid grid-cols-3 divide-x border-t border-border/70 bg-background/45">

@@ -17,8 +17,8 @@ Este índice registra qué partes de la V2 están realmente implementadas y vali
 - [Renovación visual de Inicio y Crear test](sprint-10-renovacion-visual-inicio-crear.md): implementada y validada en uso real; los selectores móviles se abren arriba y no activan el teclado hasta pulsar «Buscar».
 - [Experiencia de realización de test](sprint-11-experiencia-realizacion-test.md): implementada y validada en uso real.
 - [Controles de salida y reinicio](sprint-13-controles-usuario.md): salida segura del test y reinicio del progreso sin borrar preguntas.
-
 - [Resultados visuales y orientados al repaso](sprint-12-resultados-visuales.md): implementados y ajustados tras validación visual en uso real.
+- [Continuidad de tests y feedback contextual](sprint-15-continuidad-feedback.md): implementado técnicamente; pendiente de validación en uso real.
 
 ## Sprint en implementación
 

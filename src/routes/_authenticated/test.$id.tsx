@@ -31,6 +31,7 @@ function TestPage() {
   const [confirmFinish, setConfirmFinish] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
   const [finishing, setFinishing] = useState(false);
+  const [initializedTestId, setInitializedTestId] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["test", id],
@@ -61,6 +62,13 @@ function TestPage() {
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, [data]);
+
+  useEffect(() => {
+    if (!data || initializedTestId === id) return;
+    const firstPending = data.answers.findIndex((answer) => answer.respuesta_usuario === null);
+    setCurrent(firstPending >= 0 ? firstPending : Math.max(data.answers.length - 1, 0));
+    setInitializedTestId(id);
+  }, [data, id, initializedTestId]);
 
   const total = data?.answers.length ?? 0;
   const answered = useMemo(
