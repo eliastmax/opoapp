@@ -14,6 +14,29 @@ El banco de preguntas podrá ser común, pero todo dato de aprendizaje será ind
 
 Una cuenta nueva parte siempre de cero respuestas y cero repasos. Nunca hereda el historial, los contadores ni las fechas de otro usuario.
 
+## Catálogo inicial de oposiciones
+
+La primera versión pública ofrecerá aproximadamente tres oposiciones ya configuradas. La selección exacta se decidirá antes del lanzamiento.
+
+El flujo para una persona nueva será:
+
+1. Crear su cuenta.
+2. Elegir una de las oposiciones disponibles.
+3. Acceder inmediatamente a su temario y banco de preguntas precargado.
+4. Indicar la fecha de examen y completar la valoración inicial.
+5. Empezar a realizar tests sin importar archivos.
+
+Las preguntas, materias y temas serán un catálogo central compartido. No se duplicará físicamente todo el banco para cada cuenta. Cada usuario mantendrá únicamente su relación con la oposición elegida y sus datos personales de aprendizaje.
+
+La importación CSV seguirá existiendo como herramienta interna de administración para publicar y actualizar bancos, pero no será una función visible ni necesaria para el usuario normal.
+
+La arquitectura pública deberá separar:
+
+- catálogo compartido: oposiciones, materias, temas, subapartados y preguntas;
+- datos individuales: valoración inicial, fecha de examen, tests, respuestas, fallos, dudas, progreso, retención y recomendaciones.
+
+Una actualización o corrección del banco central debe llegar a todos los usuarios sin borrar ni mezclar su progreso. Esta transición requerirá migrar el modelo provisional actual, donde las preguntas todavía pertenecen a cada usuario.
+
 ## Arranque de una cuenta nueva
 
 1. Registrar fecha de examen exacta o aproximada.
