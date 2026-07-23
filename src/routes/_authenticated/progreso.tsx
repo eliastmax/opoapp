@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   LockKeyhole,
   XCircle,
+  Clock3,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -54,22 +55,37 @@ const EVIDENCE_STYLES: Record<EvidenceState, string> = {
   robusta: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
 };
 
+type RetentionSummaryRow = {
+  topic_id: string;
+  due_count: number;
+  next_review_at: string | null;
+};
+
 function ProgresoPage() {
   const { data, isLoading, error } = useQuery({
-    queryKey: ["topic-progress", "progress-v1.0", "verified-progress-v1.0", "learning-stages-v1.0"],
+    queryKey: [
+      "topic-progress",
+      "progress-v1.0",
+      "verified-progress-v1.0",
+      "learning-stages-v1.0",
+      "retention-v1.0",
+    ],
     queryFn: async () => {
-      const [progressResult, verifiedResult, stagesResult] = await Promise.all([
+      const [progressResult, verifiedResult, stagesResult, retentionResult] = await Promise.all([
         supabase.rpc("get_topic_progress_summary"),
         supabase.rpc("get_verified_progress_summary"),
         supabase.rpc("get_learning_stage_progress"),
+        supabase.rpc("get_retention_review_summary"),
       ]);
       if (progressResult.error) throw progressResult.error;
       if (verifiedResult.error) throw verifiedResult.error;
       if (stagesResult.error) throw stagesResult.error;
+      if (retentionResult.error) throw retentionResult.error;
       return {
         progress: progressResult.data ?? [],
         verified: verifiedResult.data ?? [],
         stages: stagesResult.data ?? [],
+        retention: (retentionResult.data ?? []) as RetentionSummaryRow[],
       };
     },
   });
@@ -79,6 +95,9 @@ function ProgresoPage() {
     (data?.verified ?? []).map((row) => [row.topic_id, row] as const),
   );
   const stagesByTopic = new Map((data?.stages ?? []).map((row) => [row.topic_id, row] as const));
+  const retentionByTopic = new Map(
+    (data?.retention ?? []).map((row) => [row.topic_id, row] as const),
+  );
 
   return (
     <div className="space-y-4">
@@ -138,6 +157,7 @@ function ProgresoPage() {
                 topic={topic}
                 verified={verifiedByTopic.get(topic.topic_id)}
                 stages={stagesByTopic.get(topic.topic_id)}
+                retention={retentionByTopic.get(topic.topic_id)}
               />
             ))}
           </section>
@@ -179,10 +199,12 @@ function TopicProgressCard({
   topic,
   verified,
   stages,
+  retention,
 }: {
   topic: TopicProgressRow;
   verified?: VerifiedProgressRow;
   stages?: LearningStageProgress;
+  retention?: RetentionSummaryRow;
 }) {
   const state = evidenceState(topic.evidence_state);
   const mastery = topic.mastery_percentage;
@@ -234,12 +256,19 @@ function TopicProgressCard({
             <Flag className="h-3 w-3" /> {topic.active_doubts} dudas
           </span>
         )}
+        {(retention?.due_count ?? 0) > 0 && (
+          <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-2 py-1 text-amber-700 dark:text-amber-300">
+            <Clock3 className="h-3 w-3" /> {retention?.due_count} para repasar hoy
+          </span>
+        )}
       </div>
 
       <div className="mt-4 rounded-lg border bg-muted/40 p-3">
         <p className="text-xs font-semibold">Siguiente paso</p>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          {nextProgressAction(topic)}
+          {(retention?.due_count ?? 0) > 0
+            ? `Tienes ${retention?.due_count} ${retention?.due_count === 1 ? "repaso programado" : "repasos programados"} para hoy. La sesión recomendada los priorizará.`
+            : nextProgressAction(topic)}
         </p>
       </div>
 
