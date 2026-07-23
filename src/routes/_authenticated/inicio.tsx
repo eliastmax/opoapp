@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import {
   BookOpen,
   Trophy,
@@ -14,6 +15,8 @@ import {
   Flag,
   Gauge,
   Sparkles,
+  PlayCircle,
+  Trash2,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -21,6 +24,16 @@ import { uniqueActiveFailureIds } from "@/lib/active-failures";
 import { uniqueActiveDoubtIds } from "@/lib/active-doubts";
 import { describeRecommendedSession, RECOMMENDED_SESSION_SIZES } from "@/lib/recommended-session";
 import { displayName } from "@/lib/user-greeting";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/inicio")({
   component: InicioPage,
@@ -28,10 +41,13 @@ export const Route = createFileRoute("/_authenticated/inicio")({
 
 function InicioPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [repasando, setRepasando] = useState(false);
   const [repasandoDudas, setRepasandoDudas] = useState(false);
   const [recommendedSize, setRecommendedSize] = useState<number>(10);
   const [creatingRecommended, setCreatingRecommended] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [discarding, setDiscarding] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
@@ -39,34 +55,61 @@ function InicioPage() {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError || !userData.user) throw userError ?? new Error("Sesión no válida");
 
-      const [profile, activas, completados, ultimo, aciertosTotal, falladasActivas, dudasActivas] =
-        await Promise.all([
-          supabase.from("profiles").select("nombre").eq("id", userData.user.id).maybeSingle(),
-          supabase
-            .from("questions")
-            .select("id", { count: "exact", head: true })
-            .eq("activa", true),
-          supabase
-            .from("tests")
-            .select("id", { count: "exact", head: true })
-            .eq("completado", true),
-          supabase
-            .from("tests")
-            .select("id, porcentaje, aciertos, numero_preguntas, fecha_finalizacion")
-            .eq("completado", true)
-            .order("fecha_finalizacion", { ascending: false })
-            .limit(1)
-            .maybeSingle(),
-          supabase.from("test_answers").select("correcta").not("correcta", "is", null),
-          supabase
-            .from("active_failed_questions")
-            .select("question_id", { count: "exact", head: true })
-            .eq("user_id", userData.user.id),
-          supabase
-            .from("active_doubt_questions")
-            .select("question_id", { count: "exact", head: true })
-            .eq("user_id", userData.user.id),
-        ]);
+      const [
+        profile,
+        activas,
+        completados,
+        ultimo,
+        aciertosTotal,
+        falladasActivas,
+        dudasActivas,
+        unfinishedTest,
+      ] = await Promise.all([
+        supabase.from("profiles").select("nombre").eq("id", userData.user.id).maybeSingle(),
+        supabase.from("questions").select("id", { count: "exact", head: true }).eq("activa", true),
+        supabase.from("tests").select("id", { count: "exact", head: true }).eq("completado", true),
+        supabase
+          .from("tests")
+          .select("id, porcentaje, aciertos, numero_preguntas, fecha_finalizacion")
+          .eq("completado", true)
+          .order("fecha_finalizacion", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase.from("test_answers").select("correcta").not("correcta", "is", null),
+        supabase
+          .from("active_failed_questions")
+          .select("question_id", { count: "exact", head: true })
+          .eq("user_id", userData.user.id),
+        supabase
+          .from("active_doubt_questions")
+          .select("question_id", { count: "exact", head: true })
+          .eq("user_id", userData.user.id),
+        supabase
+          .from("tests")
+          .select("id, tipo, numero_preguntas, fecha_inicio")
+          .eq("user_id", userData.user.id)
+          .eq("completado", false)
+          .order("fecha_inicio", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+      if (unfinishedTest.error) throw unfinishedTest.error;
+
+      let unfinished = null;
+      if (unfinishedTest.data) {
+        const { data: unfinishedAnswers, error: unfinishedAnswersError } = await supabase
+          .from("test_answers")
+          .select("respuesta_usuario")
+          .eq("user_id", userData.user.id)
+          .eq("test_id", unfinishedTest.data.id);
+        if (unfinishedAnswersError) throw unfinishedAnswersError;
+        unfinished = {
+          ...unfinishedTest.data,
+          answered:
+            unfinishedAnswers?.filter((answer) => answer.respuesta_usuario !== null).length ?? 0,
+        };
+      }
+
       const totalRespuestas = aciertosTotal.data?.length ?? 0;
       const aciertos = aciertosTotal.data?.filter((r) => r.correcta === true).length ?? 0;
       const pct = totalRespuestas > 0 ? Math.round((aciertos / totalRespuestas) * 100) : 0;
@@ -82,6 +125,7 @@ function InicioPage() {
         pctGlobal: pct,
         distintasFalladas: falladasActivas.count ?? 0,
         distintasDudosas: dudasActivas.count ?? 0,
+        unfinished,
       };
     },
   });
@@ -207,6 +251,28 @@ function InicioPage() {
     }
   }
 
+  async function discardUnfinishedTest() {
+    if (!data?.unfinished || discarding) return;
+    setDiscarding(true);
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) throw userError ?? new Error("Sesión no válida");
+      const { error } = await supabase
+        .from("tests")
+        .delete()
+        .eq("id", data.unfinished.id)
+        .eq("user_id", userData.user.id);
+      if (error) throw error;
+      setConfirmDiscard(false);
+      await queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      toast.success("Test descartado");
+    } catch (error) {
+      toast.error((error as Error).message);
+    } finally {
+      setDiscarding(false);
+    }
+  }
+
   const falladas = data?.distintasFalladas ?? 0;
   const hasFalladas = falladas > 0;
   const dudas = data?.distintasDudosas ?? 0;
@@ -281,6 +347,61 @@ function InicioPage() {
           Si falta alguna categoría, la app redistribuye las preguntas sin repetirlas.
         </p>
       </Card>
+
+      {data?.unfinished && (
+        <Card className="overflow-hidden border-primary/15 bg-card/95 p-0 shadow-[0_16px_40px_-30px_oklch(0.28_0.08_250/0.5)]">
+          <div className="p-4">
+            <div className="flex items-start gap-3">
+              <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
+                <PlayCircle className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-primary">
+                  Test en curso
+                </p>
+                <h2 className="mt-0.5 text-base font-bold">Continúa donde lo dejaste</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {data.unfinished.answered >= data.unfinished.numero_preguntas
+                    ? "Todo respondido · pendiente de corregir"
+                    : `${data.unfinished.answered} de ${data.unfinished.numero_preguntas} respondidas`}
+                </p>
+              </div>
+            </div>
+            <Progress
+              value={
+                data.unfinished.numero_preguntas > 0
+                  ? (data.unfinished.answered / data.unfinished.numero_preguntas) * 100
+                  : 0
+              }
+              className="mt-3 h-1.5"
+            />
+          </div>
+          <div className="grid grid-cols-[1fr_auto] gap-2 border-t border-border/70 bg-muted/25 p-3">
+            <Button
+              type="button"
+              className="h-10"
+              onClick={() =>
+                navigate({
+                  to: "/test/$id",
+                  params: { id: data.unfinished!.id },
+                })
+              }
+            >
+              Continuar test <ArrowRight className="ml-1.5 h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 text-muted-foreground hover:text-destructive"
+              aria-label="Descartar test en curso"
+              onClick={() => setConfirmDiscard(true)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </Card>
+      )}
 
       <Link to="/crear" className="block">
         <Button variant="outline" className="h-12 w-full border-primary/20 bg-card/90 text-base">
@@ -381,6 +502,32 @@ function InicioPage() {
           <ArrowRight className="h-4 w-4 text-muted-foreground" />
         </Card>
       </Link>
+
+      <AlertDialog open={confirmDiscard} onOpenChange={setConfirmDiscard}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Descartar este test?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminarán sus respuestas guardadas. Esta acción no afecta a tus preguntas ni a los
+              tests ya terminados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={discarding}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void discardUnfinishedTest();
+              }}
+              disabled={discarding}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {discarding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Descartar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
