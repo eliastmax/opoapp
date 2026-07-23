@@ -1,12 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, Flag, Loader2, LogOut } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock3, Flag, Loader2, LogOut } from "lucide-react";
 import type { Respuesta } from "@/lib/csv-parser";
 import {
   AlertDialog,
@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { formatExamTime, remainingExamSeconds } from "@/lib/exam-simulation";
 
 export const Route = createFileRoute("/_authenticated/test/$id")({
   component: TestPage,
@@ -32,6 +33,8 @@ function TestPage() {
   const [confirmExit, setConfirmExit] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [initializedTestId, setInitializedTestId] = useState<string | null>(null);
+  const [clockNow, setClockNow] = useState(() => Date.now());
+  const autoFinishRequested = useRef(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["test", id],
@@ -52,6 +55,21 @@ function TestPage() {
     },
   });
 
+  const finish = useCallback(async () => {
+    if (finishing) return;
+    setFinishing(true);
+    try {
+      const { error } = await supabase.rpc("complete_test", { p_test_id: id });
+      if (error) throw error;
+      await qc.invalidateQueries({ queryKey: ["dashboard"] });
+      navigate({ to: "/resultados/$id", params: { id }, replace: true });
+    } catch (error) {
+      toast.error((error as Error).message);
+      setFinishing(false);
+      autoFinishRequested.current = false;
+    }
+  }, [finishing, id, navigate, qc]);
+
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
       if (data && !data.test.completado) {
@@ -69,6 +87,32 @@ function TestPage() {
     setCurrent(firstPending >= 0 ? firstPending : Math.max(data.answers.length - 1, 0));
     setInitializedTestId(id);
   }, [data, id, initializedTestId]);
+
+  const examSecondsRemaining =
+    data?.test.exam_duration_minutes && !data.test.completado
+      ? remainingExamSeconds(data.test.fecha_inicio, data.test.exam_duration_minutes, clockNow)
+      : null;
+
+  useEffect(() => {
+    if (!data?.test.exam_duration_minutes || data.test.completado) return;
+    setClockNow(Date.now());
+    const interval = window.setInterval(() => setClockNow(Date.now()), 1_000);
+    return () => window.clearInterval(interval);
+  }, [data?.test.completado, data?.test.exam_duration_minutes]);
+
+  useEffect(() => {
+    if (
+      examSecondsRemaining !== 0 ||
+      !data ||
+      data.test.completado ||
+      autoFinishRequested.current
+    ) {
+      return;
+    }
+    autoFinishRequested.current = true;
+    toast.info("Tiempo agotado. Corrigiendo el simulacro…");
+    void finish();
+  }, [data, examSecondsRemaining, finish]);
 
   const total = data?.answers.length ?? 0;
   const answered = useMemo(
@@ -131,20 +175,6 @@ function TestPage() {
     });
   }
 
-  async function finish() {
-    if (finishing) return;
-    setFinishing(true);
-    try {
-      const { error } = await supabase.rpc("complete_test", { p_test_id: id });
-      if (error) throw error;
-      await qc.invalidateQueries({ queryKey: ["dashboard"] });
-      navigate({ to: "/resultados/$id", params: { id }, replace: true });
-    } catch (e) {
-      toast.error((e as Error).message);
-      setFinishing(false);
-    }
-  }
-
   function revisarRespuestas() {
     setConfirmFinish(false);
     const idx = data!.answers.findIndex((a) => a.respuesta_usuario === null);
@@ -167,15 +197,31 @@ function TestPage() {
   return (
     <div className="space-y-3 pb-20">
       <header className="sticky top-0 z-20 -mx-4 -mt-4 border-b border-border/60 bg-background/90 px-4 pb-3 pt-4 backdrop-blur-xl">
-        <div className="flex items-center justify-between text-xs">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center text-xs">
           <div className="flex items-baseline gap-1">
             <span className="text-lg font-bold text-foreground">{current + 1}</span>
             <span className="font-medium text-muted-foreground">de {total}</span>
           </div>
+          {examSecondsRemaining !== null ? (
+            <div
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-xs font-bold ${
+                examSecondsRemaining <= 300
+                  ? "bg-destructive/10 text-destructive"
+                  : "bg-primary/10 text-primary"
+              }`}
+              aria-live="polite"
+              aria-label={`Tiempo restante: ${formatExamTime(examSecondsRemaining)}`}
+            >
+              <Clock3 className="h-3.5 w-3.5" />
+              {formatExamTime(examSecondsRemaining)}
+            </div>
+          ) : (
+            <span />
+          )}
           <button
             type="button"
             onClick={() => setConfirmExit(true)}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <LogOut className="h-3.5 w-3.5" /> Salir
           </button>
@@ -270,6 +316,9 @@ function TestPage() {
               {remaining > 0 ? ` Te quedan ${remaining} sin responder.` : ""}
               {doubts > 0
                 ? ` Has marcado ${doubts} ${doubts === 1 ? "pregunta" : "preguntas"} como duda.`
+                : ""}
+              {examSecondsRemaining !== null
+                ? ` Tiempo restante: ${formatExamTime(examSecondsRemaining)}.`
                 : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -426,6 +426,7 @@ export type Database = {
           aciertos: number;
           completado: boolean;
           created_at: string;
+          exam_duration_minutes: number | null;
           fallos: number;
           fecha_finalizacion: string | null;
           fecha_inicio: string;
@@ -442,6 +443,7 @@ export type Database = {
           aciertos?: number;
           completado?: boolean;
           created_at?: string;
+          exam_duration_minutes?: number | null;
           fallos?: number;
           fecha_finalizacion?: string | null;
           fecha_inicio?: string;
@@ -458,6 +460,7 @@ export type Database = {
           aciertos?: number;
           completado?: boolean;
           created_at?: string;
+          exam_duration_minutes?: number | null;
           fallos?: number;
           fecha_finalizacion?: string | null;
           fecha_inicio?: string;
@@ -664,6 +667,19 @@ export type Database = {
           selected_count: number;
           test_id: string;
           was_locked_override: boolean;
+        }[];
+      };
+      create_exam_simulation: {
+        Args: {
+          p_duration_minutes?: number;
+          p_question_count?: number;
+        };
+        Returns: {
+          available_topic_count: number;
+          covered_topic_count: number;
+          duration_minutes: number;
+          selected_count: number;
+          test_id: string;
         }[];
       };
       create_multi_topic_test: {

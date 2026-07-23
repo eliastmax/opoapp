@@ -21,6 +21,7 @@ Este índice registra qué partes de la V2 están realmente implementadas y vali
 - [Continuidad de tests y feedback contextual](sprint-15-continuidad-feedback.md): implementado técnicamente; pendiente de validación en uso real.
 - [Retención programada](sprint-16-retencion-programada.md): implementada técnicamente; pendiente de validación en uso real.
 - [Tests multitema equilibrados (V2.5)](sprint-17-tests-multitema.md): implementados técnicamente; pendientes de validación en uso real.
+- [Simulacro de examen (V2.5)](sprint-18-simulacro-examen.md): implementado técnicamente; pendiente de validación en uso real.
 
 ## Sprint en implementación
 

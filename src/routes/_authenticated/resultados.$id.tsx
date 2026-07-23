@@ -10,6 +10,7 @@ import {
   BookOpenCheck,
   CheckCircle2,
   ClipboardCopy,
+  Clock3,
   Flag,
   Lightbulb,
   Loader2,
@@ -42,6 +43,7 @@ import {
 import { LEARNING_STAGE_LABELS, learningStage } from "@/lib/learning-stages";
 import { resultFeedback } from "@/lib/result-feedback";
 import { topicLabel } from "@/lib/topic-label";
+import { elapsedExamMinutes } from "@/lib/exam-simulation";
 
 export const Route = createFileRoute("/_authenticated/resultados/$id")({
   component: ResultadosPage,
@@ -433,6 +435,11 @@ function ResultadosPage() {
     doubts: dudosas.length,
     questionCount: t.numero_preguntas,
   });
+  const simulationElapsed = elapsedExamMinutes(
+    t.fecha_inicio,
+    t.fecha_finalizacion,
+    t.exam_duration_minutes,
+  );
 
   return (
     <div className="space-y-5">
@@ -445,9 +452,11 @@ function ResultadosPage() {
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           <span>
-            {t.tipo.startsWith("multitema_")
-              ? `Varios temas · ${t.tipo.replace("multitema_", "")}`
-              : t.tipo}
+            {t.tipo === "simulacro"
+              ? "Simulacro"
+              : t.tipo.startsWith("multitema_")
+                ? `Varios temas · ${t.tipo.replace("multitema_", "")}`
+                : t.tipo}
           </span>
           {t.learning_stage ? ` · ${LEARNING_STAGE_LABELS[learningStage(t.learning_stage)]}` : ""}
           {t.stage_free_mode ? " · modo libre" : ""}
@@ -475,6 +484,20 @@ function ResultadosPage() {
           />
         </div>
       </Card>
+
+      {t.tipo === "simulacro" && t.exam_duration_minutes && simulationElapsed !== null && (
+        <Card className="flex items-center gap-3 border-primary/15 bg-card/90 p-4">
+          <span className="rounded-xl bg-primary/10 p-2.5 text-primary">
+            <Clock3 className="h-5 w-5" />
+          </span>
+          <div>
+            <div className="text-sm font-bold">Tiempo utilizado</div>
+            <div className="text-xs text-muted-foreground">
+              {simulationElapsed} de {t.exam_duration_minutes} minutos
+            </div>
+          </div>
+        </Card>
+      )}
 
       {revisar.length > 0 && reviewBlock}
 
@@ -531,7 +554,7 @@ function ResultadosPage() {
       <Card className="bg-card/90 px-4">
         <Accordion
           type="multiple"
-          defaultValue={t.tipo.startsWith("multitema_") ? ["topics"] : []}
+          defaultValue={t.tipo.startsWith("multitema_") || t.tipo === "simulacro" ? ["topics"] : []}
           className="w-full"
         >
           <AccordionItem value="topics">

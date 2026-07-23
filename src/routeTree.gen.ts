@@ -13,6 +13,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedSimulacroRouteImport } from './routes/_authenticated/simulacro'
 import { Route as AuthenticatedProgresoRouteImport } from './routes/_authenticated/progreso'
 import { Route as AuthenticatedPreguntasRouteImport } from './routes/_authenticated/preguntas'
 import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated/inicio'
@@ -41,6 +42,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedSimulacroRoute = AuthenticatedSimulacroRouteImport.update({
+  id: '/simulacro',
+  path: '/simulacro',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedProgresoRoute = AuthenticatedProgresoRouteImport.update({
   id: '/progreso',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/inicio': typeof AuthenticatedInicioRoute
   '/preguntas': typeof AuthenticatedPreguntasRoute
   '/progreso': typeof AuthenticatedProgresoRoute
+  '/simulacro': typeof AuthenticatedSimulacroRoute
   '/resultados/$id': typeof AuthenticatedResultadosIdRoute
   '/test/$id': typeof AuthenticatedTestIdRoute
 }
@@ -114,6 +121,7 @@ export interface FileRoutesByTo {
   '/inicio': typeof AuthenticatedInicioRoute
   '/preguntas': typeof AuthenticatedPreguntasRoute
   '/progreso': typeof AuthenticatedProgresoRoute
+  '/simulacro': typeof AuthenticatedSimulacroRoute
   '/resultados/$id': typeof AuthenticatedResultadosIdRoute
   '/test/$id': typeof AuthenticatedTestIdRoute
 }
@@ -130,6 +138,7 @@ export interface FileRoutesById {
   '/_authenticated/inicio': typeof AuthenticatedInicioRoute
   '/_authenticated/preguntas': typeof AuthenticatedPreguntasRoute
   '/_authenticated/progreso': typeof AuthenticatedProgresoRoute
+  '/_authenticated/simulacro': typeof AuthenticatedSimulacroRoute
   '/_authenticated/resultados/$id': typeof AuthenticatedResultadosIdRoute
   '/_authenticated/test/$id': typeof AuthenticatedTestIdRoute
 }
@@ -146,6 +155,7 @@ export interface FileRouteTypes {
     | '/inicio'
     | '/preguntas'
     | '/progreso'
+    | '/simulacro'
     | '/resultados/$id'
     | '/test/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -160,6 +170,7 @@ export interface FileRouteTypes {
     | '/inicio'
     | '/preguntas'
     | '/progreso'
+    | '/simulacro'
     | '/resultados/$id'
     | '/test/$id'
   id:
@@ -175,6 +186,7 @@ export interface FileRouteTypes {
     | '/_authenticated/inicio'
     | '/_authenticated/preguntas'
     | '/_authenticated/progreso'
+    | '/_authenticated/simulacro'
     | '/_authenticated/resultados/$id'
     | '/_authenticated/test/$id'
   fileRoutesById: FileRoutesById
@@ -215,6 +227,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/simulacro': {
+      id: '/_authenticated/simulacro'
+      path: '/simulacro'
+      fullPath: '/simulacro'
+      preLoaderRoute: typeof AuthenticatedSimulacroRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/progreso': {
       id: '/_authenticated/progreso'
@@ -290,6 +309,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInicioRoute: typeof AuthenticatedInicioRoute
   AuthenticatedPreguntasRoute: typeof AuthenticatedPreguntasRoute
   AuthenticatedProgresoRoute: typeof AuthenticatedProgresoRoute
+  AuthenticatedSimulacroRoute: typeof AuthenticatedSimulacroRoute
   AuthenticatedResultadosIdRoute: typeof AuthenticatedResultadosIdRoute
   AuthenticatedTestIdRoute: typeof AuthenticatedTestIdRoute
 }
@@ -302,6 +322,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedInicioRoute: AuthenticatedInicioRoute,
   AuthenticatedPreguntasRoute: AuthenticatedPreguntasRoute,
   AuthenticatedProgresoRoute: AuthenticatedProgresoRoute,
+  AuthenticatedSimulacroRoute: AuthenticatedSimulacroRoute,
   AuthenticatedResultadosIdRoute: AuthenticatedResultadosIdRoute,
   AuthenticatedTestIdRoute: AuthenticatedTestIdRoute,
 }

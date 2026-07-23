@@ -18,6 +18,7 @@ import {
   PlayCircle,
   Trash2,
   Clock3,
+  FileCheck2,
   Info,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -430,6 +431,21 @@ function InicioPage() {
         <Button variant="outline" className="h-12 w-full border-primary/20 bg-card/90 text-base">
           <BookOpen className="h-4 w-4" /> Crear test personalizado
         </Button>
+      </Link>
+
+      <Link to="/simulacro" className="block">
+        <Card className="flex items-center gap-3 border-primary/20 bg-card/90 p-4 transition-colors hover:bg-accent/50">
+          <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
+            <FileCheck2 className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-bold">Simulacro con tiempo</div>
+            <div className="text-xs text-muted-foreground">
+              Mide tu nivel sin selección adaptativa
+            </div>
+          </div>
+          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+        </Card>
       </Link>
 
       <section aria-labelledby="activity-heading">

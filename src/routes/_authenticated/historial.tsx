@@ -11,7 +11,9 @@ export const Route = createFileRoute("/_authenticated/historial")({
 function HistorialPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["tests-history"],
-    queryFn: async () => (await supabase.from("tests").select("*").order("created_at", { ascending: false })).data ?? [],
+    queryFn: async () =>
+      (await supabase.from("tests").select("*").order("created_at", { ascending: false })).data ??
+      [],
   });
 
   return (
@@ -21,9 +23,13 @@ function HistorialPage() {
         <p className="text-sm text-muted-foreground">Tus tests anteriores</p>
       </header>
       {isLoading ? (
-        <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin" /></div>
+        <div className="flex justify-center py-10">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
       ) : (data ?? []).length === 0 ? (
-        <Card className="p-6 text-center text-sm text-muted-foreground">Aún no has realizado ningún test</Card>
+        <Card className="p-6 text-center text-sm text-muted-foreground">
+          Aún no has realizado ningún test
+        </Card>
       ) : (
         <div className="space-y-2">
           {(data ?? []).map((t) => {
@@ -32,18 +38,31 @@ function HistorialPage() {
               : { to: "/test/$id" as const, params: { id: t.id } };
             return (
               <Link key={t.id} {...linkProps}>
-                <Card className="p-3 flex items-center justify-between hover:bg-accent/50 transition-colors">
+                <Card className="flex items-center justify-between p-3 transition-colors hover:bg-accent/50">
                   <div>
-                    <div className="text-sm font-medium capitalize">{t.tipo}</div>
+                    <div className="text-sm font-medium">
+                      {t.tipo === "simulacro" ? "Simulacro" : t.tipo}
+                    </div>
                     <div className="text-xs text-muted-foreground">
-                      {new Date(t.created_at).toLocaleDateString("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })} · {t.numero_preguntas} preguntas
+                      {new Date(t.created_at).toLocaleDateString("es-ES", {
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}{" "}
+                      · {t.numero_preguntas} preguntas
+                      {t.exam_duration_minutes ? ` · ${t.exam_duration_minutes} min` : ""}
                     </div>
                   </div>
                   <div className="text-right">
                     {t.completado ? (
                       <>
-                        <div className="text-lg font-bold text-primary">{Number(t.porcentaje)}%</div>
-                        <div className="text-xs text-muted-foreground">{t.aciertos}/{t.numero_preguntas}</div>
+                        <div className="text-lg font-bold text-primary">
+                          {Number(t.porcentaje)}%
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {t.aciertos}/{t.numero_preguntas}
+                        </div>
                       </>
                     ) : (
                       <div className="text-xs font-medium text-warning">Continuar</div>

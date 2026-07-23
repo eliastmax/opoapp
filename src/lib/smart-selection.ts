@@ -14,6 +14,7 @@ export const SELECTION_LABELS: Record<string, string> = {
   retencion: "Repaso por retención",
   poco_vista: "Preguntas poco vistas",
   variedad: "Variedad del tema",
+  simulacro: "Cobertura neutral de examen",
 };
 
 export function summarizeSelection(rows: SelectionTraceRow[]) {
