@@ -18,13 +18,11 @@ Este índice registra qué partes de la V2 están realmente implementadas y vali
 - [Experiencia de realización de test](sprint-11-experiencia-realizacion-test.md): implementada y validada en uso real.
 - [Controles de salida y reinicio](sprint-13-controles-usuario.md): salida segura del test y reinicio del progreso sin borrar preguntas.
 
+- [Resultados visuales y orientados al repaso](sprint-12-resultados-visuales.md): implementados y ajustados tras validación visual en uso real.
+
 ## Sprint en implementación
 
-- [Resultados visuales y orientados al repaso](sprint-12-resultados-visuales.md): los fallos y dudas primero, con detalles secundarios plegados.
-
-## Bloques posteriores opcionales
-
-- Importación simultánea de varios CSV.
+- [Importación múltiple de CSV](sprint-14-importacion-multiple.md): selección, validación e importación conjunta de varios bancos.
 
 ## Diseño futuro
 
