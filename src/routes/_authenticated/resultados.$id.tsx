@@ -346,12 +346,12 @@ function ResultadosPage() {
           </div>
         )}
         {q.explicacion && (
-          <div className="rounded-xl border border-primary/15 bg-gradient-to-br from-primary/7 to-primary/3 p-3.5">
+          <div className="rounded-xl border border-amber-400/25 bg-gradient-to-br from-amber-50/90 to-orange-50/60 p-3.5 dark:from-amber-950/25 dark:to-orange-950/15">
             <div className="mb-2 flex items-center gap-2">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-300">
                 <Lightbulb className="h-4 w-4" />
               </span>
-              <div className="text-xs font-bold uppercase tracking-[0.12em] text-primary">
+              <div className="text-xs font-bold uppercase tracking-[0.12em] text-amber-800 dark:text-amber-200">
                 Por qué
               </div>
             </div>
@@ -633,4 +633,3 @@ function ResultStat({
     </div>
   );
 }
-
