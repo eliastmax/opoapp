@@ -428,9 +428,23 @@ function InicioPage() {
       )}
 
       <Link to="/crear" className="block">
-        <Button variant="outline" className="h-12 w-full border-primary/20 bg-card/90 text-base">
-          <BookOpen className="h-4 w-4" /> Crear test personalizado
-        </Button>
+        <Card className="group overflow-hidden border-primary/25 bg-gradient-to-r from-primary/12 via-card to-card p-0 shadow-[0_16px_38px_-28px_oklch(0.32_0.14_250/0.75)] transition-all hover:border-primary/40 hover:shadow-[0_18px_42px_-26px_oklch(0.32_0.14_250/0.85)]">
+          <div className="flex items-center gap-3 p-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md shadow-primary/20">
+              <BookOpen className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-base font-bold">Crear test personalizado</div>
+              <div className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                Elige temas, nivel y tipo de preguntas
+              </div>
+            </div>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform group-hover:translate-x-0.5">
+              <ArrowRight className="h-4 w-4" />
+            </span>
+          </div>
+          <div className="h-1 bg-gradient-to-r from-primary via-primary/60 to-transparent" />
+        </Card>
       </Link>
 
       <Link to="/simulacro" className="block">
