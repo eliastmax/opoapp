@@ -52,10 +52,16 @@ import {
   LEARNING_STAGE_LABELS,
   LEARNING_STAGES,
   isStageUnlocked,
-  learningStage,
   stageRequirements,
   type LearningStage,
 } from "@/lib/learning-stages";
+import {
+  isStageUnlockedForAll,
+  lockedTopicCount,
+  multiTopicSelectionValid,
+  recommendedStageForScope,
+  type ContentScope,
+} from "@/lib/multi-topic";
 import { topicLabel } from "@/lib/topic-label";
 import { subjectLabel, subjectTopicPrefix } from "@/lib/subject-label";
 
@@ -68,8 +74,13 @@ const CANTIDADES = [5, 10, 20, 30, 50] as const;
 
 function CrearPage() {
   const navigate = useNavigate();
+  const [contentScope, setContentScope] = useState<ContentScope>("tema");
   const [subjectId, setSubjectId] = useState<string>("");
   const [topicId, setTopicId] = useState<string>("");
+  const [multiTopicIds, setMultiTopicIds] = useState<string[]>([]);
+  const [multiTopicDialogOpen, setMultiTopicDialogOpen] = useState(false);
+  const [multiTopicSearch, setMultiTopicSearch] = useState("");
+  const [multiTopicSearchOpen, setMultiTopicSearchOpen] = useState(false);
   const [subjectDialogOpen, setSubjectDialogOpen] = useState(false);
   const [topicDialogOpen, setTopicDialogOpen] = useState(false);
   const [subjectSearch, setSubjectSearch] = useState("");
@@ -109,6 +120,12 @@ function CrearPage() {
           .order("numero")
       ).data ?? [],
   });
+  const { data: allTopics } = useQuery({
+    queryKey: ["topics", "all"],
+    queryFn: async () =>
+      (await supabase.from("topics").select("id, numero, nombre, subject_id").order("numero"))
+        .data ?? [],
+  });
   const { data: subtopics } = useQuery({
     queryKey: ["subtopics", topicId],
     enabled: !!topicId,
@@ -121,17 +138,39 @@ function CrearPage() {
           .order("nombre")
       ).data ?? [],
   });
-  const { data: stageProgress } = useQuery({
-    queryKey: ["learning-stage-progress", topicId],
-    enabled: !!topicId,
+  const { data: allStageProgress } = useQuery({
+    queryKey: ["learning-stage-progress"],
     queryFn: async () => {
       const { data, error } = await supabase.rpc("get_learning_stage_progress");
       if (error) throw error;
-      return (data ?? []).find((row) => row.topic_id === topicId) ?? null;
+      return data ?? [];
     },
   });
 
-  const canStart = useMemo(() => subjectId && topicId, [subjectId, topicId]);
+  const selectedTopicIds = useMemo(
+    () =>
+      contentScope === "tema"
+        ? topicId
+          ? [topicId]
+          : []
+        : contentScope === "todo"
+          ? (allTopics ?? []).map((topic) => topic.id)
+          : multiTopicIds,
+    [allTopics, contentScope, multiTopicIds, topicId],
+  );
+  const selectedStageProgress = useMemo(
+    () => (allStageProgress ?? []).filter((row) => selectedTopicIds.includes(row.topic_id)),
+    [allStageProgress, selectedTopicIds],
+  );
+  const stageProgress =
+    contentScope === "tema"
+      ? (selectedStageProgress.find((row) => row.topic_id === topicId) ?? null)
+      : null;
+  const hasContent =
+    contentScope === "tema"
+      ? Boolean(subjectId && topicId)
+      : multiTopicSelectionValid(selectedTopicIds, cantidad);
+  const canStart = hasContent;
 
   const filteredSubtopics = useMemo(() => {
     const query = normalizeSearch(subtopicSearch);
@@ -155,6 +194,16 @@ function CrearPage() {
       normalizeSearch(topicLabel(topic.numero, topic.nombre)).includes(query),
     );
   }, [topics, topicSearch]);
+  const filteredAllTopics = useMemo(() => {
+    const query = normalizeSearch(multiTopicSearch);
+    if (!query) return allTopics ?? [];
+    return (allTopics ?? []).filter((topic) => {
+      const subject = subjects?.find((item) => item.id === topic.subject_id);
+      return normalizeSearch(
+        `${topicLabel(topic.numero, topic.nombre)} ${subject?.nombre ?? ""}`,
+      ).includes(query);
+    });
+  }, [allTopics, multiTopicSearch, subjects]);
 
   // Auto-select when only one option exists
   useEffect(() => {
@@ -179,16 +228,22 @@ function CrearPage() {
   }, [topicId, subtopics, subtopicIds.length]);
 
   useEffect(() => {
-    const recommended = learningStage(stageProgress?.recommended_stage);
+    const recommended = recommendedStageForScope(
+      selectedStageProgress,
+      contentScope === "tema" ? topicId : undefined,
+    );
     setSelectedStage(recommended);
     setStageFreeMode(false);
-  }, [topicId, stageProgress?.recommended_stage]);
+  }, [contentScope, topicId, selectedStageProgress]);
 
   const hideSubject = !!subjects && subjects.length === 1;
   const hideTopic = !!topics && topics.length === 1;
   const hideSubtopic = !!subtopics && subtopics.length <= 1;
   const selectedSubject = subjects?.find((subject) => subject.id === subjectId);
   const selectedTopic = topics?.find((topic) => topic.id === topicId);
+  const selectedMultiTopics = (allTopics ?? []).filter((topic) =>
+    selectedTopicIds.includes(topic.id),
+  );
 
   function handleSubtopicDialogOpenChange(open: boolean) {
     if (open) {
@@ -199,7 +254,11 @@ function CrearPage() {
   }
 
   function chooseStage(stage: LearningStage) {
-    if (!stageProgress || isStageUnlocked(stageProgress, stage)) {
+    const unlocked =
+      contentScope === "tema"
+        ? !stageProgress || isStageUnlocked(stageProgress, stage)
+        : isStageUnlockedForAll(selectedStageProgress, stage);
+    if (unlocked) {
       setSelectedStage(stage);
       setStageFreeMode(false);
       return;
@@ -213,6 +272,32 @@ function CrearPage() {
     try {
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData.user!.id;
+
+      if (contentScope !== "tema") {
+        const { data: multiTest, error: multiError } = await supabase.rpc(
+          "create_multi_topic_test",
+          {
+            p_topic_ids: selectedTopicIds,
+            p_learning_stage: selectedStage,
+            p_mode: modalidad,
+            p_question_count: cantidad,
+            p_free_mode: stageFreeMode,
+          },
+        );
+        if (multiError) throw multiError;
+
+        const created = multiTest?.[0];
+        if (!created) throw new Error("No se pudo crear el test de varios temas");
+        if (created.selected_count < cantidad) {
+          toast.warning(`Solo hay ${created.selected_count} preguntas disponibles`);
+        } else if (created.covered_topic_count < created.requested_topic_count) {
+          toast.warning(
+            `El test cubre ${created.covered_topic_count} de ${created.requested_topic_count} temas por falta de preguntas compatibles`,
+          );
+        }
+        navigate({ to: "/test/$id", params: { id: created.test_id } });
+        return;
+      }
 
       if (modalidad === "mezcladas") {
         const { data: smartTest, error: smartError } = await supabase.rpc("create_level_test", {
@@ -334,9 +419,35 @@ function CrearPage() {
           icon={BookOpenText}
           step="1"
           title="Contenido"
-          description="Selecciona la materia y el tema."
+          description="Practica un tema, varios o todo lo que tienes cargado."
         />
-        {!hideSubject && (
+        <div className="grid grid-cols-3 gap-2">
+          {(
+            [
+              ["tema", "Un tema"],
+              ["varios", "Varios"],
+              ["todo", "Todo"],
+            ] as const
+          ).map(([scope, label]) => (
+            <button
+              key={scope}
+              type="button"
+              onClick={() => {
+                setContentScope(scope);
+                setStageFreeMode(false);
+              }}
+              className={`min-h-11 rounded-xl border px-2 text-sm font-semibold transition-colors ${
+                contentScope === scope
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "bg-background hover:bg-muted"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {contentScope === "tema" && !hideSubject && (
           <div className="space-y-1.5">
             <Label>Materia</Label>
             <Dialog
@@ -411,7 +522,7 @@ function CrearPage() {
           </div>
         )}
 
-        {subjectId && !hideTopic && (
+        {contentScope === "tema" && subjectId && !hideTopic && (
           <div className="space-y-1.5">
             <Label>Tema</Label>
             <Dialog
@@ -475,114 +586,249 @@ function CrearPage() {
           </div>
         )}
 
-        {topicId && subtopics && subtopics.length > 0 && !hideSubtopic && (
-          <div className="space-y-1.5">
-            <Label>Subapartados (opcional)</Label>
-            <Dialog open={subtopicDialogOpen} onOpenChange={handleSubtopicDialogOpenChange}>
-              <DialogTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-12 w-full justify-between px-3 font-normal"
-                >
-                  <span className="truncate">
-                    {subtopicIds.length === 0
-                      ? "Todos los subapartados"
-                      : subtopicIds.length === 1
-                        ? "1 seleccionado"
-                        : `${subtopicIds.length} seleccionados`}
-                  </span>
-                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
-                </Button>
-              </DialogTrigger>
+        {contentScope === "tema" &&
+          topicId &&
+          subtopics &&
+          subtopics.length > 0 &&
+          !hideSubtopic && (
+            <div className="space-y-1.5">
+              <Label>Subapartados (opcional)</Label>
+              <Dialog open={subtopicDialogOpen} onOpenChange={handleSubtopicDialogOpenChange}>
+                <DialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-12 w-full justify-between px-3 font-normal"
+                  >
+                    <span className="truncate">
+                      {subtopicIds.length === 0
+                        ? "Todos los subapartados"
+                        : subtopicIds.length === 1
+                          ? "1 seleccionado"
+                          : `${subtopicIds.length} seleccionados`}
+                    </span>
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
+                  </Button>
+                </DialogTrigger>
 
-              <DialogContent className="w-[calc(100%-2rem)] max-w-md gap-0 overflow-hidden rounded-lg p-0">
-                <DialogHeader className="border-b p-4 pr-10 text-left">
-                  <DialogTitle>Elegir subapartados</DialogTitle>
-                  <DialogDescription>
-                    Si no seleccionas ninguno, se utilizarán todos.
-                  </DialogDescription>
-                </DialogHeader>
+                <DialogContent className="w-[calc(100%-2rem)] max-w-md gap-0 overflow-hidden rounded-lg p-0">
+                  <DialogHeader className="border-b p-4 pr-10 text-left">
+                    <DialogTitle>Elegir subapartados</DialogTitle>
+                    <DialogDescription>
+                      Si no seleccionas ninguno, se utilizarán todos.
+                    </DialogDescription>
+                  </DialogHeader>
 
-                {subtopics.length > 6 && (
-                  <div className="border-b p-4">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        value={subtopicSearch}
-                        onChange={(event) => setSubtopicSearch(event.target.value)}
-                        placeholder="Buscar subapartado"
-                        aria-label="Buscar subapartado"
-                        className="h-11 pl-9"
-                      />
+                  {subtopics.length > 6 && (
+                    <div className="border-b p-4">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          value={subtopicSearch}
+                          onChange={(event) => setSubtopicSearch(event.target.value)}
+                          placeholder="Buscar subapartado"
+                          aria-label="Buscar subapartado"
+                          className="h-11 pl-9"
+                        />
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
+                  <div className="max-h-[50vh] space-y-1 overflow-y-auto p-3">
+                    {filteredSubtopics.map((subtopic) => {
+                      const checked = draftSubtopicIds.includes(subtopic.id);
+                      return (
+                        <label
+                          key={subtopic.id}
+                          className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-muted"
+                        >
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={(selected) =>
+                              setDraftSubtopicIds((previous) =>
+                                selected
+                                  ? previous.includes(subtopic.id)
+                                    ? previous
+                                    : [...previous, subtopic.id]
+                                  : previous.filter((id) => id !== subtopic.id),
+                              )
+                            }
+                          />
+                          <span>{subtopic.nombre}</span>
+                        </label>
+                      );
+                    })}
+                    {filteredSubtopics.length === 0 && (
+                      <p className="px-2 py-8 text-center text-sm text-muted-foreground">
+                        No hay subapartados que coincidan con la búsqueda.
+                      </p>
+                    )}
+                  </div>
+
+                  <DialogFooter className="flex-row gap-2 border-t p-4 sm:space-x-0">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => {
+                        setSubtopicIds([]);
+                        setSubtopicDialogOpen(false);
+                      }}
+                    >
+                      Usar todos
+                    </Button>
+                    <Button
+                      type="button"
+                      className="flex-1"
+                      onClick={() => {
+                        setSubtopicIds(draftSubtopicIds);
+                        setSubtopicDialogOpen(false);
+                      }}
+                    >
+                      Aplicar
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              <p className="text-xs text-muted-foreground">
+                Puedes limitar el test a uno o varios subapartados.
+              </p>
+            </div>
+          )}
+
+        {contentScope === "varios" && (
+          <div className="space-y-1.5">
+            <Label>Temas</Label>
+            <Dialog
+              open={multiTopicDialogOpen}
+              onOpenChange={(open) => {
+                setMultiTopicDialogOpen(open);
+                setMultiTopicSearch("");
+                setMultiTopicSearchOpen(false);
+              }}
+            >
+              <DialogTrigger asChild>
+                <PickerTrigger
+                  badge={
+                    multiTopicIds.length > 0
+                      ? `${multiTopicIds.length} temas seleccionados`
+                      : undefined
+                  }
+                  value={
+                    multiTopicIds.length > 0
+                      ? selectedMultiTopics
+                          .slice(0, 3)
+                          .map((topic) => `T${topic.numero}`)
+                          .join(" · ") + (selectedMultiTopics.length > 3 ? " · …" : "")
+                      : undefined
+                  }
+                  placeholder="Selecciona al menos dos temas"
+                />
+              </DialogTrigger>
+              <PickerSheet
+                title="Elegir varios temas"
+                description="La app repartirá las preguntas de forma equilibrada."
+              >
+                {(allTopics?.length ?? 0) > 6 && (
+                  <PickerSearch
+                    open={multiTopicSearchOpen}
+                    onOpenChange={setMultiTopicSearchOpen}
+                    value={multiTopicSearch}
+                    onChange={setMultiTopicSearch}
+                    placeholder="Buscar tema o materia"
+                  />
+                )}
+                <div className="flex items-center justify-between border-b px-4 py-2">
+                  <span className="text-xs text-muted-foreground">
+                    {multiTopicIds.length} seleccionados
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      setMultiTopicIds(
+                        multiTopicIds.length === (allTopics?.length ?? 0)
+                          ? []
+                          : (allTopics ?? []).map((topic) => topic.id),
+                      )
+                    }
+                  >
+                    {multiTopicIds.length === (allTopics?.length ?? 0)
+                      ? "Limpiar"
+                      : "Seleccionar todos"}
+                  </Button>
+                </div>
                 <div className="max-h-[50vh] space-y-1 overflow-y-auto p-3">
-                  {filteredSubtopics.map((subtopic) => {
-                    const checked = draftSubtopicIds.includes(subtopic.id);
+                  {filteredAllTopics.map((topic) => {
+                    const checked = multiTopicIds.includes(topic.id);
+                    const subject = subjects?.find((item) => item.id === topic.subject_id);
                     return (
                       <label
-                        key={subtopic.id}
-                        className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-muted"
+                        key={topic.id}
+                        className="flex min-h-14 cursor-pointer items-center gap-3 rounded-xl px-3 py-2 hover:bg-muted"
                       >
                         <Checkbox
                           checked={checked}
                           onCheckedChange={(selected) =>
-                            setDraftSubtopicIds((previous) =>
+                            setMultiTopicIds((previous) =>
                               selected
-                                ? previous.includes(subtopic.id)
+                                ? previous.includes(topic.id)
                                   ? previous
-                                  : [...previous, subtopic.id]
-                                : previous.filter((id) => id !== subtopic.id),
+                                  : [...previous, topic.id]
+                                : previous.filter((id) => id !== topic.id),
                             )
                           }
                         />
-                        <span>{subtopic.nombre}</span>
+                        <span className="min-w-0">
+                          <span className="block text-xs font-bold text-primary">
+                            Tema {topic.numero}
+                          </span>
+                          <span className="block text-sm font-semibold leading-snug">
+                            {topic.nombre}
+                          </span>
+                          {subject && (
+                            <span className="block truncate text-[11px] text-muted-foreground">
+                              {subject.nombre}
+                            </span>
+                          )}
+                        </span>
                       </label>
                     );
                   })}
-                  {filteredSubtopics.length === 0 && (
-                    <p className="px-2 py-8 text-center text-sm text-muted-foreground">
-                      No hay subapartados que coincidan con la búsqueda.
-                    </p>
-                  )}
+                  {filteredAllTopics.length === 0 && <EmptyPickerResult />}
                 </div>
-
-                <DialogFooter className="flex-row gap-2 border-t p-4 sm:space-x-0">
+                <DialogFooter className="border-t p-4">
                   <Button
                     type="button"
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => {
-                      setSubtopicIds([]);
-                      setSubtopicDialogOpen(false);
-                    }}
+                    className="w-full"
+                    disabled={multiTopicIds.length < 2}
+                    onClick={() => setMultiTopicDialogOpen(false)}
                   >
-                    Usar todos
-                  </Button>
-                  <Button
-                    type="button"
-                    className="flex-1"
-                    onClick={() => {
-                      setSubtopicIds(draftSubtopicIds);
-                      setSubtopicDialogOpen(false);
-                    }}
-                  >
-                    Aplicar
+                    Usar {multiTopicIds.length || 0} temas
                   </Button>
                 </DialogFooter>
-              </DialogContent>
+              </PickerSheet>
             </Dialog>
-            <p className="text-xs text-muted-foreground">
-              Puedes limitar el test a uno o varios subapartados.
+            {multiTopicIds.length === 1 && (
+              <p className="text-xs text-amber-700">Selecciona al menos un tema más.</p>
+            )}
+          </div>
+        )}
+
+        {contentScope === "todo" && (
+          <div className="rounded-xl border bg-primary/5 p-3">
+            <p className="text-sm font-semibold">
+              Todo lo cargado · {allTopics?.length ?? 0} temas
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              La app combinará y equilibrará preguntas de todos tus temas disponibles.
             </p>
           </div>
         )}
       </Card>
 
-      {topicId && stageProgress && (
+      {selectedTopicIds.length > 0 && selectedStageProgress.length === selectedTopicIds.length && (
         <Card className="space-y-3 bg-card/90 p-4">
           <SectionHeading
             icon={Layers3}
@@ -597,7 +843,10 @@ function CrearPage() {
           </div>
           <div className="grid gap-2 sm:grid-cols-3">
             {LEARNING_STAGES.map((stage) => {
-              const unlocked = isStageUnlocked(stageProgress, stage);
+              const unlocked =
+                contentScope === "tema"
+                  ? Boolean(stageProgress && isStageUnlocked(stageProgress, stage))
+                  : isStageUnlockedForAll(selectedStageProgress, stage);
               const active = selectedStage === stage;
               return (
                 <button
@@ -634,7 +883,7 @@ function CrearPage() {
       <Card className="space-y-4 bg-card/90 p-4">
         <SectionHeading
           icon={SlidersHorizontal}
-          step={topicId && stageProgress ? "3" : "2"}
+          step={selectedTopicIds.length > 0 ? "3" : "2"}
           title="Formato del test"
           description="Decide la extensión y el tipo de práctica."
         />
@@ -646,12 +895,18 @@ function CrearPage() {
                 key={n}
                 type="button"
                 onClick={() => setCantidad(n)}
-                className={`h-11 rounded-xl border text-sm font-semibold transition-colors ${cantidad === n ? "border-primary bg-primary text-primary-foreground shadow-sm" : "bg-background hover:bg-muted"}`}
+                disabled={contentScope !== "tema" && n < selectedTopicIds.length}
+                className={`h-11 rounded-xl border text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-35 ${cantidad === n ? "border-primary bg-primary text-primary-foreground shadow-sm" : "bg-background hover:bg-muted"}`}
               >
                 {n}
               </button>
             ))}
           </div>
+          {contentScope !== "tema" && cantidad < selectedTopicIds.length && (
+            <p className="text-xs text-amber-700">
+              Elige al menos {selectedTopicIds.length} preguntas para incluir todos los temas.
+            </p>
+          )}
         </div>
 
         <div className="space-y-1.5">
@@ -675,33 +930,45 @@ function CrearPage() {
         </div>
       </Card>
 
-      {topicId && (
+      {selectedTopicIds.length > 0 && (
         <Card className="bg-card/90 p-4">
           <div className="text-xs uppercase text-muted-foreground font-medium mb-2">Resumen</div>
           <ul className="text-sm space-y-1">
-            <li>
-              Materia:{" "}
-              <span className="font-medium">
-                {selectedSubject
-                  ? subjectLabel(
-                      selectedSubject.nombre,
-                      selectedSubject.topics.map((topic) => topic.numero),
-                    )
-                  : "—"}
-              </span>
-            </li>
-            <li>
-              Tema:{" "}
-              <span className="font-medium">
-                {selectedTopic ? topicLabel(selectedTopic.numero, selectedTopic.nombre) : "—"}
-              </span>
-            </li>
-            <li>
-              Subapartados:{" "}
-              <span className="font-medium">
-                {subtopicIds.length === 0 ? "Todos" : subtopicIds.length}
-              </span>
-            </li>
+            {contentScope === "tema" ? (
+              <>
+                <li>
+                  Materia:{" "}
+                  <span className="font-medium">
+                    {selectedSubject
+                      ? subjectLabel(
+                          selectedSubject.nombre,
+                          selectedSubject.topics.map((topic) => topic.numero),
+                        )
+                      : "—"}
+                  </span>
+                </li>
+                <li>
+                  Tema:{" "}
+                  <span className="font-medium">
+                    {selectedTopic ? topicLabel(selectedTopic.numero, selectedTopic.nombre) : "—"}
+                  </span>
+                </li>
+                <li>
+                  Subapartados:{" "}
+                  <span className="font-medium">
+                    {subtopicIds.length === 0 ? "Todos" : subtopicIds.length}
+                  </span>
+                </li>
+              </>
+            ) : (
+              <li>
+                Contenido:{" "}
+                <span className="font-medium">
+                  {contentScope === "todo" ? "Todo lo cargado" : "Selección personalizada"} ·{" "}
+                  {selectedTopicIds.length} temas
+                </span>
+              </li>
+            )}
             <li>
               Preguntas: <span className="font-medium">{cantidad}</span>
             </li>
@@ -747,16 +1014,26 @@ function CrearPage() {
               para desbloquear fases.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          {pendingLockedStage && stageProgress && (
-            <div className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
-              <p className="font-medium text-foreground">Para desbloquearlo normalmente:</p>
-              <ul className="mt-1 list-disc space-y-1 pl-4">
-                {stageRequirements(stageProgress, pendingLockedStage).map((requirement) => (
-                  <li key={requirement}>{requirement}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+          {pendingLockedStage &&
+            (contentScope === "tema" && stageProgress ? (
+              <div className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
+                <p className="font-medium text-foreground">Para desbloquearlo normalmente:</p>
+                <ul className="mt-1 list-disc space-y-1 pl-4">
+                  {stageRequirements(stageProgress, pendingLockedStage).map((requirement) => (
+                    <li key={requirement}>{requirement}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
+                Este nivel sigue bloqueado en{" "}
+                <strong className="text-foreground">
+                  {lockedTopicCount(selectedStageProgress, pendingLockedStage)} de{" "}
+                  {selectedTopicIds.length} temas
+                </strong>
+                . Puedes seguir en el nivel común o entrar en modo libre.
+              </div>
+            ))}
           <AlertDialogFooter>
             <AlertDialogCancel>Seguir en mi nivel</AlertDialogCancel>
             <AlertDialogAction

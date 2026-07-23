@@ -41,6 +41,7 @@ import {
 } from "@/lib/result-diagnostics";
 import { LEARNING_STAGE_LABELS, learningStage } from "@/lib/learning-stages";
 import { resultFeedback } from "@/lib/result-feedback";
+import { topicLabel } from "@/lib/topic-label";
 
 export const Route = createFileRoute("/_authenticated/resultados/$id")({
   component: ResultadosPage,
@@ -73,7 +74,7 @@ type AnswerRow = {
     pagina_inicio: number | null;
     pagina_fin: number | null;
     objetivo_aprendizaje: string | null;
-    topics: { nombre: string } | null;
+    topics: { nombre: string; numero: number } | null;
     subtopics: { nombre: string } | null;
   } | null;
 };
@@ -90,7 +91,7 @@ function ResultadosPage() {
       const { data: answers } = await supabase
         .from("test_answers")
         .select(
-          "*, questions!test_answers_question_id_fkey(*, topics!questions_topic_id_fkey(nombre), subtopics!questions_subtopic_id_fkey(nombre))",
+          "*, questions!test_answers_question_id_fkey(*, topics!questions_topic_id_fkey(nombre, numero), subtopics!questions_subtopic_id_fkey(nombre))",
         )
         .eq("test_id", id)
         .order("orden");
@@ -132,7 +133,9 @@ function ResultadosPage() {
   answers.forEach((a) => {
     const q = a.questions;
     if (!q) return;
-    const topicName = q.topics?.nombre ?? "—";
+    const topicName = q.topics
+      ? topicLabel(q.topics.numero, q.topics.nombre)
+      : "Tema sin identificar";
     byTopic[topicName] ??= { ok: 0, tot: 0 };
     byTopic[topicName].tot++;
     if (a.correcta) byTopic[topicName].ok++;
@@ -441,7 +444,11 @@ function ResultadosPage() {
           {perfecto ? "Resultado perfecto" : "Tus resultados"}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          <span className="capitalize">{t.tipo}</span>
+          <span>
+            {t.tipo.startsWith("multitema_")
+              ? `Varios temas · ${t.tipo.replace("multitema_", "")}`
+              : t.tipo}
+          </span>
           {t.learning_stage ? ` · ${LEARNING_STAGE_LABELS[learningStage(t.learning_stage)]}` : ""}
           {t.stage_free_mode ? " · modo libre" : ""}
         </p>
@@ -522,22 +529,28 @@ function ResultadosPage() {
       </Card>
 
       <Card className="bg-card/90 px-4">
-        <Accordion type="multiple" className="w-full">
+        <Accordion
+          type="multiple"
+          defaultValue={t.tipo.startsWith("multitema_") ? ["topics"] : []}
+          className="w-full"
+        >
           <AccordionItem value="topics">
             <AccordionTrigger className="hover:no-underline">Desglose por tema</AccordionTrigger>
             <AccordionContent>
               <div className="space-y-2 text-sm">
-                {Object.entries(byTopic).map(([k, v]) => (
-                  <div
-                    key={k}
-                    className="flex items-start justify-between gap-3 rounded-lg bg-muted/50 p-2.5"
-                  >
-                    <span className="leading-snug">{k}</span>
-                    <span className="shrink-0 font-bold">
-                      {v.ok}/{v.tot}
-                    </span>
-                  </div>
-                ))}
+                {Object.entries(byTopic)
+                  .sort(([a], [b]) => a.localeCompare(b, "es", { numeric: true }))
+                  .map(([k, v]) => (
+                    <div
+                      key={k}
+                      className="flex items-start justify-between gap-3 rounded-lg bg-muted/50 p-2.5"
+                    >
+                      <span className="leading-snug">{k}</span>
+                      <span className="shrink-0 font-bold">
+                        {v.ok}/{v.tot} · {Math.round((v.ok / v.tot) * 100)}%
+                      </span>
+                    </div>
+                  ))}
               </div>
             </AccordionContent>
           </AccordionItem>

@@ -666,6 +666,24 @@ export type Database = {
           was_locked_override: boolean;
         }[];
       };
+      create_multi_topic_test: {
+        Args: {
+          p_free_mode?: boolean;
+          p_learning_stage: string;
+          p_mode?: string;
+          p_question_count?: number;
+          p_topic_ids: string[];
+        };
+        Returns: {
+          covered_topic_count: number;
+          free_mode: boolean;
+          locked_topic_count: number;
+          requested_stage: string;
+          requested_topic_count: number;
+          selected_count: number;
+          test_id: string;
+        }[];
+      };
       get_learning_stage_progress: {
         Args: never;
         Returns: {
