@@ -18,7 +18,7 @@ Hacer que la pantalla de resultados muestre primero lo que el estudiante necesit
 - El banco completo realizado continúa incluido en el informe copiable para ChatGPT.
 - Cuando no existen fallos ni dudas, la revisión completa queda plegada inicialmente.
 - Ajuste posterior: la explicación se presenta como bloque «Por qué», con tamaño y contraste equivalentes a la importancia pedagógica de las respuestas.
-- El bloque «Por qué» utiliza icono, color suave y texto de peso normal para facilitar la lectura sin competir visualmente con las respuestas.
+- El bloque «Por qué» utiliza icono, texto de peso normal y un fondo ámbar cálido propio. Así se distingue visualmente del bloque azul «Qué repasar» sin competir con el rojo del fallo ni el verde de la respuesta correcta.
 
 ## Decisiones de alcance
 
@@ -36,10 +36,11 @@ Hacer que la pantalla de resultados muestre primero lo que el estudiante necesit
 5. Repetir falladas y repetir dudas conservan su comportamiento.
 6. El informe para ChatGPT sigue incluyendo el banco completo realizado.
 7. Los detalles secundarios no ocupan espacio hasta que el usuario los abre.
+8. «Qué repasar» y «Por qué» se reconocen como bloques distintos por su color, también en modo oscuro.
 
 ## Prompt optimizado para Lovable
 
-Trabaja exclusivamente sobre `OpoTest Study`; no modifiques `OpoTest: V2`. El Sprint 12 ya está sincronizado desde GitHub. No regeneres código ni cambies lógica. Actualiza y publica, y verifica en móvil: (1) el resumen muestra porcentaje, aciertos, fallos y sin responder; (2) los fallos o dudas aparecen inmediatamente después; (3) cada tarjeta muestra respuesta elegida y correcta completas, qué repasar, explicación y fuente; (4) no se muestran dificultad, concepto ni objetivo; (5) repetir falladas y dudas funciona; (6) desglose, selección e informe están plegados; (7) el informe copiado contiene el banco completo; y (8) un test perfecto permite desplegar la revisión completa. No cambies Supabase, motor, CSV ni bancos.
+Trabaja exclusivamente sobre `OpoTest Study`; no modifiques `OpoTest: V2`. El Sprint 12 ya está sincronizado desde GitHub. No regeneres código ni cambies lógica. Actualiza y publica, y verifica en móvil: (1) el resumen muestra porcentaje, aciertos, fallos y sin responder; (2) los fallos o dudas aparecen inmediatamente después; (3) cada tarjeta muestra respuesta elegida y correcta completas, «Qué repasar» en azul, «Por qué» en ámbar y la fuente; (4) ambos bloques mantienen contraste suficiente en modo claro y oscuro; (5) no se muestran dificultad, concepto ni objetivo; (6) repetir falladas y dudas funciona; (7) desglose, selección e informe están plegados; (8) el informe copiado contiene el banco completo; y (9) un test perfecto permite desplegar la revisión completa. No cambies Supabase, motor, CSV ni bancos.
 
 ## Prompt optimizado para el Generador de Preguntas
 
