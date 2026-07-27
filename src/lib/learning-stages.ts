@@ -32,35 +32,33 @@ export function stageRequirements(row: LearningStageProgress, stage: LearningSta
   if (stage === "aprendizaje") return [];
 
   if (stage === "consolidacion") {
+    const requiredQuestions = Math.min(20, row.learning_questions);
     return [
-      row.learning_mastery === null || row.learning_mastery < 90
-        ? `Dominio de Aprendizaje: ${row.learning_mastery ?? 0}% de 90%`
+      row.learning_seen < requiredQuestions
+        ? `Preguntas distintas: ${row.learning_seen} de ${requiredQuestions}`
         : null,
-      row.learning_question_coverage < 80
-        ? `Preguntas distintas: ${row.learning_question_coverage}% de 80%`
+      row.learning_mastery === null || row.learning_mastery < 70
+        ? `Acierto seguro: ${row.learning_mastery ?? 0}% de 70%`
         : null,
-      row.learning_perspective_coverage < 85
-        ? `Perspectivas: ${row.learning_perspective_coverage}% de 85%`
-        : null,
-      row.learning_sessions < 3 ? `Sesiones: ${row.learning_sessions} de 3` : null,
-      row.learning_critical_concepts > 0
-        ? `${row.learning_critical_concepts} conceptos críticos por reforzar`
-        : null,
+      row.learning_sessions < 2 ? `Sesiones: ${row.learning_sessions} de 2` : null,
     ].filter((value): value is string => Boolean(value));
   }
 
+  const requiredQuestions = Math.min(30, row.consolidation_questions);
   return [
     !row.consolidation_unlocked ? "Completar primero Aprendizaje" : null,
-    row.global_mastery === null || row.global_mastery < 92
-      ? `Dominio global: ${row.global_mastery ?? 0}% de 92%`
+    row.consolidation_seen < requiredQuestions
+      ? `Preguntas distintas de Consolidación: ${row.consolidation_seen} de ${requiredQuestions}`
       : null,
-    row.robustness_percentage === null || row.robustness_percentage < 80
-      ? `Robustez: ${row.robustness_percentage ?? 0}% de 80%`
+    row.consolidation_mastery === null || row.consolidation_mastery < 80
+      ? `Acierto seguro en Consolidación: ${row.consolidation_mastery ?? 0}% de 80%`
       : null,
-    row.consolidation_question_coverage < 90
-      ? `Cobertura de Consolidación: ${row.consolidation_question_coverage}% de 90%`
+    row.consolidation_sessions < 3
+      ? `Sesiones de Consolidación: ${row.consolidation_sessions} de 3`
       : null,
-    row.retention_evidence < 2 ? `Retenciones separadas: ${row.retention_evidence} de 2` : null,
-    row.critical_concepts > 0 ? `${row.critical_concepts} conceptos críticos por reforzar` : null,
+    row.critical_concepts > 3
+      ? `Fallos activos o conceptos críticos: ${row.critical_concepts}; reduce hasta 3`
+      : null,
+    row.tribunal_questions === 0 ? "Este tema todavía no tiene preguntas de Tribunal" : null,
   ].filter((value): value is string => Boolean(value));
 }
