@@ -4,10 +4,7 @@ export type VerifiedProgressRow =
   Database["public"]["Functions"]["get_verified_progress_summary"]["Returns"][number];
 
 export type ComparisonState =
-  | "insuficiente"
-  | "mejora_verificada"
-  | "estable"
-  | "descenso_observado";
+  "insuficiente" | "mejora_verificada" | "estable" | "descenso_observado";
 
 export function comparisonState(value: string): ComparisonState {
   if (value === "mejora_verificada" || value === "estable" || value === "descenso_observado") {
@@ -20,7 +17,7 @@ export function comparisonMessage(row: VerifiedProgressRow): string {
   const state = comparisonState(row.comparison_state);
 
   if (state === "insuficiente") {
-    return "Aún no hay dos bloques comparables: hacen falta 10 preguntas iguales, separadas al menos 7 días y repartidas en 2 tests por bloque.";
+    return "Aún no hay una comparación estadística entre dos bloques equivalentes. Esta medición no bloquea ningún nivel.";
   }
 
   const change = Math.abs(row.accuracy_change ?? 0).toLocaleString("es-ES", {
