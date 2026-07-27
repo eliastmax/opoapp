@@ -16,18 +16,18 @@ const progress: LearningStageProgress = {
   learning_questions: 20,
   consolidation_questions: 20,
   tribunal_questions: 10,
-  learning_seen: 16,
-  learning_sessions: 2,
+  learning_seen: 19,
+  learning_sessions: 1,
   learning_question_coverage: 80,
   learning_perspective_coverage: 90,
-  learning_mastery: 92,
+  learning_mastery: 69,
   learning_critical_concepts: 0,
   consolidation_unlocked: false,
-  consolidation_seen: 0,
-  consolidation_sessions: 0,
+  consolidation_seen: 19,
+  consolidation_sessions: 2,
   consolidation_question_coverage: 0,
   consolidation_perspective_coverage: 0,
-  consolidation_mastery: null,
+  consolidation_mastery: 79,
   global_mastery: 92,
   robustness_percentage: null,
   retention_evidence: 0,
@@ -53,8 +53,17 @@ describe("learning stages", () => {
   });
 
   it("explains the exact missing evidence", () => {
-    expect(stageRequirements(progress, "consolidacion")).toEqual(["Sesiones: 2 de 3"]);
+    expect(stageRequirements(progress, "consolidacion")).toEqual([
+      "Preguntas distintas: 19 de 20",
+      "Acierto seguro: 69% de 70%",
+      "Sesiones: 1 de 2",
+    ]);
     expect(stageRequirements(progress, "tribunal")).toContain("Completar primero Aprendizaje");
-    expect(stageRequirements(progress, "tribunal")).toContain("Retenciones separadas: 0 de 2");
+    expect(stageRequirements(progress, "tribunal")).toContain(
+      "Preguntas distintas de Consolidación: 19 de 20",
+    );
+    expect(stageRequirements(progress, "tribunal").join(" ")).not.toContain(
+      "Retenciones separadas",
+    );
   });
 });
