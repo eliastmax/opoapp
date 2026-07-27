@@ -834,11 +834,11 @@ function CrearPage() {
             icon={Layers3}
             step="2"
             title="Nivel de preparación"
-            description="Trabaja en tu fase actual o practica otra en modo libre."
+            description="Sigue la recomendación o practica cualquier nivel en modo libre."
           />
           <div>
             <p className="text-xs text-muted-foreground">
-              Avanzas cuando demuestras conocimiento; repetir tests no desbloquea por sí solo.
+              La recomendación se adapta a tus resultados. Ningún nivel está prohibido.
             </p>
           </div>
           <div className="grid gap-2 sm:grid-cols-3">
@@ -874,7 +874,8 @@ function CrearPage() {
           </div>
           {stageFreeMode && (
             <p className="rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-800 dark:text-amber-200">
-              Modo libre: este test quedará en el historial, pero no contará para desbloquear fases.
+              Modo libre: el test quedará en el historial, pero no cambiará por sí solo la
+              recomendación de nivel.
             </p>
           )}
         </Card>
@@ -1008,16 +1009,16 @@ function CrearPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Nivel aún no desbloqueado</AlertDialogTitle>
+            <AlertDialogTitle>Nivel todavía no recomendado</AlertDialogTitle>
             <AlertDialogDescription>
-              Puedes practicarlo en modo libre. El test quedará en tu historial, pero no contará
-              para desbloquear fases.
+              Puedes practicarlo ya en modo libre. El test quedará en tu historial, aunque no
+              cambiará por sí solo la recomendación de nivel.
             </AlertDialogDescription>
           </AlertDialogHeader>
           {pendingLockedStage &&
             (contentScope === "tema" && stageProgress ? (
               <div className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
-                <p className="font-medium text-foreground">Para desbloquearlo normalmente:</p>
+                <p className="font-medium text-foreground">Para que pase a ser recomendado:</p>
                 <ul className="mt-1 list-disc space-y-1 pl-4">
                   {stageRequirements(stageProgress, pendingLockedStage).map((requirement) => (
                     <li key={requirement}>{requirement}</li>
@@ -1026,7 +1027,7 @@ function CrearPage() {
               </div>
             ) : (
               <div className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
-                Este nivel sigue bloqueado en{" "}
+                Este nivel todavía no está recomendado en{" "}
                 <strong className="text-foreground">
                   {lockedTopicCount(selectedStageProgress, pendingLockedStage)} de{" "}
                   {selectedTopicIds.length} temas
@@ -1045,7 +1046,7 @@ function CrearPage() {
                 setPendingLockedStage(null);
               }}
             >
-              Entrar en modo libre
+              Practicar en modo libre
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
