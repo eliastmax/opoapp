@@ -32,7 +32,7 @@ describe("verified progress presentation", () => {
   });
 
   it("does not invent progress without comparable evidence", () => {
-    expect(comparisonMessage(row())).toContain("Aún no hay dos bloques comparables");
+    expect(comparisonMessage(row())).toContain("no bloquea ningún nivel");
   });
 
   it("reports only an improvement that the database has verified", () => {
