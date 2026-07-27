@@ -67,7 +67,7 @@ function ProgresoPage() {
       "topic-progress",
       "progress-v1.0",
       "verified-progress-v1.0",
-      "learning-stages-v1.0",
+      "learning-stages-v2.0",
       "retention-v1.0",
     ],
     queryFn: async () => {
@@ -110,10 +110,10 @@ function ProgresoPage() {
         <div className="flex gap-3">
           <Gauge className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
           <div className="space-y-1">
-            <p className="text-sm font-semibold">Un progreso que no se infla al repetir</p>
+            <p className="text-sm font-semibold">Progreso basado en práctica útil</p>
             <p className="text-xs leading-relaxed text-muted-foreground">
               La cobertura cuenta preguntas distintas. El acierto actual usa únicamente tu última
-              respuesta a cada pregunta y su fiabilidad aumenta con práctica variada y separada.
+              respuesta segura a cada pregunta: acertar con duda sigue necesitando repaso.
             </p>
           </div>
         </div>
@@ -287,9 +287,9 @@ function LearningStagesProgress({ row }: { row: LearningStageProgress }) {
   return (
     <div className="mt-3 rounded-lg border p-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-semibold">Ruta de preparación</p>
+        <p className="text-xs font-semibold">Ruta recomendada</p>
         <Badge variant="secondary" className="text-[10px]">
-          Ahora: {LEARNING_STAGE_LABELS[recommended]}
+          Recomendado: {LEARNING_STAGE_LABELS[recommended]}
         </Badge>
       </div>
       <div className="mt-3 grid grid-cols-3 gap-1.5">
@@ -316,10 +316,15 @@ function LearningStagesProgress({ row }: { row: LearningStageProgress }) {
         })}
       </div>
       <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{row.stage_message}</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        Retención confirmada en {row.retention_evidence}{" "}
+        {row.retention_evidence === 1 ? "concepto" : "conceptos"}. No bloquea el acceso a otros
+        niveles.
+      </p>
       {requirements.length > 0 && (
         <div className="mt-2 border-t pt-2">
           <p className="text-[11px] font-medium">
-            Para desbloquear {LEARNING_STAGE_LABELS[nextLocked!]}:
+            Para recomendar {LEARNING_STAGE_LABELS[nextLocked!]}:
           </p>
           <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[11px] text-muted-foreground">
             {requirements.map((requirement) => (
