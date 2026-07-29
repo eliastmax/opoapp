@@ -63,7 +63,6 @@ import {
   type ContentScope,
 } from "@/lib/multi-topic";
 import { topicLabel } from "@/lib/topic-label";
-import { subjectLabel, subjectTopicPrefix } from "@/lib/subject-label";
 
 export const Route = createFileRoute("/_authenticated/crear")({
   component: CrearPage,
@@ -75,17 +74,13 @@ const CANTIDADES = [5, 10, 20, 30, 50] as const;
 function CrearPage() {
   const navigate = useNavigate();
   const [contentScope, setContentScope] = useState<ContentScope>("tema");
-  const [subjectId, setSubjectId] = useState<string>("");
   const [topicId, setTopicId] = useState<string>("");
   const [multiTopicIds, setMultiTopicIds] = useState<string[]>([]);
   const [multiTopicDialogOpen, setMultiTopicDialogOpen] = useState(false);
   const [multiTopicSearch, setMultiTopicSearch] = useState("");
   const [multiTopicSearchOpen, setMultiTopicSearchOpen] = useState(false);
-  const [subjectDialogOpen, setSubjectDialogOpen] = useState(false);
   const [topicDialogOpen, setTopicDialogOpen] = useState(false);
-  const [subjectSearch, setSubjectSearch] = useState("");
   const [topicSearch, setTopicSearch] = useState("");
-  const [subjectSearchOpen, setSubjectSearchOpen] = useState(false);
   const [topicSearchOpen, setTopicSearchOpen] = useState(false);
   const [subtopicIds, setSubtopicIds] = useState<string[]>([]);
   const [subtopicDialogOpen, setSubtopicDialogOpen] = useState(false);
@@ -101,30 +96,18 @@ function CrearPage() {
   const { data: subjects } = useQuery({
     queryKey: ["subjects"],
     queryFn: async () =>
-      (
-        await supabase
-          .from("subjects")
-          .select("id, nombre, topics!topics_subject_id_fkey(numero)")
-          .order("nombre")
-      ).data ?? [],
-  });
-  const { data: topics } = useQuery({
-    queryKey: ["topics", subjectId],
-    enabled: !!subjectId,
-    queryFn: async () =>
-      (
-        await supabase
-          .from("topics")
-          .select("id, numero, nombre")
-          .eq("subject_id", subjectId)
-          .order("numero")
-      ).data ?? [],
+      (await supabase.from("subjects").select("id, nombre").order("nombre")).data ?? [],
   });
   const { data: allTopics } = useQuery({
     queryKey: ["topics", "all"],
     queryFn: async () =>
-      (await supabase.from("topics").select("id, numero, nombre, subject_id").order("numero"))
-        .data ?? [],
+      (
+        await supabase
+          .from("topics")
+          .select("id, numero, nombre, subject_id")
+          .order("numero", { ascending: true })
+          .order("nombre", { ascending: true })
+      ).data ?? [],
   });
   const { data: subtopics } = useQuery({
     queryKey: ["subtopics", topicId],
@@ -168,7 +151,7 @@ function CrearPage() {
       : null;
   const hasContent =
     contentScope === "tema"
-      ? Boolean(subjectId && topicId)
+      ? Boolean(topicId)
       : multiTopicSelectionValid(selectedTopicIds, cantidad);
   const canStart = hasContent;
 
@@ -178,22 +161,13 @@ function CrearPage() {
     return (subtopics ?? []).filter((subtopic) => normalizeSearch(subtopic.nombre).includes(query));
   }, [subtopics, subtopicSearch]);
 
-  const filteredSubjects = useMemo(() => {
-    const query = normalizeSearch(subjectSearch);
-    if (!query) return subjects ?? [];
-    return (subjects ?? []).filter((subject) => {
-      const numbers = subject.topics.map((topic) => topic.numero);
-      return normalizeSearch(`${subjectTopicPrefix(numbers)} ${subject.nombre}`).includes(query);
-    });
-  }, [subjects, subjectSearch]);
-
   const filteredTopics = useMemo(() => {
     const query = normalizeSearch(topicSearch);
-    if (!query) return topics ?? [];
-    return (topics ?? []).filter((topic) =>
+    if (!query) return allTopics ?? [];
+    return (allTopics ?? []).filter((topic) =>
       normalizeSearch(topicLabel(topic.numero, topic.nombre)).includes(query),
     );
-  }, [topics, topicSearch]);
+  }, [allTopics, topicSearch]);
   const filteredAllTopics = useMemo(() => {
     const query = normalizeSearch(multiTopicSearch);
     if (!query) return allTopics ?? [];
@@ -205,21 +179,12 @@ function CrearPage() {
     });
   }, [allTopics, multiTopicSearch, subjects]);
 
-  // Auto-select when only one option exists
   useEffect(() => {
-    if (subjects && subjects.length === 1 && !subjectId) {
-      setSubjectId(subjects[0].id);
-      setTopicId("");
+    if (allTopics && allTopics.length === 1 && !topicId) {
+      setTopicId(allTopics[0].id);
       setSubtopicIds([]);
     }
-  }, [subjects, subjectId]);
-
-  useEffect(() => {
-    if (subjectId && topics && topics.length === 1 && !topicId) {
-      setTopicId(topics[0].id);
-      setSubtopicIds([]);
-    }
-  }, [subjectId, topics, topicId]);
+  }, [allTopics, topicId]);
 
   useEffect(() => {
     if (topicId && subtopics && subtopics.length === 1 && subtopicIds.length === 0) {
@@ -236,11 +201,8 @@ function CrearPage() {
     setStageFreeMode(false);
   }, [contentScope, topicId, selectedStageProgress]);
 
-  const hideSubject = !!subjects && subjects.length === 1;
-  const hideTopic = !!topics && topics.length === 1;
   const hideSubtopic = !!subtopics && subtopics.length <= 1;
-  const selectedSubject = subjects?.find((subject) => subject.id === subjectId);
-  const selectedTopic = topics?.find((topic) => topic.id === topicId);
+  const selectedTopic = allTopics?.find((topic) => topic.id === topicId);
   const selectedMultiTopics = (allTopics ?? []).filter((topic) =>
     selectedTopicIds.includes(topic.id),
   );
@@ -447,82 +409,7 @@ function CrearPage() {
           ))}
         </div>
 
-        {contentScope === "tema" && !hideSubject && (
-          <div className="space-y-1.5">
-            <Label>Materia</Label>
-            <Dialog
-              open={subjectDialogOpen}
-              onOpenChange={(open) => {
-                setSubjectDialogOpen(open);
-                setSubjectSearch("");
-                setSubjectSearchOpen(false);
-              }}
-            >
-              <DialogTrigger asChild>
-                <PickerTrigger
-                  badge={
-                    selectedSubject
-                      ? subjectTopicPrefix(selectedSubject.topics.map((topic) => topic.numero))
-                      : undefined
-                  }
-                  value={selectedSubject?.nombre}
-                  placeholder="Selecciona una materia"
-                />
-              </DialogTrigger>
-              <PickerSheet
-                title="Elegir materia"
-                description="Busca por número de tema o por nombre."
-              >
-                <PickerSearch
-                  open={subjectSearchOpen}
-                  onOpenChange={setSubjectSearchOpen}
-                  value={subjectSearch}
-                  onChange={setSubjectSearch}
-                  placeholder="Buscar materia o tema"
-                />
-                <div className="max-h-[56vh] space-y-1 overflow-y-auto p-3">
-                  {filteredSubjects.map((subject) => {
-                    const numbers = subject.topics.map((topic) => topic.numero);
-                    const selected = subject.id === subjectId;
-                    return (
-                      <button
-                        key={subject.id}
-                        type="button"
-                        onClick={() => {
-                          setSubjectId(subject.id);
-                          setTopicId("");
-                          setSubtopicIds([]);
-                          setSubjectDialogOpen(false);
-                        }}
-                        className={`flex min-h-16 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${selected ? "bg-primary/10" : "hover:bg-muted"}`}
-                      >
-                        <span className="min-w-0 flex-1">
-                          {subjectTopicPrefix(numbers) && (
-                            <span className="mb-1 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">
-                              {subjectTopicPrefix(numbers)}
-                            </span>
-                          )}
-                          <span className="block text-sm font-semibold leading-snug">
-                            {subject.nombre}
-                          </span>
-                        </span>
-                        {selected && <Check className="h-5 w-5 shrink-0 text-primary" />}
-                      </button>
-                    );
-                  })}
-                  {filteredSubjects.length === 0 && <EmptyPickerResult />}
-                </div>
-              </PickerSheet>
-            </Dialog>
-            {subjects && subjects.length === 0 && (
-              <p className="text-xs text-muted-foreground">
-                Aún no tienes materias. Importa un CSV primero.
-              </p>
-            )}
-          </div>
-        )}
-
-        {contentScope === "tema" && subjectId && !hideTopic && (
+        {contentScope === "tema" && (
           <div className="space-y-1.5">
             <Label>Tema</Label>
             <Dialog
@@ -540,11 +427,8 @@ function CrearPage() {
                   placeholder="Selecciona un tema"
                 />
               </DialogTrigger>
-              <PickerSheet
-                title="Elegir tema"
-                description="El nombre completo se muestra sin recortes."
-              >
-                {(topics?.length ?? 0) > 5 && (
+              <PickerSheet title="Elegir tema" description="Busca por número de tema o por nombre.">
+                {(allTopics?.length ?? 0) > 5 && (
                   <PickerSearch
                     open={topicSearchOpen}
                     onOpenChange={setTopicSearchOpen}
@@ -583,6 +467,11 @@ function CrearPage() {
                 </div>
               </PickerSheet>
             </Dialog>
+            {allTopics && allTopics.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                Aún no tienes temas. Importa un CSV primero.
+              </p>
+            )}
           </div>
         )}
 
@@ -937,17 +826,6 @@ function CrearPage() {
           <ul className="text-sm space-y-1">
             {contentScope === "tema" ? (
               <>
-                <li>
-                  Materia:{" "}
-                  <span className="font-medium">
-                    {selectedSubject
-                      ? subjectLabel(
-                          selectedSubject.nombre,
-                          selectedSubject.topics.map((topic) => topic.numero),
-                        )
-                      : "—"}
-                  </span>
-                </li>
                 <li>
                   Tema:{" "}
                   <span className="font-medium">

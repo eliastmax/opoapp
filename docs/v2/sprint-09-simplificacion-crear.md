@@ -16,7 +16,10 @@ Reducir decisiones redundantes en la creación de tests y hacer la entrada a la 
 - No se pregunta sexo o género: la fórmula de bienvenida es neutral.
 - El selector y el resumen muestran siempre «Tema N. Nombre» usando el campo estructurado `numero`.
 - Si el nombre almacenado contiene un prefijo «Tema N» duplicado o incorrecto, se elimina antes de mostrarlo.
-- La lista inicial de materias antepone sus temas: «Tema 19 · Materia» o «Temas 13–14 · Materia».
+- La creación de un test de un solo tema permite elegir directamente el tema, sin un paso previo por la materia.
+- El catálogo se ordena globalmente por el número estructurado del tema, con el nombre como segundo criterio.
+- Progreso utiliza el mismo orden numérico global y no fragmenta los temas según el texto libre de `materia`.
+- La materia se conserva como metadato y como ayuda contextual en la selección multitema, pero no determina el orden.
 
 ## Decisiones de alcance
 
@@ -34,11 +37,13 @@ Reducir decisiones redundantes en la creación de tests y hacer la entrada a la 
 5. La bienvenida funciona aunque falte el perfil y no utiliza género.
 6. El CSV V2 mantiene exactamente sus 25 columnas.
 7. El número mostrado en Crear test procede de `topics.numero` y no del texto libre del nombre.
-8. Los números se ven ya en la selección inicial de Materia, incluso cuando una materia agrupa varios temas.
+8. Crear test permite elegir directamente «Tema N. Nombre» en orden numérico.
+9. La selección multitema y Progreso presentan también los temas en orden numérico global.
+10. Dos temas no quedan agrupados ni desordenados por compartir un valor genérico o incorrecto de `materia`.
 
 ## Prompt optimizado para Lovable
 
-Trabaja exclusivamente sobre `OpoTest Study`; no modifiques `OpoTest: V2`. Sin regenerar la implementación sincronizada desde GitHub, publica y verifica en móvil: (1) que Crear test ya no muestre «Fácil / Medio / Difícil» ni una línea de dificultad en el resumen; (2) que los tests sigan creándose con Tema, Subapartados, Nivel de preparación, Número de preguntas y Modalidad; (3) que el selector y el resumen muestren siempre «Tema N. Nombre» usando el número estructurado, sin prefijos duplicados; (4) que Inicio muestre «Te damos la bienvenida, Nombre» usando el nombre de la cuenta; y (5) que una cuenta sin nombre tenga una alternativa legible. No preguntes sexo o género, no cambies Supabase y no alteres el CSV ni los bancos existentes.
+Trabaja exclusivamente sobre `OpoTest Study`; no modifiques `OpoTest: V2`. Sin regenerar la implementación sincronizada desde GitHub, publica y verifica en móvil: (1) que Crear test ya no muestre «Fácil / Medio / Difícil» ni una línea de dificultad en el resumen; (2) que los tests sigan creándose con Tema, Subapartados, Nivel de preparación, Número de preguntas y Modalidad; (3) que el selector directo de tema, la selección multitema y Progreso muestren siempre «Tema N. Nombre» en orden numérico global usando `topics.numero`, sin agrupar por el texto libre de materia ni duplicar prefijos; (4) que Inicio muestre «Te damos la bienvenida, Nombre» usando el nombre de la cuenta; y (5) que una cuenta sin nombre tenga una alternativa legible. No preguntes sexo o género, no cambies Supabase y no alteres el CSV ni los bancos existentes.
 
 ## Prompt optimizado para el Generador de Preguntas
 
