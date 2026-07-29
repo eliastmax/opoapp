@@ -23,10 +23,8 @@ Este índice registra qué partes de la V2 están realmente implementadas y vali
 - [Tests multitema equilibrados (V2.5)](sprint-17-tests-multitema.md): implementados técnicamente; pendientes de validación en uso real.
 - [Simulacro de examen (V2.5)](sprint-18-simulacro-examen.md): implementado técnicamente; pendiente de validación en uso real.
 - [Historial útil y legible (V2.5)](sprint-19-historial-util.md): implementado técnicamente; pendiente de validación visual en uso real.
-
-## Sprint en implementación
-
-- [Importación múltiple de CSV](sprint-14-importacion-multiple.md): selección, validación e importación conjunta de varios bancos.
+- [Importación múltiple de CSV](sprint-14-importacion-multiple.md): implementada técnicamente; pendiente de validación en uso real con varios bancos completos.
+- [Identidad única y normalización de temas](sprint-20-identidad-temas.md): implementada localmente; pendiente de aplicar la migración y validar en producción.
 
 ## Diseño futuro
 
