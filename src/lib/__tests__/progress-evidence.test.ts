@@ -3,8 +3,8 @@ import { describe, expect, it } from "bun:test";
 import {
   evidenceDescription,
   evidenceState,
-  groupProgressBySubject,
   nextProgressAction,
+  sortProgressByTopicNumber,
   type TopicProgressRow,
 } from "../progress-evidence";
 
@@ -53,15 +53,14 @@ describe("progress evidence presentation", () => {
     ).toContain("preguntas distintas");
   });
 
-  it("groups topics by subject without mixing their identities", () => {
-    const grouped = groupProgressBySubject([
-      row(),
-      row({ topic_id: "topic-2", topic_number: 2 }),
-      row({ subject_id: "subject-2", subject_name: "Parte específica", topic_id: "topic-3" }),
+  it("sorts topics numerically regardless of their subject", () => {
+    const sorted = sortProgressByTopicNumber([
+      row({ subject_id: "subject-2", topic_id: "topic-20", topic_number: 20 }),
+      row({ subject_id: "subject-1", topic_id: "topic-3", topic_number: 3 }),
+      row({ subject_id: "subject-3", topic_id: "topic-11", topic_number: 11 }),
+      row({ subject_id: "subject-1", topic_id: "topic-2", topic_number: 2 }),
     ]);
 
-    expect(grouped).toHaveLength(2);
-    expect(grouped[0].topics).toHaveLength(2);
-    expect(grouped[1].name).toBe("Parte específica");
+    expect(sorted.map((topic) => topic.topic_number)).toEqual([2, 3, 11, 20]);
   });
 });

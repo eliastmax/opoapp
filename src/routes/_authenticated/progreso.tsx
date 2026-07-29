@@ -24,8 +24,8 @@ import {
   EVIDENCE_LABELS,
   evidenceDescription,
   evidenceState,
-  groupProgressBySubject,
   nextProgressAction,
+  sortProgressByTopicNumber,
   type EvidenceState,
   type TopicProgressRow,
 } from "@/lib/progress-evidence";
@@ -90,7 +90,7 @@ function ProgresoPage() {
     },
   });
 
-  const groups = groupProgressBySubject(data?.progress ?? []);
+  const topics = sortProgressByTopicNumber(data?.progress ?? []);
   const verifiedByTopic = new Map(
     (data?.verified ?? []).map((row) => [row.topic_id, row] as const),
   );
@@ -103,7 +103,7 @@ function ProgresoPage() {
     <div className="space-y-4">
       <header className="pt-2">
         <h1 className="text-2xl font-bold">Progreso</h1>
-        <p className="text-sm text-muted-foreground">Tu avance por materia y tema</p>
+        <p className="text-sm text-muted-foreground">Tu avance por tema</p>
       </header>
 
       <Card className="p-4">
@@ -139,7 +139,7 @@ function ProgresoPage() {
             Vuelve a intentarlo en unos instantes.
           </p>
         </Card>
-      ) : groups.length === 0 ? (
+      ) : topics.length === 0 ? (
         <Card className="p-6 text-center">
           <BookOpenCheck className="mx-auto mb-2 h-7 w-7 text-primary" />
           <p className="text-sm font-medium">Aún no hay temas con preguntas activas</p>
@@ -148,19 +148,14 @@ function ProgresoPage() {
           </p>
         </Card>
       ) : (
-        groups.map((group) => (
-          <section key={group.id} className="space-y-3">
-            <h2 className="px-1 text-sm font-semibold text-muted-foreground">{group.name}</h2>
-            {group.topics.map((topic) => (
-              <TopicProgressCard
-                key={topic.topic_id}
-                topic={topic}
-                verified={verifiedByTopic.get(topic.topic_id)}
-                stages={stagesByTopic.get(topic.topic_id)}
-                retention={retentionByTopic.get(topic.topic_id)}
-              />
-            ))}
-          </section>
+        topics.map((topic) => (
+          <TopicProgressCard
+            key={topic.topic_id}
+            topic={topic}
+            verified={verifiedByTopic.get(topic.topic_id)}
+            stages={stagesByTopic.get(topic.topic_id)}
+            retention={retentionByTopic.get(topic.topic_id)}
+          />
         ))
       )}
     </div>

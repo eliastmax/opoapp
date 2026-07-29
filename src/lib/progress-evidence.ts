@@ -49,14 +49,11 @@ export function nextProgressAction(row: TopicProgressRow): string {
   return "Mantén el tema con repasos separados y vigila si reaparecen fallos o dudas.";
 }
 
-export function groupProgressBySubject(rows: TopicProgressRow[]) {
-  const groups = new Map<string, { id: string; name: string; topics: TopicProgressRow[] }>();
-
-  for (const row of rows) {
-    const existing = groups.get(row.subject_id);
-    if (existing) existing.topics.push(row);
-    else groups.set(row.subject_id, { id: row.subject_id, name: row.subject_name, topics: [row] });
-  }
-
-  return Array.from(groups.values());
+export function sortProgressByTopicNumber(rows: TopicProgressRow[]): TopicProgressRow[] {
+  return [...rows].sort(
+    (left, right) =>
+      left.topic_number - right.topic_number ||
+      left.topic_name.localeCompare(right.topic_name, "es", { numeric: true }) ||
+      left.topic_id.localeCompare(right.topic_id),
+  );
 }
