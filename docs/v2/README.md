@@ -24,7 +24,8 @@ Este índice registra qué partes de la V2 están realmente implementadas y vali
 - [Simulacro de examen (V2.5)](sprint-18-simulacro-examen.md): implementado técnicamente; pendiente de validación en uso real.
 - [Historial útil y legible (V2.5)](sprint-19-historial-util.md): implementado técnicamente; pendiente de validación visual en uso real.
 - [Importación múltiple de CSV](sprint-14-importacion-multiple.md): implementada técnicamente; pendiente de validación en uso real con varios bancos completos.
-- [Identidad única y normalización de temas](sprint-20-identidad-temas.md): implementada localmente; pendiente de aplicar la migración y validar en producción.
+- [Identidad única y normalización de temas](sprint-20-identidad-temas.md): implementada, aplicada y validada en producción.
+- [Auditoría integral y cierre técnico de V2.5](sprint-21-auditoria-integral-v25.md): banco completo auditado y motores sometidos a pruebas transaccionales; pendiente únicamente la muestra manual de experiencia de uso.
 
 ## Diseño futuro
 
