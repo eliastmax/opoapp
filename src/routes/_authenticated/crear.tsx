@@ -50,10 +50,13 @@ import { keepActiveDoubtIds } from "@/lib/active-doubts";
 import {
   LEARNING_STAGE_DESCRIPTIONS,
   LEARNING_STAGE_LABELS,
-  LEARNING_STAGES,
+  PRACTICE_STAGES,
   isStageUnlocked,
+  mixedPracticeUnlocked,
+  recommendedPracticeStage,
   stageRequirements,
   type LearningStage,
+  type PracticeStage,
 } from "@/lib/learning-stages";
 import {
   isStageUnlockedForAll,
@@ -88,7 +91,7 @@ function CrearPage() {
   const [subtopicSearch, setSubtopicSearch] = useState("");
   const [cantidad, setCantidad] = useState<number>(10);
   const [modalidad, setModalidad] = useState<Modalidad>("mezcladas");
-  const [selectedStage, setSelectedStage] = useState<LearningStage>("aprendizaje");
+  const [selectedStage, setSelectedStage] = useState<PracticeStage>("aprendizaje");
   const [stageFreeMode, setStageFreeMode] = useState(false);
   const [pendingLockedStage, setPendingLockedStage] = useState<LearningStage | null>(null);
   const [starting, setStarting] = useState(false);
@@ -197,7 +200,7 @@ function CrearPage() {
       selectedStageProgress,
       contentScope === "tema" ? topicId : undefined,
     );
-    setSelectedStage(recommended);
+    setSelectedStage(recommendedPracticeStage(selectedStageProgress, recommended));
     setStageFreeMode(false);
   }, [contentScope, topicId, selectedStageProgress]);
 
@@ -215,7 +218,19 @@ function CrearPage() {
     setSubtopicDialogOpen(open);
   }
 
-  function chooseStage(stage: LearningStage) {
+  function chooseStage(stage: PracticeStage) {
+    if (stage === "mezcladas") {
+      if (mixedPracticeUnlocked(selectedStageProgress)) {
+        setSelectedStage(stage);
+        setStageFreeMode(false);
+      } else {
+        toast.info(
+          "Mezcladas se activa cuando Tribunal está disponible en todos los temas seleccionados.",
+        );
+      }
+      return;
+    }
+
     const unlocked =
       contentScope === "tema"
         ? !stageProgress || isStageUnlocked(stageProgress, stage)
@@ -234,6 +249,35 @@ function CrearPage() {
     try {
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData.user!.id;
+
+      if (selectedStage === "mezcladas") {
+        const { data: mixedTest, error: mixedError } = await supabase.rpc(
+          "create_mixed_stage_test",
+          {
+            p_topic_ids: selectedTopicIds,
+            p_mode: modalidad,
+            p_question_count: cantidad,
+            p_subtopic_ids:
+              contentScope === "tema" && subtopicIds.length > 0 ? subtopicIds : undefined,
+          },
+        );
+        if (mixedError) throw mixedError;
+
+        const created = mixedTest?.[0];
+        if (!created) throw new Error("No se pudo crear el test de niveles mezclados");
+        if (created.selected_count < cantidad) {
+          toast.warning(`Solo hay ${created.selected_count} preguntas disponibles`);
+        } else if (created.covered_topic_count < created.requested_topic_count) {
+          toast.warning(
+            `El test cubre ${created.covered_topic_count} de ${created.requested_topic_count} temas por falta de preguntas compatibles`,
+          );
+        } else if (created.covered_stage_count < 3) {
+          toast.warning("No había preguntas compatibles de los tres niveles para este formato");
+        }
+
+        navigate({ to: "/test/$id", params: { id: created.test_id } });
+        return;
+      }
 
       if (contentScope !== "tema") {
         const { data: multiTest, error: multiError } = await supabase.rpc(
@@ -295,7 +339,8 @@ function CrearPage() {
       if (modalidad === "nuevas") {
         const { data: answered } = await supabase
           .from("test_answers")
-          .select("question_id, correcta");
+          .select("question_id")
+          .not("correcta", "is", null);
         const seen = new Set((answered ?? []).map((a) => a.question_id));
         ids = ids.filter((id) => !seen.has(id));
       } else if (modalidad === "falladas") {
@@ -730,12 +775,14 @@ function CrearPage() {
               La recomendación se adapta a tus resultados. Ningún nivel está prohibido.
             </p>
           </div>
-          <div className="grid gap-2 sm:grid-cols-3">
-            {LEARNING_STAGES.map((stage) => {
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {PRACTICE_STAGES.map((stage) => {
               const unlocked =
-                contentScope === "tema"
-                  ? Boolean(stageProgress && isStageUnlocked(stageProgress, stage))
-                  : isStageUnlockedForAll(selectedStageProgress, stage);
+                stage === "mezcladas"
+                  ? mixedPracticeUnlocked(selectedStageProgress)
+                  : contentScope === "tema"
+                    ? Boolean(stageProgress && isStageUnlocked(stageProgress, stage))
+                    : isStageUnlockedForAll(selectedStageProgress, stage);
               const active = selectedStage === stage;
               return (
                 <button
@@ -806,7 +853,7 @@ function CrearPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="mezcladas">Mezcladas · selección inteligente</SelectItem>
+              <SelectItem value="mezcladas">Selección inteligente</SelectItem>
               <SelectItem value="nuevas">Nunca realizadas</SelectItem>
               <SelectItem value="falladas">Falladas</SelectItem>
               <SelectItem value="dudas">Marcadas como duda</SelectItem>

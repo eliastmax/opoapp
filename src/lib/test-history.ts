@@ -19,6 +19,14 @@ export function historyTestLabel(type: string) {
     multitema_nuevas: "Multitema · preguntas nuevas",
     multitema_falladas: "Multitema · repaso de fallos",
     multitema_dudas: "Multitema · repaso de dudas",
+    niveles_mezclados_mezcladas: "Niveles mezclados",
+    niveles_mezclados_nuevas: "Niveles mezclados · preguntas nuevas",
+    niveles_mezclados_falladas: "Niveles mezclados · repaso de fallos",
+    niveles_mezclados_dudas: "Niveles mezclados · repaso de dudas",
+    multitema_niveles_mezclados_mezcladas: "Multitema · niveles mezclados",
+    multitema_niveles_mezclados_nuevas: "Multitema · niveles mezclados · preguntas nuevas",
+    multitema_niveles_mezclados_falladas: "Multitema · niveles mezclados · repaso de fallos",
+    multitema_niveles_mezclados_dudas: "Multitema · niveles mezclados · repaso de dudas",
   };
 
   return labels[type] ?? "Test personalizado";

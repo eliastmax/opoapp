@@ -4,12 +4,21 @@ export type TopicProgressRow =
   Database["public"]["Functions"]["get_topic_progress_summary"]["Returns"][number];
 
 export type EvidenceState = "sin_base" | "inicial" | "suficiente" | "robusta";
+export type CoverageMilestone = "sin_empezar" | "en_marcha" | "casi_completo" | "completo";
+
+export type CoverageSummary = {
+  state: CoverageMilestone;
+  title: string;
+  message: string;
+  remainingQuestions: number;
+  remainingConcepts: number;
+};
 
 export const EVIDENCE_LABELS: Record<EvidenceState, string> = {
-  sin_base: "Sin base todavía",
-  inicial: "Evidencia inicial",
-  suficiente: "Base suficiente",
-  robusta: "Base robusta",
+  sin_base: "Sin práctica",
+  inicial: "Práctica inicial",
+  suficiente: "Práctica suficiente",
+  robusta: "Práctica robusta",
 };
 
 export function evidenceState(value: string): EvidenceState {
@@ -27,6 +36,61 @@ export function evidenceDescription(state: EvidenceState): string {
     case "robusta":
       return "Hay práctica variada y distribuida en el tiempo para interpretar el resultado con más confianza.";
   }
+}
+
+export function coverageSummary(row: TopicProgressRow): CoverageSummary {
+  const remainingQuestions = Math.max(0, row.active_questions - row.unique_questions_seen);
+  const remainingConcepts = Math.max(0, row.available_concepts - row.seen_concepts);
+
+  if (row.unique_questions_seen === 0) {
+    return {
+      state: "sin_empezar",
+      title: "Banco sin empezar",
+      message: "Tu primera respuesta abrirá el recorrido de este tema.",
+      remainingQuestions,
+      remainingConcepts,
+    };
+  }
+
+  if (remainingQuestions === 0) {
+    return {
+      state: "completo",
+      title: "Banco recorrido",
+      message:
+        "Has respondido todas las preguntas al menos una vez. Ahora toca mantener y consolidar lo aprendido.",
+      remainingQuestions,
+      remainingConcepts,
+    };
+  }
+
+  if (remainingQuestions <= Math.max(2, Math.ceil(row.active_questions * 0.02))) {
+    return {
+      state: "casi_completo",
+      title: "Banco casi recorrido",
+      message: `Te ${remainingQuestions === 1 ? "queda" : "quedan"} ${remainingQuestions} ${
+        remainingQuestions === 1 ? "pregunta" : "preguntas"
+      } por responder para completar la primera vuelta.`,
+      remainingQuestions,
+      remainingConcepts,
+    };
+  }
+
+  return {
+    state: "en_marcha",
+    title: "Recorrido en marcha",
+    message: `Has respondido ${row.unique_questions_seen} de ${row.active_questions} preguntas distintas.`,
+    remainingQuestions,
+    remainingConcepts,
+  };
+}
+
+export function topicProgressDescription(row: TopicProgressRow): string {
+  const coverage = coverageSummary(row);
+  if (coverage.state === "completo") {
+    return "La cobertura está completa. El siguiente avance se demuestra recuperando fallos y manteniendo el tema con repasos separados.";
+  }
+  if (coverage.state === "casi_completo") return coverage.message;
+  return evidenceDescription(evidenceState(row.evidence_state));
 }
 
 export function nextProgressAction(row: TopicProgressRow): string {

@@ -19,6 +19,10 @@ describe("test history", () => {
   it("uses friendly labels for known and unknown test types", () => {
     expect(historyTestLabel("simulacro")).toBe("Simulacro de examen");
     expect(historyTestLabel("multitema_falladas")).toBe("Multitema · repaso de fallos");
+    expect(historyTestLabel("niveles_mezclados_mezcladas")).toBe("Niveles mezclados");
+    expect(historyTestLabel("multitema_niveles_mezclados_nuevas")).toBe(
+      "Multitema · niveles mezclados · preguntas nuevas",
+    );
     expect(historyTestLabel("legacy")).toBe("Test personalizado");
   });
 

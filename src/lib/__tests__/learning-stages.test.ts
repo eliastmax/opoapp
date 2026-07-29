@@ -3,6 +3,8 @@ import { describe, expect, it } from "bun:test";
 import {
   isStageUnlocked,
   learningStage,
+  mixedPracticeUnlocked,
+  recommendedPracticeStage,
   stageRequirements,
   type LearningStageProgress,
 } from "../learning-stages";
@@ -65,5 +67,19 @@ describe("learning stages", () => {
     expect(stageRequirements(progress, "tribunal").join(" ")).not.toContain(
       "Retenciones separadas",
     );
+  });
+
+  it("offers mixed practice only after Tribunal is unlocked everywhere", () => {
+    expect(mixedPracticeUnlocked([{ ...progress, tribunal_unlocked: true }])).toBe(true);
+    expect(
+      mixedPracticeUnlocked([
+        { ...progress, topic_id: "one", tribunal_unlocked: true },
+        { ...progress, topic_id: "two", tribunal_unlocked: false },
+      ]),
+    ).toBe(false);
+    expect(recommendedPracticeStage([{ ...progress, tribunal_unlocked: true }], "tribunal")).toBe(
+      "mezcladas",
+    );
+    expect(recommendedPracticeStage([progress], "aprendizaje")).toBe("aprendizaje");
   });
 });
