@@ -26,6 +26,7 @@ Este índice registra qué partes de la V2 están realmente implementadas y vali
 - [Importación múltiple de CSV](sprint-14-importacion-multiple.md): implementada técnicamente; pendiente de validación en uso real con varios bancos completos.
 - [Identidad única y normalización de temas](sprint-20-identidad-temas.md): implementada, aplicada y validada en producción.
 - [Auditoría integral y cierre técnico de V2.5](sprint-21-auditoria-integral-v25.md): banco completo auditado y motores sometidos a pruebas transaccionales; pendiente únicamente la muestra manual de experiencia de uso.
+- [Progreso satisfactorio y mezcla de niveles](sprint-22-progreso-satisfactorio-mezcla-niveles.md): cuarta práctica de niveles mezclados, recuperación de preguntas mostradas sin respuesta e hitos visuales de cobertura; pendiente de validación visual en uso real.
 
 ## Diseño futuro
 

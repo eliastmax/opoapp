@@ -1,10 +1,12 @@
 // @ts-expect-error bun:test provided by bun runtime
 import { describe, expect, it } from "bun:test";
 import {
+  coverageSummary,
   evidenceDescription,
   evidenceState,
   nextProgressAction,
   sortProgressByTopicNumber,
+  topicProgressDescription,
   type TopicProgressRow,
 } from "../progress-evidence";
 
@@ -62,5 +64,39 @@ describe("progress evidence presentation", () => {
     ]);
 
     expect(sorted.map((topic) => topic.topic_number)).toEqual([2, 3, 11, 20]);
+  });
+
+  it("celebrates complete coverage without claiming mastery", () => {
+    const complete = row({
+      active_questions: 99,
+      unique_questions_seen: 99,
+      available_concepts: 98,
+      seen_concepts: 98,
+      evidence_state: "suficiente",
+    });
+
+    expect(coverageSummary(complete)).toMatchObject({
+      state: "completo",
+      title: "Banco recorrido",
+      remainingQuestions: 0,
+      remainingConcepts: 0,
+    });
+    expect(topicProgressDescription(complete)).toContain("cobertura está completa");
+    expect(topicProgressDescription(complete)).not.toContain("dominado");
+  });
+
+  it("explains the final unanswered question and its pending concept", () => {
+    const almostComplete = row({
+      active_questions: 99,
+      unique_questions_seen: 98,
+      available_concepts: 98,
+      seen_concepts: 97,
+    });
+    expect(coverageSummary(almostComplete)).toMatchObject({
+      state: "casi_completo",
+      remainingQuestions: 1,
+      remainingConcepts: 1,
+    });
+    expect(topicProgressDescription(almostComplete)).toContain("queda 1 pregunta");
   });
 });

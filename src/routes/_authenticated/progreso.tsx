@@ -14,6 +14,8 @@ import {
   LockKeyhole,
   XCircle,
   Clock3,
+  Layers3,
+  Sparkles,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -22,10 +24,12 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {
   EVIDENCE_LABELS,
-  evidenceDescription,
+  coverageSummary,
   evidenceState,
   nextProgressAction,
   sortProgressByTopicNumber,
+  topicProgressDescription,
+  type CoverageMilestone,
   type EvidenceState,
   type TopicProgressRow,
 } from "@/lib/progress-evidence";
@@ -53,6 +57,13 @@ const EVIDENCE_STYLES: Record<EvidenceState, string> = {
   inicial: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
   suficiente: "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300",
   robusta: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+};
+
+const COVERAGE_STYLES: Record<CoverageMilestone, string> = {
+  sin_empezar: "border-muted-foreground/20 bg-muted/40",
+  en_marcha: "border-sky-500/20 bg-sky-500/5",
+  casi_completo: "border-primary/25 bg-primary/5",
+  completo: "border-emerald-500/30 bg-emerald-500/10",
 };
 
 type RetentionSummaryRow = {
@@ -203,6 +214,7 @@ function TopicProgressCard({
 }) {
   const state = evidenceState(topic.evidence_state);
   const mastery = topic.mastery_percentage;
+  const coverage = coverageSummary(topic);
 
   return (
     <Card className="p-4">
@@ -216,8 +228,24 @@ function TopicProgressCard({
         </Badge>
       </div>
 
+      <div className={`mt-3 rounded-xl border p-3 ${COVERAGE_STYLES[coverage.state]}`}>
+        <div className="flex items-start gap-2">
+          <Sparkles
+            className={`mt-0.5 h-4 w-4 shrink-0 ${
+              coverage.state === "completo" ? "text-emerald-600" : "text-primary"
+            }`}
+          />
+          <div>
+            <p className="text-sm font-semibold">{coverage.title}</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+              {coverage.message}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-        {evidenceDescription(state)}
+        {topicProgressDescription(topic)}
       </p>
 
       <div className="mt-4 space-y-2">
@@ -236,6 +264,14 @@ function TopicProgressCard({
         <Metric label="Tests" value={topic.completed_sessions} />
         <Metric label="Conceptos" value={`${topic.seen_concepts}/${topic.available_concepts}`} />
       </div>
+
+      {coverage.remainingConcepts > 0 && coverage.remainingQuestions > 0 && (
+        <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+          {coverage.remainingConcepts === 1
+            ? "El concepto pendiente se completará cuando respondas la pregunta que falta."
+            : `${coverage.remainingConcepts} conceptos siguen pendientes dentro de las preguntas que aún no has respondido.`}
+        </p>
+      )}
 
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
         <span className="rounded-md bg-muted px-2 py-1 text-muted-foreground">
@@ -276,6 +312,7 @@ function TopicProgressCard({
 
 function LearningStagesProgress({ row }: { row: LearningStageProgress }) {
   const recommended = learningStage(row.recommended_stage);
+  const mixedUnlocked = row.tribunal_unlocked;
   const nextLocked = LEARNING_STAGES.find((stage) => !isStageUnlocked(row, stage));
   const requirements = nextLocked ? stageRequirements(row, nextLocked) : [];
 
@@ -284,13 +321,14 @@ function LearningStagesProgress({ row }: { row: LearningStageProgress }) {
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-semibold">Ruta recomendada</p>
         <Badge variant="secondary" className="text-[10px]">
-          Recomendado: {LEARNING_STAGE_LABELS[recommended]}
+          Recomendado:{" "}
+          {mixedUnlocked ? LEARNING_STAGE_LABELS.mezcladas : LEARNING_STAGE_LABELS[recommended]}
         </Badge>
       </div>
-      <div className="mt-3 grid grid-cols-3 gap-1.5">
+      <div className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
         {LEARNING_STAGES.map((stage) => {
           const unlocked = isStageUnlocked(row, stage);
-          const current = stage === recommended;
+          const current = !mixedUnlocked && stage === recommended;
           return (
             <div
               key={stage}
@@ -309,8 +347,24 @@ function LearningStagesProgress({ row }: { row: LearningStageProgress }) {
             </div>
           );
         })}
+        <div
+          className={`rounded-md border px-2 py-2 text-center ${
+            mixedUnlocked ? "border-primary bg-primary/10" : "bg-muted/30"
+          }`}
+        >
+          {mixedUnlocked ? (
+            <Layers3 className="mx-auto h-4 w-4 text-primary" />
+          ) : (
+            <LockKeyhole className="mx-auto h-4 w-4 text-muted-foreground" />
+          )}
+          <p className="mt-1 truncate text-[10px] font-medium">{LEARNING_STAGE_LABELS.mezcladas}</p>
+        </div>
       </div>
-      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{row.stage_message}</p>
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+        {mixedUnlocked
+          ? "Has completado la ruta de niveles. Ahora combina Aprendizaje, Consolidación y Tribunal para mantener el tema completo."
+          : row.stage_message}
+      </p>
       <p className="mt-1 text-[11px] text-muted-foreground">
         Retención confirmada en {row.retention_evidence}{" "}
         {row.retention_evidence === 1 ? "concepto" : "conceptos"}. No bloquea el acceso a otros
