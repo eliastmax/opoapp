@@ -2,6 +2,7 @@
 import { describe, expect, it } from "bun:test";
 import {
   isStageUnlocked,
+  learningRouteSummary,
   learningStage,
   mixedPracticeUnlocked,
   recommendedPracticeStage,
@@ -81,5 +82,21 @@ describe("learning stages", () => {
       "mezcladas",
     );
     expect(recommendedPracticeStage([progress], "aprendizaje")).toBe("aprendizaje");
+  });
+
+  it("closes the learning route at Tribunal without presenting mixed practice as a stage", () => {
+    expect(learningRouteSummary(progress)).toMatchObject({
+      completed: false,
+      badge: "Recomendado: Aprendizaje",
+    });
+
+    const completed = learningRouteSummary({ ...progress, tribunal_unlocked: true });
+    expect(completed).toMatchObject({
+      completed: true,
+      badge: "Ruta completada",
+      message:
+        "Has terminado la ruta de preparación del tema. Ahora alterna práctica, fallos y repasos para afianzarlo.",
+    });
+    expect(completed.message).not.toContain("Mezcladas");
   });
 });

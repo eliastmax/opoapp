@@ -14,7 +14,6 @@ import {
   LockKeyhole,
   XCircle,
   Clock3,
-  Layers3,
   Sparkles,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,7 +42,7 @@ import {
   LEARNING_STAGE_LABELS,
   LEARNING_STAGES,
   isStageUnlocked,
-  learningStage,
+  learningRouteSummary,
   stageRequirements,
   type LearningStageProgress,
 } from "@/lib/learning-stages";
@@ -311,8 +310,7 @@ function TopicProgressCard({
 }
 
 function LearningStagesProgress({ row }: { row: LearningStageProgress }) {
-  const recommended = learningStage(row.recommended_stage);
-  const mixedUnlocked = row.tribunal_unlocked;
+  const route = learningRouteSummary(row);
   const nextLocked = LEARNING_STAGES.find((stage) => !isStageUnlocked(row, stage));
   const requirements = nextLocked ? stageRequirements(row, nextLocked) : [];
 
@@ -320,15 +318,21 @@ function LearningStagesProgress({ row }: { row: LearningStageProgress }) {
     <div className="mt-3 rounded-lg border p-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-semibold">Ruta recomendada</p>
-        <Badge variant="secondary" className="text-[10px]">
-          Recomendado:{" "}
-          {mixedUnlocked ? LEARNING_STAGE_LABELS.mezcladas : LEARNING_STAGE_LABELS[recommended]}
+        <Badge
+          variant="secondary"
+          className={
+            route.completed
+              ? "bg-emerald-500/10 text-[10px] text-emerald-700 dark:text-emerald-300"
+              : "text-[10px]"
+          }
+        >
+          {route.badge}
         </Badge>
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+      <div className="mt-3 grid grid-cols-3 gap-1.5">
         {LEARNING_STAGES.map((stage) => {
           const unlocked = isStageUnlocked(row, stage);
-          const current = !mixedUnlocked && stage === recommended;
+          const current = !route.completed && stage === route.recommendedStage;
           return (
             <div
               key={stage}
@@ -347,24 +351,8 @@ function LearningStagesProgress({ row }: { row: LearningStageProgress }) {
             </div>
           );
         })}
-        <div
-          className={`rounded-md border px-2 py-2 text-center ${
-            mixedUnlocked ? "border-primary bg-primary/10" : "bg-muted/30"
-          }`}
-        >
-          {mixedUnlocked ? (
-            <Layers3 className="mx-auto h-4 w-4 text-primary" />
-          ) : (
-            <LockKeyhole className="mx-auto h-4 w-4 text-muted-foreground" />
-          )}
-          <p className="mt-1 truncate text-[10px] font-medium">{LEARNING_STAGE_LABELS.mezcladas}</p>
-        </div>
       </div>
-      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-        {mixedUnlocked
-          ? "Has completado la ruta de niveles. Ahora combina Aprendizaje, Consolidación y Tribunal para mantener el tema completo."
-          : row.stage_message}
-      </p>
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{route.message}</p>
       <p className="mt-1 text-[11px] text-muted-foreground">
         Retención confirmada en {row.retention_evidence}{" "}
         {row.retention_evidence === 1 ? "concepto" : "conceptos"}. No bloquea el acceso a otros
