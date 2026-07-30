@@ -4,6 +4,12 @@ export type LearningStage = "aprendizaje" | "consolidacion" | "tribunal";
 export type PracticeStage = LearningStage | "mezcladas";
 export type LearningStageProgress =
   Database["public"]["Functions"]["get_learning_stage_progress"]["Returns"][number];
+export type LearningRouteSummary = {
+  completed: boolean;
+  badge: string;
+  message: string;
+  recommendedStage: LearningStage;
+};
 
 export const LEARNING_STAGES: LearningStage[] = ["aprendizaje", "consolidacion", "tribunal"];
 export const PRACTICE_STAGES: PracticeStage[] = [
@@ -46,6 +52,27 @@ export function recommendedPracticeStage(
   fallback: LearningStage,
 ): PracticeStage {
   return mixedPracticeUnlocked(rows) ? "mezcladas" : fallback;
+}
+
+export function learningRouteSummary(row: LearningStageProgress): LearningRouteSummary {
+  const recommendedStage = learningStage(row.recommended_stage);
+
+  if (row.tribunal_unlocked) {
+    return {
+      completed: true,
+      badge: "Ruta completada",
+      message:
+        "Has terminado la ruta de preparación del tema. Ahora alterna práctica, fallos y repasos para afianzarlo.",
+      recommendedStage,
+    };
+  }
+
+  return {
+    completed: false,
+    badge: `Recomendado: ${LEARNING_STAGE_LABELS[recommendedStage]}`,
+    message: row.stage_message,
+    recommendedStage,
+  };
 }
 
 export function stageRequirements(row: LearningStageProgress, stage: LearningStage): string[] {

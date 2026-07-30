@@ -45,7 +45,7 @@ export function coverageSummary(row: TopicProgressRow): CoverageSummary {
   if (row.unique_questions_seen === 0) {
     return {
       state: "sin_empezar",
-      title: "Banco sin empezar",
+      title: "Aún no has empezado",
       message: "Tu primera respuesta abrirá el recorrido de este tema.",
       remainingQuestions,
       remainingConcepts,
@@ -55,9 +55,9 @@ export function coverageSummary(row: TopicProgressRow): CoverageSummary {
   if (remainingQuestions === 0) {
     return {
       state: "completo",
-      title: "Banco recorrido",
+      title: "Primera vuelta completada",
       message:
-        "Has respondido todas las preguntas al menos una vez. Ahora toca mantener y consolidar lo aprendido.",
+        "Has respondido todas las preguntas de este tema al menos una vez. Ahora el avance consiste en corregir fallos y mantenerlo con repasos separados.",
       remainingQuestions,
       remainingConcepts,
     };
@@ -66,7 +66,7 @@ export function coverageSummary(row: TopicProgressRow): CoverageSummary {
   if (remainingQuestions <= Math.max(2, Math.ceil(row.active_questions * 0.02))) {
     return {
       state: "casi_completo",
-      title: "Banco casi recorrido",
+      title: "A punto de completar la primera vuelta",
       message: `Te ${remainingQuestions === 1 ? "queda" : "quedan"} ${remainingQuestions} ${
         remainingQuestions === 1 ? "pregunta" : "preguntas"
       } por responder para completar la primera vuelta.`,
@@ -77,7 +77,7 @@ export function coverageSummary(row: TopicProgressRow): CoverageSummary {
 
   return {
     state: "en_marcha",
-    title: "Recorrido en marcha",
+    title: "Primera vuelta en marcha",
     message: `Has respondido ${row.unique_questions_seen} de ${row.active_questions} preguntas distintas.`,
     remainingQuestions,
     remainingConcepts,

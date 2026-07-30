@@ -77,10 +77,13 @@ describe("progress evidence presentation", () => {
 
     expect(coverageSummary(complete)).toMatchObject({
       state: "completo",
-      title: "Banco recorrido",
+      title: "Primera vuelta completada",
       remainingQuestions: 0,
       remainingConcepts: 0,
     });
+    expect(coverageSummary(complete).message).toContain(
+      "Has respondido todas las preguntas de este tema al menos una vez",
+    );
     expect(topicProgressDescription(complete)).toContain("cobertura está completa");
     expect(topicProgressDescription(complete)).not.toContain("dominado");
   });
@@ -98,5 +101,18 @@ describe("progress evidence presentation", () => {
       remainingConcepts: 1,
     });
     expect(topicProgressDescription(almostComplete)).toContain("queda 1 pregunta");
+  });
+
+  it("uses first-round language in every coverage state", () => {
+    expect(coverageSummary(row()).title).toBe("Aún no has empezado");
+    expect(coverageSummary(row({ unique_questions_seen: 30, coverage_percentage: 30 })).title).toBe(
+      "Primera vuelta en marcha",
+    );
+    expect(coverageSummary(row({ unique_questions_seen: 98, active_questions: 100 })).title).toBe(
+      "A punto de completar la primera vuelta",
+    );
+    expect(coverageSummary(row({ unique_questions_seen: 100, active_questions: 100 })).title).toBe(
+      "Primera vuelta completada",
+    );
   });
 });
