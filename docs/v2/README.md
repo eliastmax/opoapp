@@ -28,6 +28,7 @@ Este índice registra qué partes de la V2 están realmente implementadas y vali
 - [Auditoría integral y cierre técnico de V2.5](sprint-21-auditoria-integral-v25.md): banco completo auditado y motores sometidos a pruebas transaccionales; pendiente únicamente la muestra manual de experiencia de uso.
 - [Progreso satisfactorio y mezcla de niveles](sprint-22-progreso-satisfactorio-mezcla-niveles.md): cuarta práctica de niveles mezclados, recuperación de preguntas mostradas sin respuesta e hitos visuales de cobertura; pendiente de validación visual en uso real.
 - [Progreso con fases reales y primera vuelta](sprint-23-progreso-fases-reales-primera-vuelta.md): Progreso vuelve a mostrar solo las tres fases pedagógicas, cierra Tribunal con «Ruta completada» y sustituye el lenguaje de banco por «primera vuelta»; implementado técnicamente y pendiente de validación visual en uso real.
+- [Mapa compacto de progreso](sprint-24-mapa-compacto-progreso.md): sustituye la lista de informes por una cuadrícula de temas con fase, primera vuelta, filtros y detalle progresivo; implementado técnicamente y pendiente de validación visual en uso real.
 
 ## Diseño futuro
 

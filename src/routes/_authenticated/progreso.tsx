@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import {
   AlertCircle,
   BookOpenCheck,
+  ChevronRight,
+  CircleAlert,
   Flag,
-  Gauge,
   History,
   Loader2,
   RotateCcw,
@@ -21,6 +23,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   EVIDENCE_LABELS,
   coverageSummary,
@@ -46,6 +55,17 @@ import {
   stageRequirements,
   type LearningStageProgress,
 } from "@/lib/learning-stages";
+import {
+  PROGRESS_MAP_PHASE_LABELS,
+  filterProgressMapTopics,
+  needsProgressAttention,
+  progressMapPhase,
+  progressMapTotals,
+  type ProgressMapFilter,
+  type ProgressMapPhase,
+  type ProgressMapTopic,
+} from "@/lib/progress-map";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/progreso")({
   component: ProgresoPage,
@@ -65,6 +85,33 @@ const COVERAGE_STYLES: Record<CoverageMilestone, string> = {
   completo: "border-emerald-500/30 bg-emerald-500/10",
 };
 
+const MAP_PHASE_STYLES: Record<ProgressMapPhase, string> = {
+  sin_empezar: "border-border bg-card text-muted-foreground hover:border-muted-foreground/50",
+  aprendizaje:
+    "border-[#a76532]/50 bg-[#a76532]/10 text-[#7c461f] hover:border-[#a76532] dark:text-[#e7b487]",
+  consolidacion:
+    "border-slate-400/60 bg-slate-400/10 text-slate-700 hover:border-slate-500 dark:text-slate-200",
+  tribunal:
+    "border-amber-400/60 bg-amber-400/10 text-amber-800 hover:border-amber-500 dark:text-amber-200",
+  completada:
+    "border-emerald-500/50 bg-emerald-500/10 text-emerald-800 hover:border-emerald-500 dark:text-emerald-200",
+};
+
+const MAP_PHASE_DOT_STYLES: Record<ProgressMapPhase, string> = {
+  sin_empezar: "bg-muted-foreground/35",
+  aprendizaje: "bg-[#a76532]",
+  consolidacion: "bg-slate-400",
+  tribunal: "bg-amber-400",
+  completada: "bg-emerald-500",
+};
+
+const FILTER_LABELS: Record<ProgressMapFilter, string> = {
+  todos: "Todos",
+  en_curso: "En curso",
+  atencion: "Atención",
+  completada: "Completados",
+};
+
 type RetentionSummaryRow = {
   topic_id: string;
   due_count: number;
@@ -72,6 +119,8 @@ type RetentionSummaryRow = {
 };
 
 function ProgresoPage() {
+  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<ProgressMapFilter>("todos");
   const { data, isLoading, error } = useQuery({
     queryKey: [
       "topic-progress",
@@ -108,34 +157,20 @@ function ProgresoPage() {
   const retentionByTopic = new Map(
     (data?.retention ?? []).map((row) => [row.topic_id, row] as const),
   );
+  const mapEntries: ProgressMapTopic[] = topics.map((topic) => ({
+    topic,
+    stages: stagesByTopic.get(topic.topic_id),
+    dueCount: retentionByTopic.get(topic.topic_id)?.due_count ?? 0,
+  }));
+  const visibleEntries = filterProgressMapTopics(mapEntries, filter);
+  const selectedEntry = mapEntries.find((entry) => entry.topic.topic_id === selectedTopicId);
 
   return (
     <div className="space-y-4">
       <header className="pt-2">
         <h1 className="text-2xl font-bold">Progreso</h1>
-        <p className="text-sm text-muted-foreground">Tu avance por tema</p>
+        <p className="text-sm text-muted-foreground">Tu mapa de preparación por tema</p>
       </header>
-
-      <Card className="p-4">
-        <div className="flex gap-3">
-          <Gauge className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-          <div className="space-y-1">
-            <p className="text-sm font-semibold">Progreso basado en práctica útil</p>
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              La cobertura cuenta preguntas distintas. El acierto actual usa únicamente tu última
-              respuesta segura a cada pregunta: acertar con duda sigue necesitando repaso.
-            </p>
-          </div>
-        </div>
-      </Card>
-
-      <Button asChild variant="outline" className="w-full">
-        <Link to="/historial">
-          <History className="h-4 w-4" /> Ver historial de tests
-        </Link>
-      </Button>
-
-      {data && <VerifiedProgressOverview rows={data.verified} />}
 
       {isLoading ? (
         <div className="flex justify-center py-12">
@@ -158,17 +193,211 @@ function ProgresoPage() {
           </p>
         </Card>
       ) : (
-        topics.map((topic) => (
-          <TopicProgressCard
-            key={topic.topic_id}
-            topic={topic}
-            verified={verifiedByTopic.get(topic.topic_id)}
-            stages={stagesByTopic.get(topic.topic_id)}
-            retention={retentionByTopic.get(topic.topic_id)}
-          />
-        ))
+        <>
+          <ProgressMapOverview entries={mapEntries} />
+
+          <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Filtrar temas">
+            {(Object.keys(FILTER_LABELS) as ProgressMapFilter[]).map((value) => (
+              <Button
+                key={value}
+                type="button"
+                size="sm"
+                variant={filter === value ? "default" : "outline"}
+                className="h-8 shrink-0 rounded-full px-3 text-xs"
+                onClick={() => setFilter(value)}
+                aria-pressed={filter === value}
+              >
+                {FILTER_LABELS[value]}
+              </Button>
+            ))}
+          </div>
+
+          {visibleEntries.length > 0 ? (
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+              {visibleEntries.map((entry) => (
+                <ProgressMapCard
+                  key={entry.topic.topic_id}
+                  entry={entry}
+                  onSelect={() => setSelectedTopicId(entry.topic.topic_id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <Card className="p-5 text-center">
+              <p className="text-sm font-medium">No hay temas en este estado</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Prueba otro filtro para volver a ver el mapa completo.
+              </p>
+            </Card>
+          )}
+
+          {data && <VerifiedProgressOverview rows={data.verified} />}
+
+          <Button asChild variant="outline" className="w-full">
+            <Link to="/historial">
+              <History className="h-4 w-4" /> Ver historial de tests
+            </Link>
+          </Button>
+        </>
       )}
+
+      <Sheet
+        open={Boolean(selectedEntry)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedTopicId(null);
+        }}
+      >
+        {selectedEntry && (
+          <TopicProgressSheet
+            entry={selectedEntry}
+            verified={verifiedByTopic.get(selectedEntry.topic.topic_id)}
+            retention={retentionByTopic.get(selectedEntry.topic.topic_id)}
+          />
+        )}
+      </Sheet>
     </div>
+  );
+}
+
+function ProgressMapOverview({ entries }: { entries: ProgressMapTopic[] }) {
+  const totals = progressMapTotals(entries);
+  const phases: ProgressMapPhase[] = [
+    "sin_empezar",
+    "aprendizaje",
+    "consolidacion",
+    "tribunal",
+    "completada",
+  ];
+
+  return (
+    <Card className="overflow-hidden p-4">
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold">Mapa de temas</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Pulsa un tema para ver todo su detalle.
+          </p>
+        </div>
+        <p className="shrink-0 text-sm font-bold">{entries.length} temas</p>
+      </div>
+
+      <div
+        className="mt-3 flex h-2 overflow-hidden rounded-full bg-muted"
+        aria-label={`Distribución: ${phases
+          .map((phase) => `${totals[phase]} ${PROGRESS_MAP_PHASE_LABELS[phase]}`)
+          .join(", ")}`}
+      >
+        {phases.map(
+          (phase) =>
+            totals[phase] > 0 && (
+              <span
+                key={phase}
+                className={MAP_PHASE_DOT_STYLES[phase]}
+                style={{ width: `${(totals[phase] / entries.length) * 100}%` }}
+              />
+            ),
+        )}
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5">
+        {phases.map((phase) => (
+          <span key={phase} className="inline-flex items-center gap-1.5 text-[11px]">
+            <span className={cn("h-2 w-2 rounded-full", MAP_PHASE_DOT_STYLES[phase])} />
+            <span className="text-muted-foreground">{PROGRESS_MAP_PHASE_LABELS[phase]}</span>
+            <strong className="font-semibold text-foreground">{totals[phase]}</strong>
+          </span>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function ProgressMapCard({ entry, onSelect }: { entry: ProgressMapTopic; onSelect: () => void }) {
+  const { topic, stages } = entry;
+  const phase = progressMapPhase(topic, stages);
+  const needsAttention = needsProgressAttention(entry);
+  const firstRoundComplete = topic.coverage_percentage >= 100;
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={cn(
+        "group relative flex min-h-32 flex-col rounded-xl border p-2.5 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        MAP_PHASE_STYLES[phase],
+      )}
+      aria-label={`Abrir detalle del Tema ${topic.topic_number}: ${topic.topic_name}`}
+    >
+      <div className="flex w-full items-start justify-between gap-1">
+        <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-background/80 px-1.5 text-xs font-bold text-foreground shadow-sm">
+          {topic.topic_number}
+        </span>
+        <span className="flex items-center gap-1">
+          {needsAttention && (
+            <span title="Necesita atención" className="text-amber-600 dark:text-amber-300">
+              <CircleAlert className="h-3.5 w-3.5" />
+              <span className="sr-only">Necesita atención</span>
+            </span>
+          )}
+          <ChevronRight className="h-3.5 w-3.5 opacity-45 transition group-hover:translate-x-0.5 group-hover:opacity-80" />
+        </span>
+      </div>
+
+      <span className="mt-2 line-clamp-2 text-[11px] font-semibold leading-snug text-foreground">
+        {topic.topic_name}
+      </span>
+
+      <span className="mt-auto block min-w-0 pt-2">
+        <span className="block truncate text-[9px] font-bold uppercase tracking-wide">
+          {PROGRESS_MAP_PHASE_LABELS[phase]}
+        </span>
+        <span className="mt-1.5 flex items-center gap-1.5">
+          <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-background/80">
+            <span
+              className={cn("block h-full rounded-full", MAP_PHASE_DOT_STYLES[phase])}
+              style={{ width: `${Math.max(0, Math.min(100, topic.coverage_percentage))}%` }}
+            />
+          </span>
+          <span className="text-[9px] font-semibold tabular-nums">
+            {firstRoundComplete ? (
+              <CheckCircle2 className="h-3 w-3" aria-label="Primera vuelta completada" />
+            ) : (
+              `${topic.coverage_percentage}%`
+            )}
+          </span>
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function TopicProgressSheet({
+  entry,
+  verified,
+  retention,
+}: {
+  entry: ProgressMapTopic;
+  verified?: VerifiedProgressRow;
+  retention?: RetentionSummaryRow;
+}) {
+  return (
+    <SheetContent
+      side="bottom"
+      className="max-h-[88dvh] overflow-hidden rounded-t-3xl p-0 sm:inset-x-auto sm:inset-y-0 sm:left-auto sm:right-0 sm:top-0 sm:h-dvh sm:max-h-none sm:w-[min(34rem,46vw)] sm:max-w-none sm:rounded-none sm:border-l sm:border-t-0"
+    >
+      <SheetHeader className="border-b px-4 py-4 pr-12 text-left sm:px-6">
+        <SheetTitle>Detalle del Tema {entry.topic.topic_number}</SheetTitle>
+        <SheetDescription>La fase y la primera vuelta miden avances distintos.</SheetDescription>
+      </SheetHeader>
+      <div className="overflow-y-auto p-3 pb-8 sm:p-5">
+        <TopicProgressCard
+          topic={entry.topic}
+          verified={verified}
+          stages={entry.stages}
+          retention={retention}
+        />
+      </div>
+    </SheetContent>
   );
 }
 
