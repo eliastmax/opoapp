@@ -10,21 +10,87 @@ export type Database = {
     Tables: {
       profiles: {
         Row: {
+          active_opposition_id: string | null;
           created_at: string;
           id: string;
           nombre: string;
         };
         Insert: {
+          active_opposition_id?: string | null;
           created_at?: string;
           id: string;
           nombre?: string;
         };
         Update: {
+          active_opposition_id?: string | null;
           created_at?: string;
           id?: string;
           nombre?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "profiles_active_opposition_id_fkey";
+            columns: ["active_opposition_id"];
+            isOneToOne: false;
+            referencedRelation: "oppositions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      opposition_admins: {
+        Row: { created_at: string; opposition_id: string; user_id: string };
+        Insert: { created_at?: string; opposition_id: string; user_id: string };
+        Update: { created_at?: string; opposition_id?: string; user_id?: string };
+        Relationships: [
+          {
+            foreignKeyName: "opposition_admins_opposition_id_fkey";
+            columns: ["opposition_id"];
+            isOneToOne: false;
+            referencedRelation: "oppositions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      oppositions: {
+        Row: {
+          code: string;
+          created_at: string;
+          description: string | null;
+          id: string;
+          name: string;
+          published: boolean;
+        };
+        Insert: {
+          code: string;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          name: string;
+          published?: boolean;
+        };
+        Update: {
+          code?: string;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          name?: string;
+          published?: boolean;
+        };
         Relationships: [];
+      };
+      user_oppositions: {
+        Row: { enrolled_at: string; opposition_id: string; user_id: string };
+        Insert: { enrolled_at?: string; opposition_id: string; user_id: string };
+        Update: { enrolled_at?: string; opposition_id?: string; user_id?: string };
+        Relationships: [
+          {
+            foreignKeyName: "user_oppositions_opposition_id_fkey";
+            columns: ["opposition_id"];
+            isOneToOne: false;
+            referencedRelation: "oppositions";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       question_statistics: {
         Row: {
@@ -135,6 +201,7 @@ export type Database = {
       questions: {
         Row: {
           activa: boolean;
+          opposition_id: string;
           apartado: string | null;
           codigo: string;
           concepto: string | null;
@@ -166,6 +233,7 @@ export type Database = {
         };
         Insert: {
           activa?: boolean;
+          opposition_id?: string;
           apartado?: string | null;
           codigo: string;
           concepto?: string | null;
@@ -197,6 +265,7 @@ export type Database = {
         };
         Update: {
           activa?: boolean;
+          opposition_id?: string;
           apartado?: string | null;
           codigo?: string;
           concepto?: string | null;
@@ -277,6 +346,7 @@ export type Database = {
           descripcion: string | null;
           id: string;
           nombre: string;
+          opposition_id: string;
           user_id: string;
         };
         Insert: {
@@ -284,6 +354,7 @@ export type Database = {
           descripcion?: string | null;
           id?: string;
           nombre: string;
+          opposition_id?: string;
           user_id: string;
         };
         Update: {
@@ -291,6 +362,7 @@ export type Database = {
           descripcion?: string | null;
           id?: string;
           nombre?: string;
+          opposition_id?: string;
           user_id?: string;
         };
         Relationships: [];
@@ -300,6 +372,7 @@ export type Database = {
           created_at: string;
           id: string;
           nombre: string;
+          opposition_id: string;
           topic_id: string;
           user_id: string;
         };
@@ -307,6 +380,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           nombre: string;
+          opposition_id?: string;
           topic_id: string;
           user_id: string;
         };
@@ -314,6 +388,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           nombre?: string;
+          opposition_id?: string;
           topic_id?: string;
           user_id?: string;
         };
@@ -471,6 +546,7 @@ export type Database = {
           id: string;
           learning_stage: string | null;
           numero_preguntas: number;
+          opposition_id: string;
           porcentaje: number;
           sin_responder: number;
           stage_free_mode: boolean;
@@ -488,6 +564,7 @@ export type Database = {
           id?: string;
           learning_stage?: string | null;
           numero_preguntas: number;
+          opposition_id?: string;
           porcentaje?: number;
           sin_responder?: number;
           stage_free_mode?: boolean;
@@ -505,6 +582,7 @@ export type Database = {
           id?: string;
           learning_stage?: string | null;
           numero_preguntas?: number;
+          opposition_id?: string;
           porcentaje?: number;
           sin_responder?: number;
           stage_free_mode?: boolean;
@@ -519,6 +597,7 @@ export type Database = {
           id: string;
           nombre: string;
           numero: number;
+          opposition_id: string;
           subject_id: string;
           user_id: string;
         };
@@ -527,6 +606,7 @@ export type Database = {
           id?: string;
           nombre: string;
           numero: number;
+          opposition_id?: string;
           subject_id: string;
           user_id: string;
         };
@@ -535,6 +615,7 @@ export type Database = {
           id?: string;
           nombre?: string;
           numero?: number;
+          opposition_id?: string;
           subject_id?: string;
           user_id?: string;
         };
@@ -639,6 +720,7 @@ export type Database = {
       };
     };
     Functions: {
+      current_active_opposition_id: { Args: never; Returns: string | null };
       complete_test: {
         Args: { p_test_id: string };
         Returns: {
@@ -847,6 +929,7 @@ export type Database = {
           deleted_tests: number;
         }[];
       };
+      set_active_opposition: { Args: { p_opposition_id: string }; Returns: undefined };
     };
     Enums: {
       dificultad_enum: "facil" | "medio" | "dificil";
