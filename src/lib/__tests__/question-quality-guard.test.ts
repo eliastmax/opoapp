@@ -10,6 +10,14 @@ const migration = readFileSync(
   "utf8",
 );
 
+const privilegeMigration = readFileSync(
+  new URL(
+    "../../../supabase/migrations/20260802005747_tighten_question_incident_privileges.sql",
+    import.meta.url,
+  ),
+  "utf8",
+);
+
 describe("question incidents and bank quality guard migration", () => {
   it("keeps incidents private and bound to an owned question", () => {
     expect(migration).toContain("ALTER TABLE public.question_incidents ENABLE ROW LEVEL SECURITY");
@@ -36,5 +44,16 @@ describe("question incidents and bank quality guard migration", () => {
     expect(migration).toContain(
       "GRANT EXECUTE ON FUNCTION public.get_question_bank_quality_report() TO authenticated",
     );
+  });
+
+  it("limits the incident table to authenticated reads and inserts", () => {
+    expect(privilegeMigration).toContain(
+      "REVOKE ALL ON TABLE public.question_incidents FROM anon, authenticated",
+    );
+    expect(privilegeMigration).toContain(
+      "GRANT SELECT, INSERT ON TABLE public.question_incidents TO authenticated",
+    );
+    expect(privilegeMigration).not.toContain("GRANT UPDATE");
+    expect(privilegeMigration).not.toContain("GRANT DELETE");
   });
 });
