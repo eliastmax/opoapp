@@ -30,7 +30,9 @@ type PreparationProfileFlowProps = {
   saveState?: SaveState;
   resumed?: boolean;
   initialStep?: PreparationProfileStep;
+  initialTopicId?: string | null;
   sessionSizeOptions?: number[];
+  onProgressChange?: (step: PreparationProfileStep, topicId: string | null) => void;
 };
 
 const WEEK_DAYS = [
@@ -53,10 +55,17 @@ export function PreparationProfileFlow({
   saveState = "idle",
   resumed = false,
   initialStep = "opposition",
+  initialTopicId = null,
   sessionSizeOptions = [5, 10, 20],
+  onProgressChange,
 }: PreparationProfileFlowProps) {
   const [step, setStep] = useState<PreparationProfileStep>(initialStep);
-  const [topicIndex, setTopicIndex] = useState(0);
+  const [topicIndex, setTopicIndex] = useState(() => {
+    const savedIndex = initialTopicId
+      ? topics.findIndex((candidate) => candidate.id === initialTopicId)
+      : -1;
+    return savedIndex >= 0 ? savedIndex : 0;
+  });
   const stepIndex = PREPARATION_PROFILE_STEPS.indexOf(step);
   const topic = topics[topicIndex];
   const assessed = useMemo(
@@ -77,21 +86,35 @@ export function PreparationProfileFlow({
       onSave();
       return;
     }
-    setStep(PREPARATION_PROFILE_STEPS[stepIndex + 1]);
+    const next = PREPARATION_PROFILE_STEPS[stepIndex + 1];
+    setStep(next);
+    onProgressChange?.(next, next === "topics" ? (topics[topicIndex]?.id ?? null) : null);
   }
 
   function previousStep() {
     if (step === "topics" && topicIndex > 0) {
-      setTopicIndex((current) => current - 1);
+      const previousIndex = topicIndex - 1;
+      setTopicIndex(previousIndex);
+      onProgressChange?.("topics", topics[previousIndex]?.id ?? null);
       return;
     }
-    if (stepIndex > 0) setStep(PREPARATION_PROFILE_STEPS[stepIndex - 1]);
+    if (stepIndex > 0) {
+      const previous = PREPARATION_PROFILE_STEPS[stepIndex - 1];
+      setStep(previous);
+      onProgressChange?.(previous, null);
+    }
   }
 
   function assessTopic(value: TopicAssessmentValue) {
     if (!topic) return;
     update({ topicAssessments: { ...draft.topicAssessments, [topic.id]: value } });
-    if (topicIndex < topics.length - 1) setTopicIndex((current) => current + 1);
+    if (topicIndex < topics.length - 1) {
+      const nextIndex = topicIndex + 1;
+      setTopicIndex(nextIndex);
+      onProgressChange?.("topics", topics[nextIndex]?.id ?? null);
+    } else {
+      onProgressChange?.("topics", topic.id);
+    }
   }
 
   return (

@@ -4,6 +4,9 @@ import {
   ASSESSMENT_OPTIONS,
   assessedTopicCount,
   canContinuePreparationStep,
+  emptyPreparationProfileDraft,
+  practiceDaysFromDatabase,
+  practiceDaysToDatabase,
   preparationStepProgress,
   type PreparationProfileDraft,
 } from "../preparation-profile";
@@ -42,5 +45,20 @@ describe("V3.1 preparation profile presentation", () => {
   it("uses a simple five-step progress indicator", () => {
     expect(preparationStepProgress("opposition")).toBe(20);
     expect(preparationStepProgress("topics")).toBe(100);
+  });
+
+  it("maps stable weekday identifiers without depending on labels", () => {
+    expect(practiceDaysToDatabase(["monday", "wednesday", "sunday"])).toEqual([1, 3, 7]);
+    expect(practiceDaysFromDatabase([2, 6])).toEqual(["tuesday", "saturday"]);
+  });
+
+  it("creates an empty draft without claiming any preparation", () => {
+    expect(emptyPreparationProfileDraft("opposition-1")).toEqual({
+      oppositionId: "opposition-1",
+      examTiming: null,
+      practiceDays: [],
+      questionsPerSession: null,
+      topicAssessments: {},
+    });
   });
 });

@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSimulacroRouteImport } from './routes/_authenticated/simulacro'
 import { Route as AuthenticatedProgresoRouteImport } from './routes/_authenticated/progreso'
+import { Route as AuthenticatedPreparacionRouteImport } from './routes/_authenticated/preparacion'
 import { Route as AuthenticatedPreguntasRouteImport } from './routes/_authenticated/preguntas'
 import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated/inicio'
 import { Route as AuthenticatedImportarRouteImport } from './routes/_authenticated/importar'
@@ -53,6 +54,12 @@ const AuthenticatedProgresoRoute = AuthenticatedProgresoRouteImport.update({
   path: '/progreso',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPreparacionRoute =
+  AuthenticatedPreparacionRouteImport.update({
+    id: '/preparacion',
+    path: '/preparacion',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPreguntasRoute = AuthenticatedPreguntasRouteImport.update({
   id: '/preguntas',
   path: '/preguntas',
@@ -105,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/importar': typeof AuthenticatedImportarRoute
   '/inicio': typeof AuthenticatedInicioRoute
   '/preguntas': typeof AuthenticatedPreguntasRoute
+  '/preparacion': typeof AuthenticatedPreparacionRoute
   '/progreso': typeof AuthenticatedProgresoRoute
   '/simulacro': typeof AuthenticatedSimulacroRoute
   '/resultados/$id': typeof AuthenticatedResultadosIdRoute
@@ -120,6 +128,7 @@ export interface FileRoutesByTo {
   '/importar': typeof AuthenticatedImportarRoute
   '/inicio': typeof AuthenticatedInicioRoute
   '/preguntas': typeof AuthenticatedPreguntasRoute
+  '/preparacion': typeof AuthenticatedPreparacionRoute
   '/progreso': typeof AuthenticatedProgresoRoute
   '/simulacro': typeof AuthenticatedSimulacroRoute
   '/resultados/$id': typeof AuthenticatedResultadosIdRoute
@@ -137,6 +146,7 @@ export interface FileRoutesById {
   '/_authenticated/importar': typeof AuthenticatedImportarRoute
   '/_authenticated/inicio': typeof AuthenticatedInicioRoute
   '/_authenticated/preguntas': typeof AuthenticatedPreguntasRoute
+  '/_authenticated/preparacion': typeof AuthenticatedPreparacionRoute
   '/_authenticated/progreso': typeof AuthenticatedProgresoRoute
   '/_authenticated/simulacro': typeof AuthenticatedSimulacroRoute
   '/_authenticated/resultados/$id': typeof AuthenticatedResultadosIdRoute
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/importar'
     | '/inicio'
     | '/preguntas'
+    | '/preparacion'
     | '/progreso'
     | '/simulacro'
     | '/resultados/$id'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '/importar'
     | '/inicio'
     | '/preguntas'
+    | '/preparacion'
     | '/progreso'
     | '/simulacro'
     | '/resultados/$id'
@@ -185,6 +197,7 @@ export interface FileRouteTypes {
     | '/_authenticated/importar'
     | '/_authenticated/inicio'
     | '/_authenticated/preguntas'
+    | '/_authenticated/preparacion'
     | '/_authenticated/progreso'
     | '/_authenticated/simulacro'
     | '/_authenticated/resultados/$id'
@@ -240,6 +253,13 @@ declare module '@tanstack/react-router' {
       path: '/progreso'
       fullPath: '/progreso'
       preLoaderRoute: typeof AuthenticatedProgresoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/preparacion': {
+      id: '/_authenticated/preparacion'
+      path: '/preparacion'
+      fullPath: '/preparacion'
+      preLoaderRoute: typeof AuthenticatedPreparacionRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/preguntas': {
@@ -308,6 +328,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedImportarRoute: typeof AuthenticatedImportarRoute
   AuthenticatedInicioRoute: typeof AuthenticatedInicioRoute
   AuthenticatedPreguntasRoute: typeof AuthenticatedPreguntasRoute
+  AuthenticatedPreparacionRoute: typeof AuthenticatedPreparacionRoute
   AuthenticatedProgresoRoute: typeof AuthenticatedProgresoRoute
   AuthenticatedSimulacroRoute: typeof AuthenticatedSimulacroRoute
   AuthenticatedResultadosIdRoute: typeof AuthenticatedResultadosIdRoute
@@ -321,6 +342,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedImportarRoute: AuthenticatedImportarRoute,
   AuthenticatedInicioRoute: AuthenticatedInicioRoute,
   AuthenticatedPreguntasRoute: AuthenticatedPreguntasRoute,
+  AuthenticatedPreparacionRoute: AuthenticatedPreparacionRoute,
   AuthenticatedProgresoRoute: AuthenticatedProgresoRoute,
   AuthenticatedSimulacroRoute: AuthenticatedSimulacroRoute,
   AuthenticatedResultadosIdRoute: AuthenticatedResultadosIdRoute,
@@ -339,3 +361,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

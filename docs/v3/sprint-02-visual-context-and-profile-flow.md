@@ -16,10 +16,10 @@ para funcionar con 24 temas o más sin crear una tabla densa en móvil.
 Los componentes son controlados: reciben el borrador, notifican cambios y exponen guardado,
 reintento y reanudación. No están conectados a una ruta ni simulan persistencia.
 
-## Contrato operativo pendiente
+## Contrato operativo
 
 | Dato necesario       | Tipo esperado                                        | Estados                                | Consumidor       | Si falta                                            |
-| -------------------- | ---------------------------------------------------- | -------------------------------------- | ---------------- | --------------------------------------------------- |
+| -------------------- | ---------------------------------------------------- | -------------------------------------- | ---------------- | --------------------------------------------------- | --- | ----- | ------------------- | ---------------- | ---------------------------------------- |
 | Oposición elegida    | `oppositionId: uuid`                                 | activa, no disponible                  | Paso 1 y edición | bloquear avance con explicación                     |
 | Fecha o periodo      | unión `exact`, `month`, `unknown` con valor nullable | completa, omitida, inválida            | Paso 2           | mantener el borrador y mostrar error de campo       |
 | Días disponibles     | identificadores de días o equivalente estable        | uno o más                              | Paso 3           | pedir al menos uno                                  |
@@ -27,5 +27,6 @@ reintento y reanudación. No están conectados a una ruta ni simulan persistenci
 | Valoración por tema  | mapa `topicId -> 0                                   | 25                                     | 50               | 75                                                  | 100 | null` | pendiente, guardada | Paso 5 y edición | permitir «No sé»; nunca alterar progreso |
 | Borrador/reanudación | perfil parcial con paso y tema actuales              | guardando, guardado, error, recuperado | flujo completo   | continuar solo en memoria y no prometer reanudación |
 
-La V3.1 operativa deberá concretar tablas/RPC, validación, RLS y forma de recuperar borradores. Hasta
-entonces el flujo no debe montarse en producción.
+V3.1 concreta este contrato en `preparation_profiles`, `topic_self_assessments` y
+`save_preparation_profile`. El flujo puede recuperar borradores, completar el perfil y editarlo sin
+convertir las valoraciones subjetivas en progreso observado.

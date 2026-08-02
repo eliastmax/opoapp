@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Database, Loader2, LogOut, RotateCcw } from "lucide-react";
+import { Database, Loader2, LogOut, RotateCcw, Target } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -79,6 +79,15 @@ function AjustesPage() {
         <div className="text-sm text-muted-foreground">{profile?.email}</div>
       </Card>
       <ActiveOppositionContext variant="settings" />
+      <Link to="/preparacion">
+        <Card className="flex items-center gap-3 p-4 transition-colors hover:bg-accent/50">
+          <Target className="h-5 w-5 text-primary" />
+          <div className="flex-1">
+            <div className="font-medium">Perfil de preparación</div>
+            <div className="text-xs text-muted-foreground">Fecha, ritmo y valoración inicial</div>
+          </div>
+        </Card>
+      </Link>
       <Link to="/preguntas">
         <Card className="p-4 flex items-center gap-3 hover:bg-accent/50 transition-colors">
           <Database className="w-5 h-5 text-primary" />
