@@ -19,9 +19,12 @@ La percepción subjetiva sirve para comenzar con mejores recomendaciones, pero p
 - [V3-VIS.0: contexto multioposición y preparación visual de V3.1](sprint-02-visual-context-and-profile-flow.md).
 - [V3.1: perfil de preparación persistente](sprint-03-preparation-profile.md).
 - [V3.2: prioridad inicial personalizada](sprint-04-initial-recommendation.md).
+- [V3.3: hoja de ruta semanal derivada](sprint-05-weekly-roadmap.md).
 
 ## Estado
 
 V3.0, V3-VIS.0 y V3.1 están implementadas. V3.2 incorpora la autovaloración como señal temporal
 del motor: empieza con peso alto cuando no hay evidencia y desaparece al alcanzar 20 preguntas
 distintas respondidas. La autovaloración continúa aislada del progreso, los niveles y la retención.
+V3.3 calcula una ruta semanal replanificable a partir de la disponibilidad y los resultados reales;
+la integración visual del contrato se realiza en el frente de interfaz.

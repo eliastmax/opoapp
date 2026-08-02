@@ -905,6 +905,28 @@ export type Database = {
           topic_name: string;
         }[];
       };
+      get_weekly_roadmap: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          available_days: number[];
+          completed_questions: number;
+          completed_sessions: number;
+          exam_guidance: string;
+          questions: number;
+          reason: string;
+          reason_code: string;
+          remaining_questions: number;
+          remaining_sessions: number;
+          scheduled_date: string | null;
+          slot_number: number | null;
+          target_questions: number;
+          target_sessions: number;
+          topic_id: string | null;
+          topic_name: string | null;
+          week_end: string;
+          week_start: string;
+        }[];
+      };
       create_level_test: {
         Args: {
           p_difficulties?: Database["public"]["Enums"]["dificultad_enum"][];
