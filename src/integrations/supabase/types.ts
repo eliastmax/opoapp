@@ -877,15 +877,32 @@ export type Database = {
       create_recommended_test: {
         Args: { p_question_count?: number };
         Returns: {
+          assessment_weight: number;
           current_topic_count: number;
           current_topic_id: string | null;
           current_topic_name: string | null;
+          evidence_count: number;
           fallback_count: number;
+          recommendation_reason: string;
+          recommendation_reason_code: string;
           retention_new_count: number;
           review_count: number;
           selected_count: number;
           test_id: string;
           weak_count: number;
+        }[];
+      };
+      get_initial_recommendation_context: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          assessment_weight: number;
+          estimated_percentage: number | null;
+          evidence_count: number;
+          observed_accuracy: number | null;
+          reason: string;
+          reason_code: string;
+          topic_id: string;
+          topic_name: string;
         }[];
       };
       create_level_test: {

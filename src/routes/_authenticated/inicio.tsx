@@ -70,6 +70,7 @@ function InicioPage() {
         dudasActivas,
         unfinishedTest,
         retentionSummary,
+        recommendationContext,
       ] = await Promise.all([
         supabase.from("profiles").select("nombre").eq("id", userData.user.id).maybeSingle(),
         supabase.from("questions").select("id", { count: "exact", head: true }).eq("activa", true),
@@ -99,9 +100,11 @@ function InicioPage() {
           .limit(1)
           .maybeSingle(),
         supabase.rpc("get_retention_review_summary"),
+        supabase.rpc("get_initial_recommendation_context").maybeSingle(),
       ]);
       if (unfinishedTest.error) throw unfinishedTest.error;
       if (retentionSummary.error) throw retentionSummary.error;
+      if (recommendationContext.error) throw recommendationContext.error;
 
       let unfinished = null;
       if (unfinishedTest.data) {
@@ -134,6 +137,7 @@ function InicioPage() {
         distintasFalladas: falladasActivas.count ?? 0,
         distintasDudosas: dudasActivas.count ?? 0,
         dueReviews: retentionSummary.data?.reduce((total, row) => total + row.due_count, 0) ?? 0,
+        recommendation: recommendationContext.data,
         unfinished,
       };
     },
@@ -310,7 +314,8 @@ function InicioPage() {
             </p>
             <h2 className="mt-0.5 text-lg font-bold">Sesión recomendada</h2>
             <p className="mt-1 text-sm leading-relaxed text-white/80">
-              La app combina tus fallos, dudas y puntos débiles para elegir qué practicar ahora.
+              {data?.recommendation?.reason ??
+                "La app combina tus fallos, dudas y puntos débiles para elegir qué practicar ahora."}
             </p>
             <div className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full bg-white/12 px-2.5 py-1 text-xs text-white/85 ring-1 ring-white/15">
               <Clock3 className="h-3.5 w-3.5 shrink-0" />

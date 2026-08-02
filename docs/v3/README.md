@@ -18,9 +18,10 @@ La percepción subjetiva sirve para comenzar con mejores recomendaciones, pero p
 - [V3.0: base multioposición y catálogo compartido](sprint-01-base-multioposicion.md).
 - [V3-VIS.0: contexto multioposición y preparación visual de V3.1](sprint-02-visual-context-and-profile-flow.md).
 - [V3.1: perfil de preparación persistente](sprint-03-preparation-profile.md).
+- [V3.2: prioridad inicial personalizada](sprint-04-initial-recommendation.md).
 
 ## Estado
 
-V3.0 y V3-VIS.0 implementadas y publicadas. V3.1 incorpora el contrato operativo, la persistencia
-privada y la conexión del flujo de perfil. Las autovaloraciones continúan aisladas del progreso real
-y todavía no modifican el motor de recomendación.
+V3.0, V3-VIS.0 y V3.1 están implementadas. V3.2 incorpora la autovaloración como señal temporal
+del motor: empieza con peso alto cuando no hay evidencia y desaparece al alcanzar 20 preguntas
+distintas respondidas. La autovaloración continúa aislada del progreso, los niveles y la retención.

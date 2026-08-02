@@ -8,6 +8,10 @@ export type RecommendedSessionResult = {
   retention_new_count: number;
   fallback_count: number;
   current_topic_name: string | null;
+  recommendation_reason?: string;
+  recommendation_reason_code?: string;
+  assessment_weight?: number;
+  evidence_count?: number;
 };
 
 export function describeRecommendedSession(result: RecommendedSessionResult) {
