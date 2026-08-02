@@ -1,5 +1,5 @@
 import { learningRouteSummary, type LearningStageProgress } from "@/lib/learning-stages";
-import type { TopicProgressRow } from "@/lib/progress-evidence";
+import { coverageSummary, type TopicProgressRow } from "@/lib/progress-evidence";
 
 export type ProgressMapPhase =
   | "sin_empezar"
@@ -14,6 +14,13 @@ export type ProgressMapTopic = {
   topic: TopicProgressRow;
   stages?: LearningStageProgress;
   dueCount: number;
+};
+
+export type ProgressDetailSummary = {
+  title: string;
+  message: string;
+  status: string;
+  completed: boolean;
 };
 
 export const PROGRESS_MAP_PHASE_LABELS: Record<ProgressMapPhase, string> = {
@@ -37,6 +44,35 @@ export function progressMapPhase(
 
 export function needsProgressAttention(entry: ProgressMapTopic): boolean {
   return entry.topic.active_failures > 0 || entry.topic.active_doubts > 0 || entry.dueCount > 0;
+}
+
+export function progressDetailSummary(entry: ProgressMapTopic): ProgressDetailSummary {
+  const phase = progressMapPhase(entry.topic, entry.stages);
+
+  if (phase === "completada") {
+    const dueLabel = entry.dueCount === 1 ? "repaso programado" : "repasos programados";
+    return {
+      title: "Ruta completada",
+      message:
+        entry.dueCount > 0
+          ? `Has terminado la ruta de preparación. Tienes ${entry.dueCount} ${dueLabel} para hoy; hacerlos mantiene el tema al día.`
+          : "Has terminado la ruta de preparación. Ahora alterna práctica, fallos y repasos para afianzarla.",
+      status: entry.dueCount > 0 ? "Mantenimiento pendiente" : "En mantenimiento",
+      completed: true,
+    };
+  }
+
+  const coverage = coverageSummary(entry.topic);
+  return {
+    title: coverage.title,
+    message: coverage.message,
+    status: PROGRESS_MAP_PHASE_LABELS[phase],
+    completed: false,
+  };
+}
+
+export function progressPercentage(value: number): number {
+  return Math.round(Math.max(0, Math.min(100, value)));
 }
 
 export function filterProgressMapTopics(

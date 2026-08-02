@@ -5,8 +5,10 @@ import type { TopicProgressRow } from "../progress-evidence";
 import {
   filterProgressMapTopics,
   needsProgressAttention,
+  progressDetailSummary,
   progressMapPhase,
   progressMapTotals,
+  progressPercentage,
   type ProgressMapTopic,
 } from "../progress-map";
 
@@ -151,5 +153,41 @@ describe("progress map presentation", () => {
       tribunal: 1,
       completada: 1,
     });
+  });
+
+  it("presents a completed route with due reviews as maintenance, not a contradiction", () => {
+    expect(progressDetailSummary(entry({}, { tribunal_unlocked: true }, 93))).toEqual({
+      title: "Ruta completada",
+      message:
+        "Has terminado la ruta de preparación. Tienes 93 repasos programados para hoy; hacerlos mantiene el tema al día.",
+      status: "Mantenimiento pendiente",
+      completed: true,
+    });
+  });
+
+  it("keeps a completed route without pending reviews in maintenance", () => {
+    expect(progressDetailSummary(entry({}, { tribunal_unlocked: true }))).toMatchObject({
+      title: "Ruta completada",
+      status: "En mantenimiento",
+      completed: true,
+    });
+  });
+
+  it("uses the first-round milestone while the route is still in progress", () => {
+    expect(
+      progressDetailSummary(
+        entry({ active_questions: 100, unique_questions_seen: 99, coverage_percentage: 99 }),
+      ),
+    ).toMatchObject({
+      title: "A punto de completar la primera vuelta",
+      status: "Consolidación",
+      completed: false,
+    });
+  });
+
+  it("rounds visual percentages without exposing false decimal precision", () => {
+    expect(progressPercentage(0.6)).toBe(1);
+    expect(progressPercentage(8.3)).toBe(8);
+    expect(progressPercentage(104)).toBe(100);
   });
 });

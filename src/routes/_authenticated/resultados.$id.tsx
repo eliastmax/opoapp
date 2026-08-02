@@ -16,6 +16,8 @@ import {
   Loader2,
   MinusCircle,
   RefreshCcw,
+  ShieldCheck,
+  Target,
   XCircle,
 } from "lucide-react";
 import {
@@ -44,6 +46,11 @@ import { LEARNING_STAGE_LABELS, learningStage } from "@/lib/learning-stages";
 import { resultFeedback } from "@/lib/result-feedback";
 import { topicLabel } from "@/lib/topic-label";
 import { elapsedExamMinutes } from "@/lib/exam-simulation";
+import {
+  resultImpact,
+  type ResultImpactItem,
+  type ResultImpactSelection,
+} from "@/lib/result-impact";
 
 export const Route = createFileRoute("/_authenticated/resultados/$id")({
   component: ResultadosPage,
@@ -99,7 +106,9 @@ function ResultadosPage() {
         .order("orden");
       const { data: selection } = await supabase
         .from("test_question_selection")
-        .select("selection_group, selection_reason, was_in_previous_test, overlap_exception")
+        .select(
+          "question_id, selection_group, selection_reason, was_in_previous_test, overlap_exception",
+        )
         .eq("test_id", id)
         .order("selection_order");
       return {
@@ -130,6 +139,10 @@ function ResultadosPage() {
     previousOverlap,
     overlapException,
   } = summarizeSelection(data.selection);
+  const impactItems = resultImpact(
+    answers,
+    data.selection as (SelectionTraceRow & ResultImpactSelection)[],
+  );
 
   const byTopic: Record<string, { ok: number; tot: number }> = {};
   answers.forEach((a) => {
@@ -376,7 +389,7 @@ function ResultadosPage() {
   };
 
   const reviewBlock = (
-    <section>
+    <section id="revision" className="scroll-mt-4">
       <div className="mb-3">
         <h2 className="text-lg font-bold tracking-tight">
           {falladas.length > 0 ? "Tus fallos" : dudosas.length > 0 ? "Tus dudas" : "Revisión"}
@@ -422,10 +435,26 @@ function ResultadosPage() {
           </TabsContent>
         </Tabs>
       )}
+
+      {falladas.length > 0 ? (
+        <div className="mt-4 space-y-2">
+          <Button className="h-12 w-full" onClick={repetirFalladas}>
+            <RefreshCcw className="h-4 w-4" /> Practicar de nuevo las falladas
+          </Button>
+          {dudosas.length > 0 && (
+            <Button variant="outline" className="h-11 w-full" onClick={repetirDudas}>
+              Practicar las dudas
+            </Button>
+          )}
+        </div>
+      ) : dudosas.length > 0 ? (
+        <Button className="mt-4 h-12 w-full" onClick={repetirDudas}>
+          <RefreshCcw className="h-4 w-4" /> Practicar de nuevo las dudas
+        </Button>
+      ) : null}
     </section>
   );
 
-  const sinFallosDuros = t.fallos === 0;
   const percentage = Number(t.porcentaje);
   const feedback = resultFeedback({
     percentage,
@@ -485,6 +514,8 @@ function ResultadosPage() {
         </div>
       </Card>
 
+      <ResultImpactCard items={impactItems} />
+
       {t.tipo === "simulacro" && t.exam_duration_minutes && simulationElapsed !== null && (
         <Card className="flex items-center gap-3 border-primary/15 bg-card/90 p-4">
           <span className="rounded-xl bg-primary/10 p-2.5 text-primary">
@@ -499,8 +530,6 @@ function ResultadosPage() {
         </Card>
       )}
 
-      {revisar.length > 0 && reviewBlock}
-
       <Card className="space-y-3 bg-card/90 p-4">
         <div>
           <div className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
@@ -514,42 +543,39 @@ function ResultadosPage() {
                 : "Continúa con una nueva sesión"}
           </h2>
         </div>
-        {sinFallosDuros ? (
-          <>
-            {dudosas.length > 0 && (
-              <Button className="h-12 w-full" onClick={repetirDudas}>
-                <RefreshCcw className="h-4 w-4" /> Repetir dudas
-              </Button>
-            )}
-            <Link to="/crear" className="block">
-              <Button variant={dudosas.length > 0 ? "outline" : "default"} className="h-12 w-full">
-                Hacer otro test <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-          </>
-        ) : (
-          <>
-            <Button className="h-12 w-full" onClick={repetirFalladas}>
-              <RefreshCcw className="h-4 w-4" /> Repetir falladas
-            </Button>
-            {dudosas.length > 0 && (
-              <Button variant="outline" className="h-12 w-full" onClick={repetirDudas}>
-                Repetir dudas
-              </Button>
-            )}
-            <Link to="/crear" className="block">
-              <Button variant="outline" className="h-12 w-full">
-                Crear otro test
-              </Button>
-            </Link>
-          </>
-        )}
-        <Link to="/inicio" className="block">
-          <Button variant="ghost" className="h-10 w-full text-muted-foreground">
-            Volver al inicio
+        {revisar.length > 0 ? (
+          <Button asChild className="h-12 w-full">
+            <a href="#revision">
+              {falladas.length > 0
+                ? `Revisar ${falladas.length} ${falladas.length === 1 ? "fallo" : "fallos"}`
+                : `Revisar ${dudosas.length} ${dudosas.length === 1 ? "duda" : "dudas"}`}
+              <ArrowRight className="h-4 w-4" />
+            </a>
           </Button>
-        </Link>
+        ) : (
+          <Link to="/crear" className="block">
+            <Button className="h-12 w-full">
+              Hacer otro test <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
+        )}
+        <div className="flex items-center justify-center gap-3 text-xs font-medium">
+          {revisar.length > 0 && (
+            <Link to="/crear" className="text-primary hover:underline">
+              Otro test
+            </Link>
+          )}
+          {revisar.length > 0 && <span className="text-muted-foreground/50">·</span>}
+          <Link
+            to="/inicio"
+            className="text-muted-foreground hover:text-foreground hover:underline"
+          >
+            Terminar por hoy
+          </Link>
+        </div>
       </Card>
+
+      {revisar.length > 0 && reviewBlock}
 
       <Card className="bg-card/90 px-4">
         <Accordion
@@ -666,5 +692,47 @@ function ResultStat({
       <div className="font-bold leading-none">{value}</div>
       <div className="mt-1 text-[11px] text-muted-foreground">{label}</div>
     </div>
+  );
+}
+
+function ResultImpactCard({ items }: { items: ResultImpactItem[] }) {
+  return (
+    <Card className="border-primary/15 bg-card/90 p-4">
+      <div>
+        <div className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
+          Impacto de la sesión
+        </div>
+        <h2 className="mt-1 font-bold">Lo que has conseguido</h2>
+      </div>
+      <div className="mt-3 grid gap-2 sm:grid-cols-3">
+        {items.map((item) => {
+          const Icon =
+            item.kind === "new"
+              ? BookOpenCheck
+              : item.kind === "recovered"
+                ? RefreshCcw
+                : item.kind === "retained"
+                  ? ShieldCheck
+                  : item.kind === "reinforced"
+                    ? Target
+                    : CheckCircle2;
+          return (
+            <div key={item.kind} className="flex gap-3 rounded-xl bg-muted/55 p-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Icon className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-bold leading-snug">
+                  {item.value} {item.label}
+                </p>
+                <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                  {item.description}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
   );
 }

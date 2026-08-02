@@ -11,6 +11,7 @@ export const SELECTION_LABELS: Record<string, string> = {
   duda: "Dudas activas",
   nueva: "Preguntas nuevas",
   rendimiento_bajo: "Preguntas a reforzar",
+  repaso_programado: "Repaso programado",
   retencion: "Repaso por retención",
   poco_vista: "Preguntas poco vistas",
   variedad: "Variedad del tema",

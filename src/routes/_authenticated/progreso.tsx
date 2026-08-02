@@ -31,15 +31,12 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import {
-  EVIDENCE_LABELS,
   coverageSummary,
   evidenceState,
   nextProgressAction,
   sortProgressByTopicNumber,
-  topicProgressDescription,
   type CoverageMilestone,
   type EvidenceState,
-  type TopicProgressRow,
 } from "@/lib/progress-evidence";
 import {
   comparisonMessage,
@@ -59,8 +56,10 @@ import {
   PROGRESS_MAP_PHASE_LABELS,
   filterProgressMapTopics,
   needsProgressAttention,
+  progressDetailSummary,
   progressMapPhase,
   progressMapTotals,
+  progressPercentage,
   type ProgressMapFilter,
   type ProgressMapPhase,
   type ProgressMapTopic,
@@ -76,6 +75,13 @@ const EVIDENCE_STYLES: Record<EvidenceState, string> = {
   inicial: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
   suficiente: "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300",
   robusta: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+};
+
+const EVIDENCE_SHORT_LABELS: Record<EvidenceState, string> = {
+  sin_base: "Sin base",
+  inicial: "Inicial",
+  suficiente: "Suficiente",
+  robusta: "Robusta",
 };
 
 const COVERAGE_STYLES: Record<CoverageMilestone, string> = {
@@ -317,6 +323,7 @@ function ProgressMapCard({ entry, onSelect }: { entry: ProgressMapTopic; onSelec
   const phase = progressMapPhase(topic, stages);
   const needsAttention = needsProgressAttention(entry);
   const firstRoundComplete = topic.coverage_percentage >= 100;
+  const roundedCoverage = progressPercentage(topic.coverage_percentage);
 
   return (
     <button
@@ -355,14 +362,14 @@ function ProgressMapCard({ entry, onSelect }: { entry: ProgressMapTopic; onSelec
           <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-background/80">
             <span
               className={cn("block h-full rounded-full", MAP_PHASE_DOT_STYLES[phase])}
-              style={{ width: `${Math.max(0, Math.min(100, topic.coverage_percentage))}%` }}
+              style={{ width: `${roundedCoverage}%` }}
             />
           </span>
           <span className="text-[9px] font-semibold tabular-nums">
             {firstRoundComplete ? (
               <CheckCircle2 className="h-3 w-3" aria-label="Primera vuelta completada" />
             ) : (
-              `${topic.coverage_percentage}%`
+              `${roundedCoverage}%`
             )}
           </span>
         </span>
@@ -386,16 +393,13 @@ function TopicProgressSheet({
       className="max-h-[88dvh] overflow-hidden rounded-t-3xl p-0 sm:inset-x-auto sm:inset-y-0 sm:left-auto sm:right-0 sm:top-0 sm:h-dvh sm:max-h-none sm:w-[min(34rem,46vw)] sm:max-w-none sm:rounded-none sm:border-l sm:border-t-0"
     >
       <SheetHeader className="border-b px-4 py-4 pr-12 text-left sm:px-6">
-        <SheetTitle>Detalle del Tema {entry.topic.topic_number}</SheetTitle>
-        <SheetDescription>La fase y la primera vuelta miden avances distintos.</SheetDescription>
+        <SheetTitle>Tema {entry.topic.topic_number}</SheetTitle>
+        <SheetDescription className="line-clamp-2 leading-relaxed">
+          {entry.topic.topic_name}
+        </SheetDescription>
       </SheetHeader>
       <div className="overflow-y-auto p-3 pb-8 sm:p-5">
-        <TopicProgressCard
-          topic={entry.topic}
-          verified={verified}
-          stages={entry.stages}
-          retention={retention}
-        />
+        <TopicProgressCard entry={entry} verified={verified} retention={retention} />
       </div>
     </SheetContent>
   );
@@ -430,67 +434,92 @@ function VerifiedProgressOverview({ rows }: { rows: VerifiedProgressRow[] }) {
 }
 
 function TopicProgressCard({
-  topic,
+  entry,
   verified,
-  stages,
   retention,
 }: {
-  topic: TopicProgressRow;
+  entry: ProgressMapTopic;
   verified?: VerifiedProgressRow;
-  stages?: LearningStageProgress;
   retention?: RetentionSummaryRow;
 }) {
+  const { topic, stages } = entry;
   const state = evidenceState(topic.evidence_state);
   const mastery = topic.mastery_percentage;
   const coverage = coverageSummary(topic);
+  const detail = progressDetailSummary(entry);
+  const roundedCoverage = progressPercentage(topic.coverage_percentage);
 
   return (
     <Card className="p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-medium text-muted-foreground">Tema {topic.topic_number}</p>
-          <h3 className="font-semibold leading-snug">{topic.topic_name}</h3>
-        </div>
-        <Badge variant="outline" className={EVIDENCE_STYLES[state]}>
-          {EVIDENCE_LABELS[state]}
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          Estado actual
+        </p>
+        <Badge
+          variant="outline"
+          className={
+            detail.completed
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+              : EVIDENCE_STYLES[state]
+          }
+        >
+          {detail.status}
         </Badge>
       </div>
 
-      <div className={`mt-3 rounded-xl border p-3 ${COVERAGE_STYLES[coverage.state]}`}>
+      <div
+        className={`mt-3 rounded-xl border p-3 ${
+          detail.completed
+            ? "border-emerald-500/30 bg-emerald-500/10"
+            : COVERAGE_STYLES[coverage.state]
+        }`}
+      >
         <div className="flex items-start gap-2">
           <Sparkles
             className={`mt-0.5 h-4 w-4 shrink-0 ${
-              coverage.state === "completo" ? "text-emerald-600" : "text-primary"
+              detail.completed || coverage.state === "completo"
+                ? "text-emerald-600"
+                : "text-primary"
             }`}
           />
           <div>
-            <p className="text-sm font-semibold">{coverage.title}</p>
-            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-              {coverage.message}
-            </p>
+            <p className="text-sm font-semibold">{detail.title}</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{detail.message}</p>
           </div>
         </div>
       </div>
 
-      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-        {topicProgressDescription(topic)}
-      </p>
+      <div className="mt-3 rounded-lg border bg-muted/40 p-3">
+        <p className="text-xs font-semibold">Siguiente paso</p>
+        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+          {(retention?.due_count ?? 0) > 0
+            ? `Haz los ${retention?.due_count} ${retention?.due_count === 1 ? "repaso programado" : "repasos programados"} de hoy. La sesión recomendada los priorizará.`
+            : nextProgressAction(topic)}
+        </p>
+      </div>
+
+      <details className="mt-3 rounded-lg border px-3 py-2 text-xs">
+        <summary className="cursor-pointer font-medium text-primary">
+          Ver nombre oficial completo
+        </summary>
+        <p className="mt-2 leading-relaxed text-muted-foreground">{topic.topic_name}</p>
+      </details>
 
       <div className="mt-4 space-y-2">
         <div className="flex items-center justify-between text-xs">
           <span className="font-medium">Cobertura</span>
           <span className="text-muted-foreground">
-            {topic.unique_questions_seen}/{topic.active_questions} distintas ·{" "}
-            {topic.coverage_percentage}%
+            {topic.unique_questions_seen}/{topic.active_questions} distintas · {roundedCoverage}%
           </span>
         </div>
-        <Progress value={topic.coverage_percentage} aria-label="Cobertura del tema" />
+        <Progress value={roundedCoverage} aria-label="Cobertura del tema" />
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+      <div className="mt-4 grid grid-cols-2 gap-2 text-center">
         <Metric label="Acierto actual" value={mastery === null ? "—" : `${mastery}%`} />
         <Metric label="Tests" value={topic.completed_sessions} />
         <Metric label="Conceptos" value={`${topic.seen_concepts}/${topic.available_concepts}`} />
+        <Metric label="Base de práctica" value={EVIDENCE_SHORT_LABELS[state]} />
       </div>
 
       {coverage.remainingConcepts > 0 && coverage.remainingQuestions > 0 && (
@@ -522,15 +551,6 @@ function TopicProgressCard({
         )}
       </div>
 
-      <div className="mt-4 rounded-lg border bg-muted/40 p-3">
-        <p className="text-xs font-semibold">Siguiente paso</p>
-        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          {(retention?.due_count ?? 0) > 0
-            ? `Tienes ${retention?.due_count} ${retention?.due_count === 1 ? "repaso programado" : "repasos programados"} para hoy. La sesión recomendada los priorizará.`
-            : nextProgressAction(topic)}
-        </p>
-      </div>
-
       {stages && <LearningStagesProgress row={stages} />}
 
       {verified && <VerifiedTopicProgress row={verified} />}
@@ -546,7 +566,7 @@ function LearningStagesProgress({ row }: { row: LearningStageProgress }) {
   return (
     <div className="mt-3 rounded-lg border p-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-semibold">Ruta recomendada</p>
+        <p className="text-xs font-semibold">Fases de preparación</p>
         <Badge
           variant="secondary"
           className={
@@ -555,7 +575,7 @@ function LearningStagesProgress({ row }: { row: LearningStageProgress }) {
               : "text-[10px]"
           }
         >
-          {route.badge}
+          {route.completed ? "3 de 3" : route.badge}
         </Badge>
       </div>
       <div className="mt-3 grid grid-cols-3 gap-1.5">
@@ -581,7 +601,11 @@ function LearningStagesProgress({ row }: { row: LearningStageProgress }) {
           );
         })}
       </div>
-      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{route.message}</p>
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+        {route.completed
+          ? "Aprendizaje, Consolidación y Tribunal están disponibles."
+          : route.message}
+      </p>
       <p className="mt-1 text-[11px] text-muted-foreground">
         Retención confirmada en {row.retention_evidence}{" "}
         {row.retention_evidence === 1 ? "concepto" : "conceptos"}. No bloquea el acceso a otros
