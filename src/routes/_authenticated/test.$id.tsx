@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, Clock3, Flag, Loader2, LogOut } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Clock3, Flag, Loader2, LogOut } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import type { Respuesta } from "@/lib/csv-parser";
 import {
   AlertDialog,
@@ -31,6 +32,10 @@ function TestPage() {
   const [current, setCurrent] = useState(0);
   const [confirmFinish, setConfirmFinish] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [incidentReason, setIncidentReason] = useState("error_juridico");
+  const [incidentDetail, setIncidentDetail] = useState("");
+  const [reporting, setReporting] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [initializedTestId, setInitializedTestId] = useState<string | null>(null);
   const [clockNow, setClockNow] = useState(() => Date.now());
@@ -175,6 +180,28 @@ function TestPage() {
     });
   }
 
+  async function reportIncident() {
+    if (reporting) return;
+    setReporting(true);
+    const detail = incidentDetail.trim();
+    const { error } = await supabase.from("question_incidents").insert({
+      question_id: question.id,
+      reason: incidentReason,
+      detail: detail || null,
+    });
+    if (error) {
+      toast.error(
+        error.code === "23505" ? "Esta incidencia ya está pendiente de revisión." : error.message,
+      );
+      setReporting(false);
+      return;
+    }
+    toast.success("Incidencia registrada para revisión.");
+    setReportOpen(false);
+    setIncidentDetail("");
+    setReporting(false);
+  }
+
   function revisarRespuestas() {
     setConfirmFinish(false);
     const idx = data!.answers.findIndex((a) => a.respuesta_usuario === null);
@@ -224,6 +251,13 @@ function TestPage() {
             className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <LogOut className="h-3.5 w-3.5" /> Salir
+          </button>
+          <button
+            type="button"
+            onClick={() => setReportOpen(true)}
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-border bg-background/80 px-3 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <AlertTriangle className="h-3.5 w-3.5" /> Avisar
           </button>
         </div>
         <div className="mt-1.5 flex items-center gap-3">
@@ -346,6 +380,55 @@ function TestPage() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Salir del test
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={reportOpen} onOpenChange={setReportOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Comunicar incidencia</AlertDialogTitle>
+            <AlertDialogDescription>
+              No cambia esta pregunta ni tu resultado. Quedará anotada para revisarla después.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3">
+            <label className="block text-sm font-medium" htmlFor="incident-reason">
+              Motivo
+            </label>
+            <select
+              id="incident-reason"
+              value={incidentReason}
+              onChange={(event) => setIncidentReason(event.target.value)}
+              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            >
+              <option value="error_juridico">Posible error jurídico</option>
+              <option value="enunciado_ambiguo">Enunciado ambiguo</option>
+              <option value="referencia_incorrecta">Referencia o página incorrecta</option>
+              <option value="duplicada_similar">Duplicada o demasiado parecida</option>
+              <option value="redaccion_formato">Redacción o formato</option>
+            </select>
+            <label className="block text-sm font-medium" htmlFor="incident-detail">
+              Nota opcional
+            </label>
+            <Textarea
+              id="incident-detail"
+              value={incidentDetail}
+              onChange={(event) => setIncidentDetail(event.target.value.slice(0, 600))}
+              placeholder="Qué te hace dudar o qué debería revisarse"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={reporting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void reportIncident();
+              }}
+              disabled={reporting}
+            >
+              {reporting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Registrar incidencia"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
