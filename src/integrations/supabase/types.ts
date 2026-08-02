@@ -92,6 +92,108 @@ export type Database = {
           },
         ];
       };
+      preparation_profiles: {
+        Row: {
+          completed_at: string | null;
+          created_at: string;
+          current_step: string;
+          current_topic_id: string | null;
+          exam_precision: string | null;
+          exam_value: string | null;
+          opposition_id: string;
+          practice_days: number[];
+          questions_per_session: number | null;
+          status: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          completed_at?: string | null;
+          created_at?: string;
+          current_step?: string;
+          current_topic_id?: string | null;
+          exam_precision?: string | null;
+          exam_value?: string | null;
+          opposition_id: string;
+          practice_days?: number[];
+          questions_per_session?: number | null;
+          status?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          completed_at?: string | null;
+          created_at?: string;
+          current_step?: string;
+          current_topic_id?: string | null;
+          exam_precision?: string | null;
+          exam_value?: string | null;
+          opposition_id?: string;
+          practice_days?: number[];
+          questions_per_session?: number | null;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "preparation_profiles_membership_fkey";
+            columns: ["user_id", "opposition_id"];
+            isOneToOne: true;
+            referencedRelation: "user_oppositions";
+            referencedColumns: ["user_id", "opposition_id"];
+          },
+          {
+            foreignKeyName: "preparation_profiles_opposition_topic_fkey";
+            columns: ["opposition_id", "current_topic_id"];
+            isOneToOne: false;
+            referencedRelation: "topics";
+            referencedColumns: ["opposition_id", "id"];
+          },
+        ];
+      };
+      topic_self_assessments: {
+        Row: {
+          assessed_at: string;
+          estimated_percentage: number | null;
+          opposition_id: string;
+          topic_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          assessed_at?: string;
+          estimated_percentage?: number | null;
+          opposition_id: string;
+          topic_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          assessed_at?: string;
+          estimated_percentage?: number | null;
+          opposition_id?: string;
+          topic_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "topic_self_assessments_profile_fkey";
+            columns: ["user_id", "opposition_id"];
+            isOneToOne: false;
+            referencedRelation: "preparation_profiles";
+            referencedColumns: ["user_id", "opposition_id"];
+          },
+          {
+            foreignKeyName: "topic_self_assessments_opposition_topic_fkey";
+            columns: ["opposition_id", "topic_id"];
+            isOneToOne: false;
+            referencedRelation: "topics";
+            referencedColumns: ["opposition_id", "id"];
+          },
+        ];
+      };
       question_statistics: {
         Row: {
           answered_count: number;
@@ -721,6 +823,20 @@ export type Database = {
     };
     Functions: {
       current_active_opposition_id: { Args: never; Returns: string | null };
+      save_preparation_profile: {
+        Args: {
+          p_complete: boolean;
+          p_current_step: string;
+          p_current_topic_id: string | null;
+          p_exam_precision: string | null;
+          p_exam_value: string | null;
+          p_opposition_id: string;
+          p_practice_days: number[];
+          p_questions_per_session: number | null;
+          p_topic_assessments: Json;
+        };
+        Returns: undefined;
+      };
       complete_test: {
         Args: { p_test_id: string };
         Returns: {
@@ -949,12 +1065,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -974,12 +1090,13 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -998,12 +1115,13 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -1022,12 +1140,13 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -1038,12 +1157,13 @@ export type Enums<
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    keyof DefaultSchema["CompositeTypes"] | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never) = never,
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }

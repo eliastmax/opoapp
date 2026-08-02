@@ -24,6 +24,20 @@ export type PreparationProfileDraft = {
 
 export type PreparationProfileStep = "opposition" | "exam" | "days" | "session" | "topics";
 
+export type PreparationProfileStatus = "draft" | "completed";
+
+export const WEEK_DAY_IDS = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+] as const;
+
+export type WeekDayId = (typeof WEEK_DAY_IDS)[number];
+
 export const PREPARATION_PROFILE_STEPS: PreparationProfileStep[] = [
   "opposition",
   "exam",
@@ -60,4 +74,22 @@ export function canContinuePreparationStep(
     case "topics":
       return true;
   }
+}
+
+export function practiceDaysToDatabase(days: string[]) {
+  return days.map((day) => WEEK_DAY_IDS.indexOf(day as WeekDayId) + 1).filter((day) => day > 0);
+}
+
+export function practiceDaysFromDatabase(days: number[]) {
+  return days.map((day) => WEEK_DAY_IDS[day - 1]).filter((day): day is WeekDayId => Boolean(day));
+}
+
+export function emptyPreparationProfileDraft(oppositionId = ""): PreparationProfileDraft {
+  return {
+    oppositionId,
+    examTiming: null,
+    practiceDays: [],
+    questionsPerSession: null,
+    topicAssessments: {},
+  };
 }
