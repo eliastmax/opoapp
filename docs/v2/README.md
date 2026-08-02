@@ -29,6 +29,7 @@ Este índice registra qué partes de la V2 están realmente implementadas y vali
 - [Progreso satisfactorio y mezcla de niveles](sprint-22-progreso-satisfactorio-mezcla-niveles.md): cuarta práctica de niveles mezclados, recuperación de preguntas mostradas sin respuesta e hitos visuales de cobertura; pendiente de validación visual en uso real.
 - [Progreso con fases reales y primera vuelta](sprint-23-progreso-fases-reales-primera-vuelta.md): Progreso vuelve a mostrar solo las tres fases pedagógicas, cierra Tribunal con «Ruta completada» y sustituye el lenguaje de banco por «primera vuelta»; implementado técnicamente y pendiente de validación visual en uso real.
 - [Mapa compacto de progreso](sprint-24-mapa-compacto-progreso.md): sustituye la lista de informes por una cuadrícula de temas con fase, primera vuelta, filtros y detalle progresivo; implementado técnicamente y pendiente de validación visual en uso real.
+- [Progreso coherente y cierre de sesión útil](sprint-25-progreso-y-cierre-sesion.md): separa ruta completada y mantenimiento, compacta el detalle y añade al resultado el impacto factual de la sesión con una única acción dominante; implementado técnicamente y pendiente de validación visual en uso real.
 
 ## Diseño futuro
 

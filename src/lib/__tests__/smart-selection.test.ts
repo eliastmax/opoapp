@@ -1,6 +1,6 @@
 // @ts-expect-error bun:test provided by bun runtime
 import { describe, expect, it } from "bun:test";
-import { summarizeSelection } from "../smart-selection";
+import { SELECTION_LABELS, summarizeSelection } from "../smart-selection";
 
 describe("smart selection summary", () => {
   it("groups selection reasons and counts overlap", () => {
@@ -43,5 +43,9 @@ describe("smart selection summary", () => {
     ]);
 
     expect(summary.overlapException).toBe(true);
+  });
+
+  it("uses a readable label for scheduled reviews", () => {
+    expect(SELECTION_LABELS.repaso_programado).toBe("Repaso programado");
   });
 });
