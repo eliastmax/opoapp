@@ -16,8 +16,10 @@ La percepción subjetiva sirve para comenzar con mejores recomendaciones, pero p
 
 - [Valoración inicial, fecha de examen y hoja de ruta adaptativa](01-valoracion-inicial-y-hoja-ruta.md).
 - [V3.0: base multioposición y catálogo compartido](sprint-01-base-multioposicion.md).
+- [V3-VIS.0: contexto multioposición y preparación visual de V3.1](sprint-02-visual-context-and-profile-flow.md).
 
 ## Estado
 
-V3.0 en implementación. La base multioposición se introduce antes del perfil inicial y de la hoja de
-ruta, manteniendo el núcleo de aprendizaje V2 sin cambios de comportamiento.
+V3.0 implementada y publicada. La base visual ya puede leer la oposición activa. El perfil inicial
+V3.1 está preparado a nivel de presentación, pero su integración espera al contrato operativo de
+persistencia y no modifica todavía el motor de aprendizaje.
