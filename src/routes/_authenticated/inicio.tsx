@@ -27,6 +27,7 @@ import { uniqueActiveFailureIds } from "@/lib/active-failures";
 import { uniqueActiveDoubtIds } from "@/lib/active-doubts";
 import { describeRecommendedSession, RECOMMENDED_SESSION_SIZES } from "@/lib/recommended-session";
 import { displayName } from "@/lib/user-greeting";
+import { ActiveOppositionContext } from "@/components/active-opposition-context";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -295,6 +296,7 @@ function InicioPage() {
           Te damos la bienvenida, {data?.userName ?? "…"}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">Hoy seguimos avanzando paso a paso.</p>
+        <ActiveOppositionContext />
       </header>
 
       <Card className="overflow-hidden border-0 bg-gradient-to-br from-primary via-primary to-[oklch(0.48_0.12_225)] p-5 text-primary-foreground shadow-[0_22px_50px_-28px_oklch(0.32_0.14_250/0.85)]">

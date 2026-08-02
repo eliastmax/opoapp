@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { ActiveOppositionContext } from "@/components/active-opposition-context";
 
 export const Route = createFileRoute("/_authenticated/ajustes")({
   component: AjustesPage,
@@ -77,6 +78,7 @@ function AjustesPage() {
         <div className="text-base font-medium">{profile?.nombre || "—"}</div>
         <div className="text-sm text-muted-foreground">{profile?.email}</div>
       </Card>
+      <ActiveOppositionContext variant="settings" />
       <Link to="/preguntas">
         <Card className="p-4 flex items-center gap-3 hover:bg-accent/50 transition-colors">
           <Database className="w-5 h-5 text-primary" />
