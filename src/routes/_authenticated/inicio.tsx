@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,9 @@ import { uniqueActiveDoubtIds } from "@/lib/active-doubts";
 import { describeRecommendedSession, RECOMMENDED_SESSION_SIZES } from "@/lib/recommended-session";
 import { displayName } from "@/lib/user-greeting";
 import { ActiveOppositionContext } from "@/components/active-opposition-context";
+import { WeeklyRoadmap } from "@/components/weekly-roadmap";
+import { useActiveOpposition } from "@/hooks/use-active-opposition";
+import { usePreparationProfile } from "@/hooks/use-preparation-profile";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,6 +56,18 @@ function InicioPage() {
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [discarding, setDiscarding] = useState(false);
   const [retentionInfoOpen, setRetentionInfoOpen] = useState(false);
+  const activeOpposition = useActiveOpposition();
+  const preparationProfile = usePreparationProfile(activeOpposition.data?.id);
+
+  useEffect(() => {
+    const questionsPerSession = preparationProfile.data?.draft.questionsPerSession;
+    if (
+      questionsPerSession &&
+      (RECOMMENDED_SESSION_SIZES as readonly number[]).includes(questionsPerSession)
+    ) {
+      setRecommendedSize(questionsPerSession);
+    }
+  }, [preparationProfile.data?.draft.questionsPerSession]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
@@ -378,6 +393,8 @@ function InicioPage() {
           Si falta alguna categoría, la app redistribuye las preguntas sin repetirlas.
         </p>
       </Card>
+
+      <WeeklyRoadmap />
 
       {data?.unfinished && (
         <Card className="overflow-hidden border-primary/15 bg-card/95 p-0 shadow-[0_16px_40px_-30px_oklch(0.28_0.08_250/0.5)]">
