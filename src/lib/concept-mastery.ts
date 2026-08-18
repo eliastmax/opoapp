@@ -92,7 +92,7 @@ function latestAttemptPerCard(evidence: ConceptFlashcardEvidence[]) {
       latest.set(review.cardId, review);
     }
   }
-  return [...latest.values()];
+  return [...latest.values()].sort((a, b) => timestamp(a.reviewedAt) - timestamp(b.reviewedAt));
 }
 
 function previousStateFloor(previousState: ConceptMasteryState | undefined) {
@@ -155,13 +155,14 @@ export function evaluateConceptMastery(input: ConceptMasteryInput): ConceptMaste
   const retentionDistinctSessions = new Set(retentionPasses.map((attempt) => attempt.sessionId)).size;
 
   const recentQuestions = latestQuestions.slice(-3);
+  const recentCards = latestCards.slice(-3);
   const recentUnsafe = recentQuestions.filter((attempt) => !safeCorrect(attempt)).length;
   const twoConsecutiveUnsafe =
     recentQuestions.length >= 2 && recentQuestions.slice(-2).every((attempt) => !safeCorrect(attempt));
   const recentInstability = recentUnsafe >= 2 || twoConsecutiveUnsafe;
 
-  const questionAttention = latestQuestions.some((attempt) => !safeCorrect(attempt));
-  const flashcardAttention = latestCards.some((review) => !review.correct);
+  const questionAttention = recentQuestions.some((attempt) => !safeCorrect(attempt));
+  const flashcardAttention = recentCards.some((review) => !review.correct);
   const needsAttention = questionAttention || flashcardAttention;
 
   let candidate: ConceptMasteryState = "unseen";
