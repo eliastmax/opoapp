@@ -137,7 +137,7 @@ function conceptCandidate(row: V4TodayContextRow, kind: V4TodayBlockKind): Candi
   ) {
     return {
       kind,
-      score: 100 + overdueDays(row.next_review_on, "1970-01-01"),
+      score: 100,
       desiredMinutes: 6,
       minimumMinutes: 4,
       row,
@@ -310,7 +310,7 @@ export function composeV4TodayPlan(args: {
 
       const requested = compact ? candidate.minimumMinutes : candidate.desiredMinutes;
       const minutes = remaining >= requested ? requested : remaining >= candidate.minimumMinutes ? candidate.minimumMinutes : 0;
-      if (minutes === 0) return false;
+      if (minutes === 0) continue;
 
       blocks.push(buildBlock(candidate, minutes));
       remaining -= minutes;
