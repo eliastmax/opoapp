@@ -62,9 +62,9 @@ export function WeeklyRoadmap() {
     return (
       <Card className="border-border/80 bg-card/90 p-4">
         <RoadmapHeading />
-        <p className="mt-2 text-sm font-semibold">Tu ruta semanal estará lista en breve</p>
+        <p className="mt-2 text-sm font-semibold">No hemos podido preparar tu ruta todavía</p>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          Aún no hay sesiones que podamos mostrar con seguridad. Vuelve a comprobarlo más tarde.
+          No hay una propuesta completa que podamos mostrar con seguridad. Puedes volver a comprobarlo.
         </p>
       </Card>
     );
@@ -73,6 +73,7 @@ export function WeeklyRoadmap() {
   if (state.status === "week_complete") return <TerminalRoadmap row={state.row} complete />;
   if (state.status === "no_days_remaining")
     return <TerminalRoadmap row={state.row} complete={false} />;
+  if (state.status === "no_questions_available") return <NoQuestionsRoadmap row={state.row} />;
   return <ActiveRoadmap rows={state.rows} />;
 }
 
@@ -148,6 +149,25 @@ function TerminalRoadmap({ row, complete }: { row: WeeklyRoadmapRow; complete: b
   );
 }
 
+function NoQuestionsRoadmap({ row }: { row: WeeklyRoadmapRow }) {
+  return (
+    <Card className="border-border/80 bg-card/90 p-4">
+      <RoadmapHeading />
+      <div className="mt-3 flex gap-3">
+        <CircleAlert
+          className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground"
+          aria-hidden="true"
+        />
+        <div className="min-w-0">
+          <p className="text-sm font-semibold">No hay preguntas disponibles para organizar la semana</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{row.reason}</p>
+        </div>
+      </div>
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{row.exam_guidance}</p>
+    </Card>
+  );
+}
+
 function ActiveRoadmap({ rows }: { rows: WeeklyRoadmapRow[] }) {
   const first = rows[0];
   const today = rows.find((row) => isRoadmapToday(row.scheduled_date));
@@ -211,6 +231,7 @@ function ActiveRoadmap({ rows }: { rows: WeeklyRoadmapRow[] }) {
 
 function RoadmapSummary({ row }: { row: WeeklyRoadmapRow }) {
   const progress = roadmapProgress(row);
+  const exceededTarget = row.completed_sessions > row.target_sessions;
   return (
     <div className="mt-4">
       <div className="flex items-baseline justify-between gap-3">
@@ -219,7 +240,9 @@ function RoadmapSummary({ row }: { row: WeeklyRoadmapRow }) {
           {row.target_questions} preguntas
         </p>
         <p className="shrink-0 text-xs font-semibold text-muted-foreground">
-          {row.completed_sessions}/{row.target_sessions}
+          {exceededTarget
+            ? `${row.completed_sessions} hechas`
+            : `${row.completed_sessions}/${row.target_sessions}`}
         </p>
       </div>
       <Progress
@@ -228,7 +251,9 @@ function RoadmapSummary({ row }: { row: WeeklyRoadmapRow }) {
         aria-label={`${row.completed_sessions} de ${row.target_sessions} sesiones completadas esta semana`}
       />
       <p className="mt-1.5 text-xs text-muted-foreground">
-        {row.completed_questions} preguntas realizadas esta semana
+        {exceededTarget
+          ? `Objetivo superado · ${row.completed_questions} preguntas realizadas esta semana`
+          : `${row.completed_questions} preguntas realizadas esta semana`}
       </p>
     </div>
   );

@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { formatExamTime, remainingExamSeconds } from "@/lib/exam-simulation";
+import { weeklyRoadmapQueryKey } from "@/hooks/use-weekly-roadmap";
 
 export const Route = createFileRoute("/_authenticated/test/$id")({
   component: TestPage,
@@ -66,7 +67,10 @@ function TestPage() {
     try {
       const { error } = await supabase.rpc("complete_test", { p_test_id: id });
       if (error) throw error;
-      await qc.invalidateQueries({ queryKey: ["dashboard"] });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["dashboard"] }),
+        qc.invalidateQueries({ queryKey: weeklyRoadmapQueryKey }),
+      ]);
       navigate({ to: "/resultados/$id", params: { id }, replace: true });
     } catch (error) {
       toast.error((error as Error).message);
