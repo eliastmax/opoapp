@@ -390,15 +390,15 @@ function TopicProgressSheet({
   return (
     <SheetContent
       side="bottom"
-      className="max-h-[88dvh] overflow-hidden rounded-t-3xl p-0 sm:inset-x-auto sm:inset-y-0 sm:left-auto sm:right-0 sm:top-0 sm:h-dvh sm:max-h-none sm:w-[min(34rem,46vw)] sm:max-w-none sm:rounded-none sm:border-l sm:border-t-0"
+      className="flex max-h-[88dvh] flex-col gap-0 overflow-hidden rounded-t-3xl p-0 sm:inset-x-auto sm:inset-y-0 sm:left-auto sm:right-0 sm:top-0 sm:h-dvh sm:max-h-none sm:w-[min(34rem,46vw)] sm:max-w-none sm:rounded-none sm:border-l sm:border-t-0"
     >
-      <SheetHeader className="border-b px-4 py-4 pr-12 text-left sm:px-6">
+      <SheetHeader className="shrink-0 border-b px-4 py-4 pr-12 text-left sm:px-6">
         <SheetTitle>Tema {entry.topic.topic_number}</SheetTitle>
         <SheetDescription className="line-clamp-2 leading-relaxed">
           {entry.topic.topic_name}
         </SheetDescription>
       </SheetHeader>
-      <div className="overflow-y-auto p-3 pb-8 sm:p-5">
+      <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain p-3 pb-8 sm:p-5">
         <TopicProgressCard entry={entry} verified={verified} retention={retention} />
       </div>
     </SheetContent>

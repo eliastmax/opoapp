@@ -35,6 +35,11 @@ describe("weekly roadmap presentation", () => {
         row({ reason_code: "no_days_remaining", scheduled_date: null, topic_name: null }),
       ]),
     ).toMatchObject({ status: "no_days_remaining" });
+    expect(
+      weeklyRoadmapViewState([
+        row({ reason_code: "no_questions_available", scheduled_date: null, topic_name: null }),
+      ]),
+    ).toMatchObject({ status: "no_questions_available" });
   });
 
   test("does not display partial rows as scheduled sessions", () => {
@@ -44,5 +49,6 @@ describe("weekly roadmap presentation", () => {
   test("only turns the delivered weekly totals into a display progress", () => {
     expect(roadmapProgress(row())).toBe(50);
     expect(roadmapProgress(row({ target_sessions: 0 }))).toBe(0);
+    expect(roadmapProgress(row({ completed_sessions: 4, target_sessions: 2 }))).toBe(100);
   });
 });

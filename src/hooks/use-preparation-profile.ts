@@ -10,6 +10,7 @@ import {
   type TopicAssessmentValue,
 } from "@/lib/preparation-profile";
 import { activeOppositionQueryKey } from "@/hooks/use-active-opposition";
+import { weeklyRoadmapQueryKey } from "@/hooks/use-weekly-roadmap";
 
 export type StoredPreparationProfile = {
   draft: PreparationProfileDraft;
@@ -123,6 +124,7 @@ export function useSavePreparationProfile() {
         }),
         queryClient.invalidateQueries({ queryKey: activeOppositionQueryKey }),
         queryClient.invalidateQueries({ queryKey: ["topics"] }),
+        queryClient.invalidateQueries({ queryKey: weeklyRoadmapQueryKey }),
       ]);
     },
   });
