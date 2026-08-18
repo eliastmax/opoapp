@@ -23,7 +23,12 @@ Fuentes canónicas:
 
 ### Seguridad
 
-La función es `SECURITY DEFINER` de forma intencionada porque los clientes autenticados solo tienen `SELECT` sobre `user_concept_mastery` y no deben poder autodeclararse `retained`.
+Los clientes autenticados mantienen solo `SELECT` sobre `user_concept_mastery`: no pueden autodeclararse `retained` ni escribir métricas de dominio.
+
+La arquitectura final separa dos piezas:
+
+- `public.refresh_my_v4_concept_mastery()` es un wrapper `SECURITY INVOKER` expuesto al cliente;
+- `private.refresh_my_v4_concept_mastery()` es el escritor `SECURITY DEFINER` y vive fuera del esquema expuesto.
 
 Protecciones:
 
@@ -31,9 +36,9 @@ Protecciones:
 - solo trabaja sobre la oposición activa del usuario;
 - no recibe ningún estado ni métrica calculada por el cliente;
 - `p_concept_id` solo sirve para limitar el concepto recalculado;
-- `search_path` vacío y referencias de esquema explícitas;
-- `PUBLIC` y `anon` no pueden ejecutarla;
-- solo `authenticated` recibe `EXECUTE`.
+- el escritor privilegiado usa `search_path` vacío y referencias de esquema explícitas;
+- `PUBLIC` y `anon` no pueden ejecutar ninguna de las dos funciones;
+- el escritor privilegiado no se publica como RPC de `public`.
 
 ## 2. Contrato de evaluación
 
@@ -60,7 +65,9 @@ Intervalos base:
 - `Consolidating`: +3 días antes del primer control, +7 tras un control;
 - `Retained`: +14 días y después +30 cuando ya existen tres controles satisfactorios.
 
-La fecha se calcula desde la evidencia más reciente relevante. Si el historial es antiguo al activar V4, la fecha puede quedar ya vencida: el compositor lo tratará como trabajo pendiente en vez de posponerlo artificialmente desde el día del bootstrap.
+La fecha se calcula desde la evidencia más reciente relevante. Para respuestas de test, el instante canónico es `tests.fecha_finalizacion`, no la creación previa de la fila de `test_answers`.
+
+Si el historial es antiguo al activar V4, la fecha puede quedar ya vencida: el compositor lo tratará como trabajo pendiente en vez de posponerlo artificialmente desde el día del bootstrap.
 
 ## 4. Actualización automática
 
@@ -105,7 +112,7 @@ Orden visible:
 
 Máximo inicial: un bloque de cada tipo.
 
-El plan nunca supera los minutos indicados. Con menos de 20 minutos utiliza bloques compactos mínimos.
+El plan nunca supera los minutos indicados. Con menos de 20 minutos utiliza bloques compactos mínimos. Si una candidata no cabe en el tiempo restante, intenta la siguiente en vez de bloquear el resto del plan.
 
 ## 7. Checkpoints dirigidos
 
@@ -125,6 +132,16 @@ Ese valor todavía no crea un test. El futuro creador de comprobaciones deberá 
 - `nothing_due` es un resultado válido: el motor no inventa actividad para llenar tiempo;
 - el compositor es puro y testeable; no muta base de datos;
 - la cache puede reconstruirse desde evidencia original.
+
+## Validación del piloto
+
+El Tema 18 se validó transaccionalmente con evidencia sintética y `ROLLBACK`:
+
+1. 4 preguntas distintas seguras en 2 sesiones → `Consolidating`;
+2. control dirigido +3 días y otro +7 días, con preguntas y sesiones diferentes → `Retained`;
+3. un fallo posterior mantiene `Retained` pero activa `needs_attention` y revisión al día siguiente;
+4. la misma secuencia funciona bajo el rol `authenticated`, atravesando RLS y el wrapper público;
+5. tras el `ROLLBACK` no queda ningún test ni cache sintético.
 
 ## Siguiente pieza
 
