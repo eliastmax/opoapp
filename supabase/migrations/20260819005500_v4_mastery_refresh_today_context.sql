@@ -274,7 +274,7 @@ BEGIN
 
     v_final_rank := v_candidate_rank;
     IF v_recent_instability AND v_candidate_rank < v_previous_rank THEN
-      v_final_rank := pg_catalog.greatest(v_previous_rank - 1, v_candidate_rank);
+      v_final_rank := GREATEST(v_previous_rank - 1, v_candidate_rank);
     END IF;
 
     v_final_state := CASE v_final_rank
@@ -300,7 +300,7 @@ BEGIN
       ELSE 14
     END;
 
-    v_last_evidence_at := pg_catalog.greatest(v_last_question_at, v_last_card_at, v_unit_completed_at);
+    v_last_evidence_at := GREATEST(v_last_question_at, v_last_card_at, v_unit_completed_at);
     v_review_base := COALESCE(v_last_evidence_at::date, CURRENT_DATE);
 
     INSERT INTO public.user_concept_mastery AS mastery (
