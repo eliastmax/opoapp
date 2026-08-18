@@ -1,3 +1,5 @@
+import { V4_MASTERY_THRESHOLDS } from "./v4-mastery-config";
+
 export type ConceptMasteryState =
   | "unseen"
   | "seen"
@@ -142,15 +144,21 @@ export function evaluateConceptMastery(input: ConceptMasteryInput): ConceptMaste
       (attempt) =>
         safeCorrect(attempt) &&
         typeof attempt.retentionCheckpointDays === "number" &&
-        attempt.retentionCheckpointDays >= 3,
+        attempt.retentionCheckpointDays >= V4_MASTERY_THRESHOLDS.firstRetentionCheckpointDays,
     )
     .sort((a, b) => timestamp(a.answeredAt) - timestamp(b.answeredAt));
 
   const retentionChecksPassed = new Set(
     retentionPasses.map((attempt) => `${attempt.retentionCheckpointDays}:${attempt.questionId}`),
   ).size;
-  const hasThreeDayPass = retentionPasses.some((attempt) => (attempt.retentionCheckpointDays ?? 0) >= 3);
-  const hasSevenDayPass = retentionPasses.some((attempt) => (attempt.retentionCheckpointDays ?? 0) >= 7);
+  const hasThreeDayPass = retentionPasses.some(
+    (attempt) =>
+      (attempt.retentionCheckpointDays ?? 0) >= V4_MASTERY_THRESHOLDS.firstRetentionCheckpointDays,
+  );
+  const hasSevenDayPass = retentionPasses.some(
+    (attempt) =>
+      (attempt.retentionCheckpointDays ?? 0) >= V4_MASTERY_THRESHOLDS.secondRetentionCheckpointDays,
+  );
   const retentionDistinctQuestions = new Set(retentionPasses.map((attempt) => attempt.questionId)).size;
   const retentionDistinctSessions = new Set(retentionPasses.map((attempt) => attempt.sessionId)).size;
 
@@ -179,16 +187,22 @@ export function evaluateConceptMastery(input: ConceptMasteryInput): ConceptMaste
   }
 
   const enoughForConsolidation =
-    distinctQuestions >= 4 &&
-    safeCorrectQuestions >= 3 &&
+    distinctQuestions >= V4_MASTERY_THRESHOLDS.minDistinctQuestions &&
+    safeCorrectQuestions >= V4_MASTERY_THRESHOLDS.minSafeCorrectQuestions &&
     safeAccuracy !== null &&
-    safeAccuracy >= 0.7;
+    safeAccuracy >= V4_MASTERY_THRESHOLDS.minSafeAccuracy;
 
-  if (enoughForConsolidation && distinctSessions < 2) {
+  if (enoughForConsolidation && distinctSessions < V4_MASTERY_THRESHOLDS.minDistinctSessions) {
     reasonCode = "needs_more_sessions";
-  } else if (distinctQuestions >= 4 && (safeAccuracy ?? 0) < 0.7) {
+  } else if (
+    distinctQuestions >= V4_MASTERY_THRESHOLDS.minDistinctQuestions &&
+    (safeAccuracy ?? 0) < V4_MASTERY_THRESHOLDS.minSafeAccuracy
+  ) {
     reasonCode = "accuracy_not_safe";
-  } else if (enoughForConsolidation && distinctSessions >= 2) {
+  } else if (
+    enoughForConsolidation &&
+    distinctSessions >= V4_MASTERY_THRESHOLDS.minDistinctSessions
+  ) {
     candidate = "consolidating";
     reasonCode = "consolidating";
   }
@@ -197,8 +211,8 @@ export function evaluateConceptMastery(input: ConceptMasteryInput): ConceptMaste
     candidate === "consolidating" &&
     hasThreeDayPass &&
     hasSevenDayPass &&
-    retentionDistinctQuestions >= 2 &&
-    retentionDistinctSessions >= 2;
+    retentionDistinctQuestions >= V4_MASTERY_THRESHOLDS.minRetentionDistinctQuestions &&
+    retentionDistinctSessions >= V4_MASTERY_THRESHOLDS.minRetentionDistinctSessions;
 
   if (enoughForRetention) {
     candidate = "retained";
