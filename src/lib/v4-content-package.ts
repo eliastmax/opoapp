@@ -1,4 +1,8 @@
-import { auditV4ConceptCoverage, type V4CoverageAudit } from "./v4-content-coverage";
+import {
+  auditV4ConceptCoverage,
+  type V4CoverageAudit,
+  type V4CoverageMapping,
+} from "./v4-content-coverage";
 
 export const V4_STUDY_CONTENT_VERSION = "4.0" as const;
 
@@ -70,6 +74,7 @@ export type V4ContentValidationIssue = {
     | "duplicate_flashcard_code"
     | "duplicate_question_mapping"
     | "invalid_unit"
+    | "invalid_concept"
     | "missing_unit_source"
     | "unknown_unit"
     | "unknown_primary_concept"
@@ -150,20 +155,40 @@ export function validateV4StudyContentPackage(
     });
   }
   if (pkg.units.length === 0) {
-    errors.push({ code: "empty_units", message: "A V4 topic package needs at least one study unit.", path: "units" });
+    errors.push({
+      code: "empty_units",
+      message: "A V4 topic package needs at least one study unit.",
+      path: "units",
+    });
   }
   if (pkg.concepts.length === 0) {
-    errors.push({ code: "empty_concepts", message: "A V4 topic package needs at least one concept.", path: "concepts" });
+    errors.push({
+      code: "empty_concepts",
+      message: "A V4 topic package needs at least one concept.",
+      path: "concepts",
+    });
   }
 
   for (const code of duplicateValues(pkg.units.map((unit) => unit.code))) {
-    errors.push({ code: "duplicate_unit_code", message: `Duplicate study-unit code: ${code}.`, path: "units" });
+    errors.push({
+      code: "duplicate_unit_code",
+      message: `Duplicate study-unit code: ${code}.`,
+      path: "units",
+    });
   }
   for (const code of duplicateValues(pkg.concepts.map((concept) => concept.code))) {
-    errors.push({ code: "duplicate_concept_code", message: `Duplicate concept code: ${code}.`, path: "concepts" });
+    errors.push({
+      code: "duplicate_concept_code",
+      message: `Duplicate concept code: ${code}.`,
+      path: "concepts",
+    });
   }
   for (const code of duplicateValues(pkg.flashcards.map((card) => card.code))) {
-    errors.push({ code: "duplicate_flashcard_code", message: `Duplicate flashcard code: ${code}.`, path: "flashcards" });
+    errors.push({
+      code: "duplicate_flashcard_code",
+      message: `Duplicate flashcard code: ${code}.`,
+      path: "flashcards",
+    });
   }
   for (const code of duplicateValues(pkg.questionMappings.map((mapping) => mapping.questionCode))) {
     errors.push({
@@ -223,7 +248,7 @@ export function validateV4StudyContentPackage(
       concept.position < 0
     ) {
       errors.push({
-        code: "invalid_unit",
+        code: "invalid_concept",
         message: `Concept at index ${index} has an invalid code, title or position.`,
         path: `concepts[${index}]`,
       });
@@ -233,6 +258,13 @@ export function validateV4StudyContentPackage(
   pkg.questionMappings.forEach((mapping, index) => {
     const primary = normalized(mapping.primaryConceptCode);
     const secondaries = (mapping.secondaryConceptCodes ?? []).map(normalized);
+    if (!normalized(mapping.questionCode)) {
+      errors.push({
+        code: "duplicate_question_mapping",
+        message: `Question mapping at index ${index} has an empty questionCode.`,
+        path: `questionMappings[${index}].questionCode`,
+      });
+    }
     if (!conceptCodes.has(primary)) {
       errors.push({
         code: "unknown_primary_concept",
@@ -292,19 +324,19 @@ export function validateV4StudyContentPackage(
   const validQuestionCodes = pkg.questionMappings
     .map((mapping) => normalized(mapping.questionCode))
     .filter(Boolean);
-  const coverageMappings = pkg.questionMappings.flatMap((mapping) => {
-    const rows = [
+  const coverageMappings = pkg.questionMappings.flatMap((mapping): V4CoverageMapping[] => {
+    const rows: V4CoverageMapping[] = [
       {
         questionId: normalized(mapping.questionCode),
         conceptId: normalized(mapping.primaryConceptCode),
-        role: "primary" as const,
+        role: "primary",
       },
     ];
     for (const conceptCode of mapping.secondaryConceptCodes ?? []) {
       rows.push({
         questionId: normalized(mapping.questionCode),
         conceptId: normalized(conceptCode),
-        role: "secondary" as const,
+        role: "secondary",
       });
     }
     return rows;
