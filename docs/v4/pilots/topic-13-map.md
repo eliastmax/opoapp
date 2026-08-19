@@ -1,30 +1,70 @@
-# V4 — Mapa conceptual del Tema 13
+# V4 — Mapa conceptual definitivo del Tema 13
 
-Estado: mapa técnico validado contra el banco activo. No sustituye el banco V2 ni cambia UI.
+Estado: candidato de contenido tras `T13-CONTENT.2`. **No importado y no fusionado**. Este documento sustituye editorialmente el mapa inicial de 29 conceptos del mismo PR.
 
-Fecha de auditoría: 2026-08-19
+Fecha de auditoría y gate: 2026-08-19.
 
-## Fuentes de verdad usadas
+## Fuentes de verdad
 
-- Supabase producción `kimswvynzehmilqydcgz`: preguntas activas reales de Auxiliar Administrativo SMS.
-- `Temario_new.pdf`: estructura del tema y páginas/referencias empleadas por el banco.
-- BOE consolidado de la Ley 55/2003 (`BOE-A-2003-23101`), última actualización publicada 2023-03-01.
-- Contrato V4 vigente: una relación `primary` por pregunta; secundarias solo cuando aporten significado real.
-- Umbral V4 vigente: cobertura suficiente con al menos 4 preguntas primarias activas distintas.
+- Supabase producción `kimswvynzehmilqydcgz`: 99 preguntas activas reales del Tema 13, `SMS-T13-0001` a `SMS-T13-0099`.
+- `Temario_new.pdf`, páginas 241-275 usadas por el banco.
+- Ley 55/2003 consolidada, `BOE-A-2003-23101`.
+- Contrato V4: un único `question_concepts.role = 'primary'` por pregunta; cobertura de consolidación a partir de 4 preguntas primarias activas distintas.
 
-## Foto real del banco antes de mapear
+## Corrección C03
 
-- 99 preguntas activas y 99 totales: `SMS-T13-0001` a `SMS-T13-0099`.
-- 98 valores textuales distintos en `questions.concepto`.
-- 6 apartados.
-- 35 subapartados.
-- 99 objetivos de aprendizaje distintos.
-- 92 referencias de fuente textuales distintas.
-- 0 unidades V4, 0 conceptos V4, 0 asociaciones V4 y 0 flashcards V4 antes de este sprint.
+La descripción inicial decía erróneamente `no incorporarse justificadamente en plazo`. Se corrige en el paquete canónico: el decaimiento del artículo 20.3 exige que la falta de incorporación **sea imputable al interesado y no obedezca a causa justificada**. El resumen de unidad, flashcards y nueva pregunta de cobertura mantienen el mismo sentido.
 
-La casi equivalencia `98 etiquetas concepto / 99 preguntas` confirma que el metadato V2 es útil como señal editorial, pero no puede convertirse directamente en el concepto canónico V4. El mapa siguiente agrupa preguntas que comprueban la misma idea jurídica razonable sin ensanchar conceptos para alcanzar artificialmente el umbral de cuatro.
+## Gate final de granularidad
 
-## Mapa propuesto
+Pregunta editorial aplicada: **si el usuario falla solo una de las partes, ¿seguiría siendo suficientemente preciso diagnosticar el concepto completo?**
+
+### C05 inicial — Nacionalidad, separación e inhabilitación
+
+**Decisión: dividir.**
+
+No sería preciso. Son tres causas de pérdida con presupuestos distintos: artículo 23 para nacionalidad, artículo 24 para separación disciplinaria firme y artículo 25 para penas de inhabilitación. Un usuario puede dominar la excepción de nacionalidad y fallar la firmeza o los tipos de inhabilitación sin que el diagnóstico conjunto indique qué conocimiento falla.
+
+Resultado:
+
+- `SMS-T13-C05` — Pérdida por nacionalidad — pregunta original 0018.
+- `SMS-T13-C30` — Pérdida por separación del servicio — pregunta original 0019.
+- `SMS-T13-C31` — Pérdida por inhabilitación — pregunta original 0020.
+
+### C06 inicial — Jubilación e incapacidad permanente
+
+**Decisión: dividir.**
+
+No sería preciso. Jubilación contiene edad, prolongación, autorización y prórroga por cotización; incapacidad contiene grados extintivos. Comparten el efecto de pérdida, pero no el conocimiento jurídico que debe recuperarse.
+
+Resultado:
+
+- `SMS-T13-C06` — Jubilación — preguntas originales 0021-0022.
+- `SMS-T13-C32` — Incapacidad permanente — pregunta original 0023.
+
+### C17 inicial — Coordinación de convocatorias y comisiones de servicio
+
+**Decisión: dividir.**
+
+No sería preciso. El artículo 38 regula colaboración y coordinación cuando una convocatoria afecta a más de un servicio de salud; el artículo 39 regula comisiones de servicio, temporalidad, categoría/especialidad, retribución y reserva de origen. Son núcleos jurídicos independientes.
+
+Resultado:
+
+- `SMS-T13-C17` — Coordinación y colaboración en convocatorias — pregunta original 0059.
+- `SMS-T13-C33` — Comisiones de servicio — preguntas originales 0060-0061.
+
+### C27 inicial — Prescripción y cancelación de sanciones
+
+**Decisión: dividir.**
+
+No sería preciso. La prescripción del artículo 73.4 mide extinción temporal de la posibilidad de ejecutar la sanción y tiene dies a quo, interrupción y reinicio. La cancelación de los apartados 5-6 actúa después del cumplimiento sobre la anotación y la reincidencia. Un usuario puede conocer uno y confundir completamente el otro.
+
+Resultado:
+
+- `SMS-T13-C27` — Prescripción de sanciones — pregunta original 0094.
+- `SMS-T13-C34` — Cancelación de anotaciones disciplinarias — pregunta original 0095.
+
+## Mapa definitivo
 
 ```text
 Tema 13 — Ley 55/2003. Estatuto Marco
@@ -33,12 +73,15 @@ Tema 13 — Ley 55/2003. Estatuto Marco
 ├ U02 Deberes del personal
 │  └ C02 Deberes estatutarios
 ├ U03 Adquisición de la condición fija
-│  └ C03 Requisitos sucesivos y efectos de la falta de acreditación/incorporación
-├ U04 Pérdida: causas, renuncia, nacionalidad e inhabilitación
+│  └ C03 Requisitos sucesivos y efectos de falta de acreditación/incorporación
+├ U04 Pérdida: renuncia, nacionalidad, separación e inhabilitación
 │  ├ C04 Causas de pérdida y renuncia
-│  └ C05 Nacionalidad, separación e inhabilitación
+│  ├ C05 Pérdida por nacionalidad
+│  ├ C30 Pérdida por separación del servicio
+│  └ C31 Pérdida por inhabilitación
 ├ U05 Jubilación, incapacidad y recuperación
-│  ├ C06 Jubilación e incapacidad permanente
+│  ├ C06 Jubilación
+│  ├ C32 Incapacidad permanente
 │  └ C07 Recuperación de la condición fija
 ├ U06 Provisión y convocatorias
 │  ├ C08 Principios y sistemas de provisión
@@ -53,9 +96,10 @@ Tema 13 — Ley 55/2003. Estatuto Marco
 ├ U10 Promoción interna
 │  ├ C14 Promoción interna: acceso, requisitos y preferencia
 │  └ C15 Promoción interna temporal
-├ U11 Movilidad y comisiones de servicio
+├ U11 Movilidad, coordinación y comisiones de servicio
 │  ├ C16 Movilidad por razón del servicio y movilidad voluntaria
-│  └ C17 Coordinación de convocatorias y comisiones de servicio
+│  ├ C17 Coordinación y colaboración en convocatorias
+│  └ C33 Comisiones de servicio
 ├ U12 Carrera profesional
 │  └ C18 Carrera profesional y homologación
 ├ U13 Régimen retributivo: estructura y básicas
@@ -71,105 +115,100 @@ Tema 13 — Ley 55/2003. Estatuto Marco
 │  └ C25 Prescripción de faltas
 ├ U17 Sanciones
 │  ├ C26 Clases de sanciones y efectos
-│  └ C27 Prescripción y cancelación de sanciones
+│  ├ C27 Prescripción de sanciones
+│  └ C34 Cancelación de anotaciones disciplinarias
 └ U18 Procedimiento y medidas provisionales
    ├ C28 Procedimiento y garantías
    └ C29 Suspensión provisional y efectos
 ```
 
-Las 18 unidades quedan entre 4 y 9 minutos estimados. El régimen disciplinario ocupa U15-U18, pero no se fuerza al resto del Tema 13 dentro de ese bloque: el banco real también cubre derechos/deberes, adquisición y pérdida, selección/promoción, movilidad/carrera y retribuciones.
+Se conservan las 18 unidades. El gate modifica la granularidad conceptual, no requiere hacer unidades artificialmente pequeñas.
 
-## Auditoría concepto por concepto
+## Cobertura con las 99 preguntas originales
 
-| Código | Unidad | Concepto canónico | Preguntas primarias | N | Cobertura | Falta | Fuente principal | Solapamiento / observación |
-|---|---|---|---|---:|---|---:|---|---|
-| SMS-T13-C01 | U01 | Derechos individuales y colectivos | 0001-0004 | 4 | suficiente | 0 | arts. 17-18 | Agrupa catálogo de derechos; no mezcla deberes. |
-| SMS-T13-C02 | U02 | Deberes estatutarios | 0005-0010 | 6 | suficiente | 0 | art. 19 | Un único catálogo con trampas de sujeto/conducta. |
-| SMS-T13-C03 | U03 | Adquisición: requisitos sucesivos y efectos | 0011-0013 | 3 | insuficiente | 1 | art. 20 | No se fusiona con pérdida solo para llegar a cuatro. |
-| SMS-T13-C04 | U04 | Causas de pérdida y renuncia | 0014-0017 | 4 | suficiente | 0 | arts. 21-22 | Renuncia es causa de pérdida con reglas propias; unión natural. |
-| SMS-T13-C05 | U04 | Nacionalidad, separación e inhabilitación | 0018-0020 | 3 | insuficiente | 1 | arts. 23-25 | Tres causas próximas con efectos extintivos distintos. |
-| SMS-T13-C06 | U05 | Jubilación e incapacidad permanente | 0021-0023 | 3 | insuficiente | 1 | arts. 26-27 | Ambas extinguen la condición; no incluye recuperación. |
-| SMS-T13-C07 | U05 | Recuperación de la condición fija | 0024-0026 | 3 | insuficiente | 1 | art. 28 | Concepto autónomo por requisitos y efectos de reingreso. |
-| SMS-T13-C08 | U06 | Principios y sistemas de provisión | 0027-0028 | 2 | insuficiente | 2 | art. 29 | No se mezcla con reglas formales de convocatoria. |
-| SMS-T13-C09 | U06 | Convocatorias: periodicidad, bases y contenido | 0029-0031 | 3 | insuficiente | 1 | art. 30.1-4 | Cohesión formal de la convocatoria. |
-| SMS-T13-C10 | U07 | Requisitos de participación y discapacidad | 0032-0035 | 4 | suficiente | 0 | art. 30.5-6 | Reserva de discapacidad se mantiene ligada al acceso. |
-| SMS-T13-C11 | U08 | Sistemas de selección y aspirantes en prácticas | 0036-0039 | 4 | suficiente | 0 | art. 31.1-7 | Oposición/concurso/concurso-oposición y fase práctica. |
-| SMS-T13-C12 | U08 | Órganos de selección y nombramientos | 0040-0041 | 2 | insuficiente | 2 | arts. 31.8 y 32 | Dos pasos institucionales consecutivos; cobertura escasa. |
-| SMS-T13-C13 | U09 | Selección, nombramiento y prueba temporal | 0042-0045 | 4 | suficiente | 0 | art. 33 | Mantiene junta la lógica específica del temporal. |
-| SMS-T13-C14 | U10 | Promoción interna: acceso, requisitos y preferencia | 0046-0049 | 4 | suficiente | 0 | art. 34 | Concepto estable y suficientemente contrastado. |
-| SMS-T13-C15 | U10 | Promoción interna temporal | 0050-0052 | 3 | insuficiente | 1 | art. 35 | No se fusiona con promoción definitiva. |
-| SMS-T13-C16 | U11 | Movilidad por razón del servicio y voluntaria | 0053-0058 | 6 | suficiente | 0 | arts. 36-37 | El contraste entre movilidad impuesta/voluntaria es examinable. |
-| SMS-T13-C17 | U11 | Coordinación y comisiones de servicio | 0059-0061 | 3 | insuficiente | 1 | arts. 38-39 | Reglas auxiliares de movilidad/provisión; revisar al escalar. |
-| SMS-T13-C18 | U12 | Carrera profesional y homologación | 0062-0063 | 2 | insuficiente | 2 | art. 40 | No se amplía a retribuciones para forzar cobertura. |
-| SMS-T13-C19 | U13 | Estructura, criterios y reglas generales de retribución | 0064-0067 | 4 | suficiente | 0 | art. 41 | Base conceptual del sistema retributivo. |
-| SMS-T13-C20 | U13 | Retribuciones básicas y pagas extraordinarias | 0068-0070 | 3 | insuficiente | 1 | art. 42 | Sueldo/trienios/pagas forman un catálogo propio. |
-| SMS-T13-C21 | U14 | Complementos retributivos | 0071-0073 | 3 | insuficiente | 1 | art. 43 | Mantiene juntos destino, específico, productividad, continuada y carrera. |
-| SMS-T13-C22 | U14 | Retribuciones de temporales y aspirantes en prácticas | 0074-0075 | 2 | insuficiente | 2 | arts. 44-45 | Dos reglas especiales muy próximas; no se mezclan con básicas. |
-| SMS-T13-C23 | U15 | Responsabilidad, competencia y principios disciplinarios | 0076-0080 | 5 | suficiente | 0 | arts. 70-71 | Potestad disciplinaria y garantías previas a tipificación. |
-| SMS-T13-C24 | U16 | Clases y fronteras entre faltas | 0081-0086 | 6 | suficiente | 0 | art. 72.1-4 | Las preguntas comparan umbrales muy grave/grave/leve. |
-| SMS-T13-C25 | U16 | Prescripción de faltas | 0087-0088 | 2 | insuficiente | 2 | art. 72.6 | Se mantiene separada de prescripción de sanciones. |
-| SMS-T13-C26 | U17 | Clases de sanciones y efectos | 0089-0093 | 5 | suficiente | 0 | art. 73.1-3 | Sanción, gravedad y efectos forman el núcleo. |
-| SMS-T13-C27 | U17 | Prescripción y cancelación de sanciones | 0094-0095 | 2 | insuficiente | 2 | arts. 71.8 y 73.4-6 | Prescripción y cancelación comparten fase posterior a la sanción, pero no se mezclan con faltas. |
-| SMS-T13-C28 | U18 | Procedimiento y garantías | 0096-0097 | 2 | insuficiente | 2 | art. 74 | Cobertura escasa; concepto jurídicamente claro. |
-| SMS-T13-C29 | U18 | Suspensión provisional y efectos | 0098-0099 | 2 | insuficiente | 2 | art. 75 | Medida cautelar autónoma; no se ensancha con el procedimiento general. |
+| Código | Preguntas originales | N | Estado antes de nuevas | Faltan |
+|---|---|---:|---|---:|
+| C01 | 0001-0004 | 4 | suficiente | 0 |
+| C02 | 0005-0010 | 6 | suficiente | 0 |
+| C03 | 0011-0013 | 3 | gap | 1 |
+| C04 | 0014-0017 | 4 | suficiente | 0 |
+| C05 | 0018 | 1 | gap | 3 |
+| C30 | 0019 | 1 | gap | 3 |
+| C31 | 0020 | 1 | gap | 3 |
+| C06 | 0021-0022 | 2 | gap | 2 |
+| C32 | 0023 | 1 | gap | 3 |
+| C07 | 0024-0026 | 3 | gap | 1 |
+| C08 | 0027-0028 | 2 | gap | 2 |
+| C09 | 0029-0031 | 3 | gap | 1 |
+| C10 | 0032-0035 | 4 | suficiente | 0 |
+| C11 | 0036-0039 | 4 | suficiente | 0 |
+| C12 | 0040-0041 | 2 | gap | 2 |
+| C13 | 0042-0045 | 4 | suficiente | 0 |
+| C14 | 0046-0049 | 4 | suficiente | 0 |
+| C15 | 0050-0052 | 3 | gap | 1 |
+| C16 | 0053-0058 | 6 | suficiente | 0 |
+| C17 | 0059 | 1 | gap | 3 |
+| C33 | 0060-0061 | 2 | gap | 2 |
+| C18 | 0062-0063 | 2 | gap | 2 |
+| C19 | 0064-0067 | 4 | suficiente | 0 |
+| C20 | 0068-0070 | 3 | gap | 1 |
+| C21 | 0071-0073 | 3 | gap | 1 |
+| C22 | 0074-0075 | 2 | gap | 2 |
+| C23 | 0076-0080 | 5 | suficiente | 0 |
+| C24 | 0081-0086 | 6 | suficiente | 0 |
+| C25 | 0087-0088 | 2 | gap | 2 |
+| C26 | 0089-0093 | 5 | suficiente | 0 |
+| C27 | 0094 | 1 | gap | 3 |
+| C34 | 0095 | 1 | gap | 3 |
+| C28 | 0096-0097 | 2 | gap | 2 |
+| C29 | 0098-0099 | 2 | gap | 2 |
 
-## Cobertura resultante
+Resultado tras el gate, antes de añadir preguntas al banco:
 
-- Conceptos canónicos: **29**.
-- Preguntas activas mapeadas: **99/99**.
-- Preguntas sin asignación clara: **0**.
-- Preguntas con más de un `primary`: **0**.
-- Media: **3,41 preguntas/concepto**.
-- Mediana: **3**.
-- Cobertura suficiente (`>=4`): **12/29 = 41,4 %**.
-- Cobertura insuficiente (`1-3`): **17/29 = 58,6 %**.
-- Sin cobertura: **0/29**.
-- Preguntas adicionales mínimas para llevar todos los conceptos a cuatro, sin cambiar la granularidad: **25**.
+- 18 unidades.
+- **34 conceptos canónicos**.
+- 99/99 preguntas originales con un único `primary`.
+- media: **2,91 preguntas originales/concepto**.
+- mediana: **3**.
+- cobertura suficiente: **12/34 = 35,3 %**.
+- `coverage_gap`: **22/34 = 64,7 %**.
+- sin cobertura: **0**.
+- preguntas adicionales exactas necesarias: **45**.
 
-Huecos exactos:
+El aumento de 25 a 45 preguntas necesarias es intencional: deriva de priorizar precisión diagnóstica sobre una cobertura artificialmente favorable.
 
-- +1: C03, C05, C06, C07, C09, C15, C17, C20, C21.
-- +2: C08, C12, C18, C22, C25, C27, C28, C29.
+## Lote dirigido T13-CONTENT.2
 
-No se proponen todavía preguntas nuevas en este paquete: el hueco se conserva explícito para una fase de generación y validación dirigida.
+Se preparan exactamente 45 candidatas, `SMS-T13-0100` a `SMS-T13-0144`, en `src/lib/v4-pilots/topic-13-coverage-gap-questions.ts`.
 
-## Decisiones de mapeo
+Antes de reservar esos códigos se comprobó en Supabase que no existe ninguna pregunta del Tema 13 en ese rango.
 
-1. Las 99 preguntas tienen un único concepto primario propuesto. No se usa relación secundaria por defecto: que una pregunta contraste dos subtipos dentro de la misma regla no significa que mida dos conceptos canónicos.
-2. El dato textual `questions.concepto` se conserva intacto. V4 añade una capa canónica; no reescribe el banco V2.
-3. C25 y C27 permanecen separados aunque una fusión aumentaría cobertura: prescripción de la falta y prescripción/cancelación de la sanción tienen dies a quo e interrupciones diferentes y conviene poder diagnosticar la confusión.
-4. C28 y C29 permanecen separados: procedimiento disciplinario y suspensión provisional son próximos, pero el usuario puede dominar las garantías y fallar límites/efectos de la cautelar.
+Las candidatas no se añaden todavía a `questionMappings`: el importador V4 solo puede asociar preguntas activas reales del banco. Hasta que Gobernanza autorice la incorporación de estas preguntas al banco, el paquete canónico conserva de forma honesta los 22 `coverage_gap`; las pruebas calculan además que, si se validan e incorporan las 45 candidatas, **cada uno de esos 22 conceptos queda exactamente en 4 preguntas primarias**.
 
-## Validación de fuentes
+## Regla de generación aplicada
 
-`Temario_new.pdf` incluye la redacción actualizada del artículo 17.1.k tras la modificación de 2023 y la estructura vigente del Estatuto Marco. El banco del Tema 13 referencia los artículos 17 a 75 y páginas 241-275 del temario. El contraste editorial se hace contra el BOE consolidado, no desde memoria del modelo.
+Cada candidata parte de las dimensiones ya comprobadas por las preguntas originales y busca otra dimensión cuando la norma lo permite: regla, excepción, sujeto, límite, dies a quo, interrupción, efecto, competencia, literalidad o mini caso. No se generan preguntas para conceptos que ya tienen cuatro o más primarias.
 
-No se ha detectado en el material revisado una discrepancia sustantiva que obligue a invalidar una de las 99 preguntas. Si aparece una discrepancia en una revisión posterior, debe registrarse y resolverse de forma explícita; nunca corregirse silenciosamente dentro del contenido V4.
+## Automatización y revisión humana
 
-## Qué puede automatizarse al escalar
+Automatizable:
 
-Automatizable con alta confianza:
+- extracción de metadatos y fuentes;
+- clustering sugerido;
+- recuento de cobertura;
+- detección de códigos libres;
+- generación inicial de candidatos;
+- validación estructural y cobertura prospectiva.
 
-- extracción por tema de `codigo`, `apartado`, `subapartado`, `concepto`, `objetivo_aprendizaje`, páginas y referencia;
-- propuesta inicial de clusters a partir de metadatos y similitud semántica;
-- recuento de primarias, media/mediana y `coverage_gap`;
-- generación de códigos estables secuenciales;
-- comprobación de que cada pregunta incluida tiene exactamente un `primary`;
-- validación TypeScript del paquete;
-- comprobación de referencias y preguntas reales antes de importar;
-- importación atómica con `import_v4_study_content`;
-- verificación post-import de counts.
+Revisión editorial obligatoria:
 
-Debe seguir teniendo revisión humana/editorial:
+- decisión final de granularidad;
+- fidelidad jurídica;
+- distractores;
+- ausencia de clones;
+- pertinencia de cada nueva dimensión;
+- aprobación antes de alta en banco/importación.
 
-- frontera final entre conceptos canónicos;
-- decisión de cuándo una relación secundaria es real;
-- contenido jurídico y literalidad relevante;
-- `No lo confundas con` y trampas;
-- mnemotecnias;
-- cualquier pregunta nueva para cerrar cobertura;
-- discrepancias entre temario y norma vigente.
+## Estado de producción
 
-## Hipótesis que este piloto ya permite medir
-
-El Tema 13 confirma que el banco existente es reutilizable como materia prima V4: no hace falta rehacer sus 99 preguntas. Sin embargo, también muestra que un banco diseñado para amplitud de test no garantiza por sí solo cuatro evidencias distintas en cada concepto canónico. El escalado debe combinar **reutilización + clustering editorial + generación dirigida de huecos**, no regeneración masiva.
+Tema 13 continúa sin contenido V4 importado en Supabase. Este sprint no realiza DDL, INSERT manual, importación V4 ni merge de PR.
