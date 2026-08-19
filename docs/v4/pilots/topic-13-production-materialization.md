@@ -1,8 +1,10 @@
 # T13-CONTENT.3 — Materialización controlada en producción
 
-Estado: **materializado y verificado en producción**. Este documento sustituye cualquier referencia operativa previa a cobertura meramente prospectiva; los documentos de T13-CONTENT.2 conservan el histórico del diseño y de la auditoría de huecos.
+Estado actual: **banco V2 materializado y verificado; importación V4 pendiente del gate de Quality**.
 
-## Banco V2
+Este documento distingue deliberadamente entre el estado real de producción y el paquete V4 ya preparado. La base de datos es la fuente de verdad: en la última comprobación directa, Tema 13 tiene 144 preguntas activas y todavía 0 unidades / 0 conceptos / 0 relaciones `primary` / 0 flashcards V4.
+
+## Banco V2 — materializado
 
 Antes de T13-CONTENT.3, Tema 13 tenía 99 preguntas activas. Las 45 preguntas aprobadas `SMS-T13-0100` a `SMS-T13-0144` se validaron con el contrato V2 real de 25 columnas y se materializaron exclusivamente mediante `import_questions_batch(jsonb)`.
 
@@ -24,44 +26,56 @@ Verificación directa posterior:
 - filas con metadatos V2 esperados ausentes: 0;
 - distribución del lote nuevo: A 11 / B 11 / C 11 / D 12.
 
-Se inspeccionaron directamente en producción, entre otras, las filas `0100`, `0106`, `0112`, `0126`, `0138` y `0144`.
+Se inspeccionaron directamente en producción las filas `0100`, `0106`, `0112`, `0126`, `0138` y `0144`, incluyendo sus 25 campos V2 y su estado activo.
 
-## Paquete V4 final
+## Paquete V4 final — preparado, no importado todavía
 
 El paquete canónico final está en `src/lib/v4-pilots/topic-13-estatuto-marco-materialized.ts`. Mantiene sin alteración los 99 `primary` originales y añade exactamente los 45 `primary` aprobados, sin `secondary` nuevos.
 
-Dimensiones finales:
+Dimensiones del paquete preparado:
 
 - 18 `study_units`;
 - 34 `concepts`;
 - 144 `questionMappings` primary;
 - 68 `flashcards`.
 
-El artefacto exacto usado para la importación fue exportado por CI desde el paquete TypeScript validado. Antes de la llamada al RPC se verificó:
+Los tests del paquete fijan además:
 
-- tamaño: 69.325 bytes;
-- MD5: `749a3c330fbc37e0bbdfa1d19e3df3be`;
-- versión: `4.0`;
-- 18 unidades / 34 conceptos / 144 mappings / 68 cards.
+- 144/144 códigos mapeados una sola vez como primary;
+- 34/34 conceptos con al menos 4 preguntas primary;
+- 0 `coverage_gap` en el paquete;
+- 0 conceptos con cobertura cero;
+- conservación exacta de los splits aprobados por Gobernanza;
+- contrato V2 completo de 25 columnas para las 45 preguntas nuevas;
+- distribución A 11 / B 11 / C 11 / D 12;
+- alcance corregido de `SMS-T13-0106` conforme al artículo 73.1.a.
 
-Se realizó un preflight transaccional con `import_v4_study_content` y `ROLLBACK`; tras él, producción continuó en 144 preguntas y V4 0/0/0/0. Solo después se ejecutó la importación atómica real mediante `import_v4_study_content`.
+## Estado V4 real de producción antes del import
 
-## Verificación V4 real
-
-Comprobación directa en Supabase tras el import:
+Comprobación directa actual en Supabase:
 
 - preguntas activas Tema 13: **144**;
-- unidades activas: **18**;
-- conceptos activos: **34**;
-- relaciones `primary`: **144**;
-- flashcards activas: **68**;
-- conceptos con al menos 4 preguntas primary: **34/34**;
-- `coverage_gap`: **0**;
-- conceptos con cobertura cero: **0**;
-- preguntas con más de un primary: **0**;
-- preguntas nuevas sin relación canónica: **0**.
+- unidades V4 activas: **0**;
+- conceptos V4 activos: **0**;
+- relaciones `primary` V4: **0**;
+- flashcards V4 activas: **0**.
 
-### Cobertura final por concepto
+Por tanto, la cobertura 34/34 es actualmente una propiedad validada del **paquete preparado**, no todavía una cobertura materializada en producción. No debe describirse como producción real hasta ejecutar y verificar `import_v4_study_content`.
+
+## Gate pendiente
+
+La importación V4 solo puede ejecutarse cuando el HEAD vigente del PR haya pasado el workflow estándar `Quality` (`bun run check`: tests + TypeScript + build). El run #108 del HEAD anterior terminó como `action_required` sin ejecutar jobs, por lo que no se considera un Quality verde y bloquea correctamente el import V4.
+
+Una vez exista un HEAD verde se seguirá, sin atajos, esta secuencia:
+
+1. preflight transaccional de `import_v4_study_content` con el JSON exacto del paquete validado y `ROLLBACK`;
+2. verificación de que producción sigue V4 0/0/0/0 tras el rollback;
+3. importación atómica real mediante `import_v4_study_content`;
+4. verificación directa de 18 unidades / 34 conceptos / 144 primary / 68 flashcards;
+5. cálculo de cobertura contra las filas reales de producción;
+6. pruebas de compatibilidad V2/V3 y advisors finales.
+
+## Cobertura esperada del paquete preparado
 
 | Concepto | Primary |
 |---|---:|
@@ -100,18 +114,11 @@ Comprobación directa en Supabase tras el import:
 | C28 | 4 |
 | C29 | 4 |
 
-Los conceptos sensibles de Gobernanza (`C03`, `C05`, `C30`, `C31`, `C06`, `C32`, `C17`, `C33`, `C25`, `C27`, `C34`, `C28`, `C29`) se inspeccionaron directamente tras el import y conservan las relaciones primary aprobadas.
-
-## Compatibilidad V2/V3
-
-Las 45 nuevas siguen siendo filas ordinarias de `public.questions`, con su jerarquía V2 normal y disponibles para los mecanismos ordinarios del banco. No se introdujo DDL ni se modificaron las funciones/rutas de creación de test, recomendación, selección inteligente o `complete_test`.
-
-Se verificó además que existen temas fuera de los pilotos V4 con preguntas activas y cero relaciones `question_concepts`, por lo que el mapeo V4 no se ha convertido en requisito global para utilizar una pregunta. `complete_test` se probó de forma reversible dentro de transacción cuando existía un test incompleto disponible; cualquier cambio de esa prueba se revirtió.
-
 ## Seguridad de ejecución
 
-- no hubo `INSERT` manual en `questions`;
-- no hubo `INSERT` manual en `study_units`, `concepts`, `question_concepts` ni `flashcards`;
-- no se aplicó DDL ni migración;
-- los intentos de transporte intermedios que no ofrecían garantías suficientes se descartaron antes de llamar al importador V4 y sus buffers efímeros se eliminaron;
-- la importación V4 real tomó únicamente el JSON cuyo tamaño y MD5 coincidían con el artefacto aprobado por CI.
+- no se ha hecho `INSERT` manual en `questions`;
+- no se hará `INSERT` manual en `study_units`, `concepts`, `question_concepts` ni `flashcards`;
+- no se ha aplicado DDL ni migración para T13-CONTENT.3;
+- el PR #62 permanece draft y sin fusionar;
+- no se ha iniciado trabajo de Tema 18 ni Tema 19;
+- no se ha modificado UI.
