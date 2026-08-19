@@ -2,6 +2,7 @@ import { jaccard } from "../similarity";
 import { calculateFactoryCoverage, type FactoryCoverageResult } from "./coverage";
 import type {
   ContentFactoryJob,
+  FactoryProposalConfidence,
   FactoryQuestionAssignment,
   ProposedConcept,
   ProposedStudyUnit,
@@ -12,6 +13,9 @@ export type Gate1ConceptReportRow = {
   unitCode: string;
   unitTitle: string;
   title: string;
+  description: string;
+  confidence: FactoryProposalConfidence;
+  sourceReferences: string[];
   questionCodes: string[];
   primaryCount: number;
   ready: boolean;
@@ -65,6 +69,10 @@ function detectTitleOverlaps(concepts: ProposedConcept[], threshold = 0.72) {
   return overlaps;
 }
 
+function displaySourceReferences(concept: ProposedConcept) {
+  return (concept.sourceRefs ?? []).map((source) => `${source.label}: ${source.reference}`);
+}
+
 export function buildGate1Report(input: {
   job: ContentFactoryJob;
   units: ProposedStudyUnit[];
@@ -99,6 +107,9 @@ export function buildGate1Report(input: {
       unitCode: concept.unitCode,
       unitTitle: unitByCode.get(concept.unitCode)?.title ?? "<unknown unit>",
       title: concept.title,
+      description: concept.description,
+      confidence: concept.confidence ?? "medium",
+      sourceReferences: displaySourceReferences(concept),
       questionCodes: [...(questionCodesByConcept.get(concept.code) ?? new Set())].sort(),
       primaryCount: row?.primaryQuestionCount ?? 0,
       ready: row?.status === "ready",
@@ -168,10 +179,10 @@ export function renderGate1ReportMarkdown(report: Gate1Report) {
     "",
     "## Conceptos",
     "",
-    "| Código | Unidad | Concepto | Primarias | Estado | Faltan | Solapamientos | Observaciones |",
-    "|---|---|---|---:|---|---:|---|---|",
+    "| Código | Unidad | Concepto | Primarias | Estado | Faltan | Fuente | Confianza | Solapamientos | Observaciones |",
+    "|---|---|---|---:|---|---:|---|---|---|---|",
     ...report.concepts.map((row) =>
-      `| ${row.code} | ${row.unitCode} · ${row.unitTitle} | ${row.title} | ${row.primaryCount} | ${row.ready ? "ready" : "coverage_gap"} | ${row.missing} | ${row.possibleOverlaps.join(", ") || "—"} | ${row.observations.join(" · ") || "—"} |`,
+      `| ${row.code} | ${row.unitCode} · ${row.unitTitle} | ${row.title} | ${row.primaryCount} | ${row.ready ? "ready" : "coverage_gap"} | ${row.missing} | ${row.sourceReferences.join(" · ") || "—"} | ${row.confidence} | ${row.possibleOverlaps.join(", ") || "—"} | ${row.observations.join(" · ") || "—"} |`,
     ),
   ];
   if (report.warnings.length > 0) {
