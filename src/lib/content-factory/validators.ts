@@ -33,6 +33,12 @@ function validSourceRef(source: V4SourceRef) {
   return !(source.pageStart != null && source.pageEnd != null && source.pageEnd < source.pageStart);
 }
 
+function belongsToCanonicalDocument(source: V4SourceRef, document: string) {
+  const needle = document.trim().toLocaleLowerCase("es");
+  if (!needle) return false;
+  return `${source.label} ${source.reference}`.toLocaleLowerCase("es").includes(needle);
+}
+
 export function validateContentFactoryJob(job: ContentFactoryJob): FactoryValidationResult {
   const errors: FactoryValidationIssue[] = [];
   const warnings: FactoryValidationIssue[] = [];
@@ -46,6 +52,24 @@ export function validateContentFactoryJob(job: ContentFactoryJob): FactoryValida
   if (job.coverageThreshold != null && (!Number.isInteger(job.coverageThreshold) || job.coverageThreshold < 1)) {
     errors.push({ code: "invalid_threshold", message: "coverageThreshold must be a positive integer." });
   }
+
+  if (job.sourcePolicy?.canonicalOnly) {
+    const canonicalDocument = job.sourcePolicy.document.trim();
+    if (!canonicalDocument) {
+      errors.push({ code: "missing_canonical_source", message: "A canonical-only source policy requires a document name." });
+    } else {
+      const nonCanonical = [...job.source, ...(job.references ?? [])].filter(
+        (source) => !belongsToCanonicalDocument(source, canonicalDocument),
+      );
+      if (nonCanonical.length > 0) {
+        errors.push({
+          code: "non_canonical_source",
+          message: `Canonical-only jobs may reference only ${canonicalDocument}; external or auxiliary content sources are not allowed.`,
+        });
+      }
+    }
+  }
+
   if (job.mode === "existing_bank" && (job.existingQuestions?.length ?? 0) === 0) {
     warnings.push({ code: "empty_existing_bank", message: "existing_bank has no questions to analyze." });
   }
