@@ -11,7 +11,7 @@ import {
 } from "./topic-18-approved-gate1";
 import {
   topic18GapQuestionCandidates,
-  topic18GapSourceReviewRequired,
+  topic18SourceReviewRequiredSlots,
 } from "./topic-18-gap-questions";
 import {
   topic18Gate1Concepts,
@@ -47,7 +47,6 @@ function canonicalUnit(unit: (typeof topic18Gate1Units)[number]): V4StudyUnitPac
     return {
       ...pilot,
       sourceRefs: unit.sourceRefs,
-      sourceSubtopicName: unit.title,
     };
   }
 
@@ -177,7 +176,7 @@ export const topic18Gate2Package = {
 export const topic18Gate2EditorialState = {
   approvedGate1: topic18ApprovedGate1Report,
   generatedQuestions: topic18GapQuestionCandidates.length,
-  blockedSourceReview: topic18GapSourceReviewRequired,
+  blockedSourceReview: topic18SourceReviewRequiredSlots,
   anchorUnits: [...ANCHOR_UNIT_CODES],
   anchorConcepts: [...ANCHOR_CONCEPT_CODES],
 } as const;
