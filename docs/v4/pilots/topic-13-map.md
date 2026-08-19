@@ -179,7 +179,11 @@ El aumento de 25 a 45 preguntas necesarias es intencional: deriva de priorizar p
 
 ## Lote dirigido T13-CONTENT.2
 
-Se preparan exactamente 45 candidatas, `SMS-T13-0100` a `SMS-T13-0144`, en `src/lib/v4-pilots/topic-13-coverage-gap-questions.ts`.
+Se preparan exactamente 45 candidatas, `SMS-T13-0100` a `SMS-T13-0144`.
+
+- generación inicial trazable: `src/lib/v4-pilots/topic-13-coverage-gap-questions.ts`;
+- lote final tras revisión editorial: `src/lib/v4-pilots/topic-13-coverage-gap-questions-reviewed.ts`;
+- auditoría código → dimensión → fuente: `docs/v4/pilots/topic-13-gap-question-audit.md`.
 
 Antes de reservar esos códigos se comprobó en Supabase que no existe ninguna pregunta del Tema 13 en ese rango.
 
