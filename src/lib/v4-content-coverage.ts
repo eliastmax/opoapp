@@ -39,12 +39,22 @@ export type V4CoverageAudit = {
  * Secondary mappings never satisfy the baseline mastery-coverage requirement.
  * A concept needs enough distinct primary questions to make the mastery model
  * measurable without relying on memorising one repeated question.
+ *
+ * Factory analysis may raise the threshold for a content job. The default stays
+ * tied to the live V4 mastery contract so existing callers keep identical behavior.
  */
 export function auditV4ConceptCoverage(input: {
   questions: V4CoverageQuestion[];
   concepts: V4CoverageConcept[];
   mappings: V4CoverageMapping[];
+  minimumPrimaryQuestions?: number;
 }): V4CoverageAudit {
+  const minimumPrimaryQuestions =
+    input.minimumPrimaryQuestions ?? V4_MASTERY_THRESHOLDS.minDistinctQuestions;
+  if (!Number.isInteger(minimumPrimaryQuestions) || minimumPrimaryQuestions < 1) {
+    throw new Error("minimumPrimaryQuestions must be a positive integer.");
+  }
+
   const activeQuestionIds = new Set(
     input.questions.filter((question) => question.active !== false).map((question) => question.id),
   );
@@ -83,7 +93,7 @@ export function auditV4ConceptCoverage(input: {
       const primaryQuestionCount = primaryQuestionsByConcept.get(conceptId)?.size ?? 0;
       const missingPrimaryQuestions = Math.max(
         0,
-        V4_MASTERY_THRESHOLDS.minDistinctQuestions - primaryQuestionCount,
+        minimumPrimaryQuestions - primaryQuestionCount,
       );
       return {
         conceptId,
