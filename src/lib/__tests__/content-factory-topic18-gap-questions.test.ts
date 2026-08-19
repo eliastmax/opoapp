@@ -23,6 +23,12 @@ function codeOf(candidate: (typeof topic18GapQuestionCandidates)[number]) {
   return String(candidate.v2.codigo);
 }
 
+function optionTexts(candidate: (typeof topic18GapQuestionCandidates)[number]) {
+  return ["opcion_a", "opcion_b", "opcion_c", "opcion_d"].map((key) =>
+    String(candidate.v2[key] ?? "").trim(),
+  );
+}
+
 describe("Content Factory Topic 18 directed gap generation", () => {
   test("preserves the exact mathematical deficit while refusing unsupported C29 paraphrases", () => {
     expect(topic18ApprovedGate1Report.summary.questionsNeeded).toBe(23);
@@ -60,6 +66,7 @@ describe("Content Factory Topic 18 directed gap generation", () => {
       concepts: topic18Gate1Concepts,
     });
     expect(qa.valid).toBe(true);
+    expect(qa.issues).toEqual([]);
     expect(qa.parser.validRows).toBe(20);
     expect(qa.parser.errors).toEqual([]);
     expect(qa.extremeAnswerImbalance).toBe(false);
@@ -77,6 +84,18 @@ describe("Content Factory Topic 18 directed gap generation", () => {
     expect(parsed.mode).toBe("v2");
     expect(parsed.valid).toHaveLength(20);
     expect(parsed.errors).toEqual([]);
+  });
+
+  test("adversarially avoids giveaway option patterns and gross length clues", () => {
+    for (const candidate of topic18GapQuestionCandidates) {
+      const options = optionTexts(candidate);
+      const normalized = options.map((option) => option.toLocaleLowerCase("es"));
+      expect(normalized.some((option) => /todas las anteriores|ninguna de las anteriores/.test(option))).toBe(false);
+      expect(normalized.some((option) => option.length < 20)).toBe(false);
+      const lengths = options.map((option) => option.length);
+      const ratio = Math.max(...lengths) / Math.min(...lengths);
+      expect(ratio).toBeLessThanOrEqual(2.3);
+    }
   });
 
   test("closes every generable gap and leaves only C29 visibly under-covered", () => {
