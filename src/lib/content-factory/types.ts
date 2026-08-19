@@ -11,6 +11,7 @@ export const DEFAULT_QUESTION_CODE_DIGITS = 4;
 
 export type ContentFactoryMode = "existing_bank" | "greenfield";
 export type FactoryGateStatus = "pending" | "approved" | "rejected";
+export type FactoryProposalConfidence = "low" | "medium" | "high";
 
 export type FactoryEditorialGate = {
   status: FactoryGateStatus;
@@ -61,6 +62,8 @@ export type ProposedStudyUnit = Pick<V4StudyUnitPackage, "code" | "title" | "pos
 };
 
 export type ProposedConcept = V4ConceptPackage & {
+  sourceRefs?: V4SourceRef[];
+  confidence?: FactoryProposalConfidence;
   overlapCandidates?: string[];
   observations?: string[];
 };
@@ -70,7 +73,7 @@ export type FactoryQuestionAssignment = {
   primaryConceptCode: string;
   secondaryConceptCodes?: string[];
   rationale?: string;
-  confidence?: "low" | "medium" | "high";
+  confidence?: FactoryProposalConfidence;
 };
 
 export const FACTORY_EVIDENCE_DIMENSIONS = [
@@ -117,6 +120,12 @@ export type ExistingBankCluster = {
   subapartado: string | null;
   conceptLabels: string[];
   learningObjectives: string[];
+  questionCodes: string[];
+  sourceReferences: string[];
+};
+
+export type ExistingBankSourceCluster = {
+  article: number;
   questionCodes: string[];
   sourceReferences: string[];
 };
