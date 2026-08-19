@@ -1,8 +1,14 @@
 // @ts-expect-error bun:test is provided by the Bun test runtime
 import { describe, expect, test } from "bun:test";
+import { HEADERS_V2, parseCsv } from "../csv-parser";
+import {
+  getAnswerKeyDistribution,
+  hasExtremeAnswerKeyImbalance,
+} from "../question-batch-quality";
 import { validateV4StudyContentPackage } from "../v4-content-package";
 import { topic13ReviewedCoverageGapQuestions } from "../v4-pilots/topic-13-coverage-gap-questions-reviewed";
 import { topic13EstatutoMarcoPackage } from "../v4-pilots/topic-13-estatuto-marco";
+import { topic13V2QuestionCandidates } from "../v4-pilots/topic-13-v2-question-candidates";
 
 describe("V4 Topic 13 Estatuto Marco package", () => {
   test("passes the portable content-package contract", () => {
@@ -17,6 +23,7 @@ describe("V4 Topic 13 Estatuto Marco package", () => {
     expect(topic13EstatutoMarcoPackage.questionMappings).toHaveLength(99);
     expect(topic13EstatutoMarcoPackage.flashcards).toHaveLength(68);
     expect(topic13ReviewedCoverageGapQuestions).toHaveLength(45);
+    expect(topic13V2QuestionCandidates).toHaveLength(45);
   });
 
   test("maps every original active bank question exactly once as primary", () => {
@@ -106,6 +113,58 @@ describe("V4 Topic 13 Estatuto Marco package", () => {
       expect(entry.pageEnd).toBeLessThanOrEqual(275);
       expect(entry.pageEnd).toBeGreaterThanOrEqual(entry.pageStart);
     }
+  });
+
+  test("balances stored answer positions because the current test renderer does not shuffle options", () => {
+    const keys = topic13ReviewedCoverageGapQuestions.map((entry) => entry.correctOption);
+    expect(getAnswerKeyDistribution(keys)).toEqual({ A: 11, B: 11, C: 11, D: 12 });
+    expect(hasExtremeAnswerKeyImbalance(keys)).toBe(false);
+
+    // Regression fixture: the Governance-audited 7/33/4/1 batch must fail the reusable guard.
+    const oldBiasedKeys = [
+      ...Array(7).fill("A"),
+      ...Array(33).fill("B"),
+      ...Array(4).fill("C"),
+      "D",
+    ] as Array<"A" | "B" | "C" | "D">;
+    expect(hasExtremeAnswerKeyImbalance(oldBiasedKeys)).toBe(true);
+  });
+
+  test("0106 covers the complete six-year exclusion in article 73.1.a", () => {
+    const q0106 = topic13ReviewedCoverageGapQuestions.find((entry) => entry.questionCode === "SMS-T13-0106");
+    expect(q0106).toBeDefined();
+    expect(q0106?.question).toContain("seis años");
+    expect(q0106?.explanation).toContain("no concurrir a selección para fijo");
+    expect(q0106?.explanation).toContain("estatutario temporal");
+    expect(q0106?.explanation).toContain("Administración pública");
+    expect(q0106?.explanation).toContain("fundaciones sanitarias");
+  });
+
+  test("every new question materializes as a complete, valid V2 25-column row", () => {
+    for (const row of topic13V2QuestionCandidates) {
+      expect(Object.keys(row)).toHaveLength(25);
+      for (const header of HEADERS_V2) {
+        const value = (row as unknown as Record<string, string | number>)[header];
+        expect(value).not.toBeUndefined();
+        expect(String(value).trim().length).toBeGreaterThan(0);
+      }
+    }
+
+    const quote = (value: string | number) => `"${String(value).replaceAll('"', '""')}"`;
+    const csv = [
+      HEADERS_V2.join(";"),
+      ...topic13V2QuestionCandidates.map((row) =>
+        HEADERS_V2.map((header) =>
+          quote((row as unknown as Record<string, string | number>)[header]),
+        ).join(";"),
+      ),
+    ].join("\n");
+
+    const parsed = parseCsv(csv);
+    if ("fatal" in parsed) throw new Error(parsed.fatal);
+    expect(parsed.mode).toBe("v2");
+    expect(parsed.valid).toHaveLength(45);
+    expect(parsed.errors).toEqual([]);
   });
 
   test("keeps fault prescription, sanction prescription and cancellation separate", () => {
