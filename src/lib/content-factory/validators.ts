@@ -1,5 +1,5 @@
 import type { V4SourceRef } from "../v4-content-package";
-import type { ContentFactoryJob, FactoryGates } from "./types";
+import type { ContentFactoryJob, FactoryGateStatus, FactoryGates } from "./types";
 
 export type FactoryValidationIssue = {
   code: string;
@@ -11,6 +11,20 @@ export type FactoryValidationResult = {
   errors: FactoryValidationIssue[];
   warnings: FactoryValidationIssue[];
 };
+
+export type FactoryPipelineState = {
+  structural: FactoryValidationResult;
+  generation: {
+    allowed: boolean;
+    blockers: FactoryValidationIssue[];
+  };
+  importReadiness: {
+    ready: boolean;
+    blockers: FactoryValidationIssue[];
+  };
+};
+
+const GATE_STATUSES = new Set<FactoryGateStatus>(["pending", "approved", "rejected"]);
 
 function validSourceRef(source: V4SourceRef) {
   if (!source.label.trim() || !source.reference.trim()) return false;
@@ -41,21 +55,67 @@ export function validateContentFactoryJob(job: ContentFactoryJob): FactoryValida
   return { valid: errors.length === 0, errors, warnings };
 }
 
+/**
+ * Distinguishes three different questions that were previously conflated:
+ * whether the gate object is structurally legitimate, whether generation may
+ * proceed, and whether an otherwise valid package is allowed to become import-ready.
+ *
+ * A normal editorial work-in-progress such as Gate 1 approved + Gate 2 pending is
+ * structurally valid and generation-enabled; it is simply not import-ready yet.
+ */
+export function evaluateFactoryPipelineState(gates: FactoryGates): FactoryPipelineState {
+  const structuralErrors: FactoryValidationIssue[] = [];
+  const conceptMapStatus = gates.conceptMap?.status as FactoryGateStatus | undefined;
+  const editorialQualityStatus = gates.editorialQuality?.status as FactoryGateStatus | undefined;
+
+  if (!conceptMapStatus || !GATE_STATUSES.has(conceptMapStatus)) {
+    structuralErrors.push({ code: "invalid_gate_1_status", message: "Gate 1 has an unsupported status." });
+  }
+  if (!editorialQualityStatus || !GATE_STATUSES.has(editorialQualityStatus)) {
+    structuralErrors.push({ code: "invalid_gate_2_status", message: "Gate 2 has an unsupported status." });
+  }
+
+  const generationBlockers: FactoryValidationIssue[] = [];
+  if (conceptMapStatus === "pending") {
+    generationBlockers.push({ code: "gate_1_pending", message: "Gate 1 conceptual map approval is required before generation." });
+  } else if (conceptMapStatus === "rejected") {
+    generationBlockers.push({ code: "gate_1_rejected", message: "Gate 1 conceptual map was rejected and must be revised before generation." });
+  } else if (conceptMapStatus !== "approved") {
+    generationBlockers.push({ code: "gate_1_invalid", message: "Gate 1 conceptual map status is invalid." });
+  }
+
+  const importBlockers = [...generationBlockers];
+  if (editorialQualityStatus === "pending") {
+    importBlockers.push({ code: "gate_2_pending", message: "Gate 2 editorial quality approval is required before import-ready output." });
+  } else if (editorialQualityStatus === "rejected") {
+    importBlockers.push({ code: "gate_2_rejected", message: "Gate 2 editorial quality was rejected and must be revised before import-ready output." });
+  } else if (editorialQualityStatus !== "approved") {
+    importBlockers.push({ code: "gate_2_invalid", message: "Gate 2 editorial quality status is invalid." });
+  }
+
+  const structurallyValid = structuralErrors.length === 0;
+  return {
+    structural: { valid: structurallyValid, errors: structuralErrors, warnings: [] },
+    generation: {
+      allowed: structurallyValid && generationBlockers.length === 0,
+      blockers: generationBlockers,
+    },
+    importReadiness: {
+      ready: structurallyValid && importBlockers.length === 0,
+      blockers: importBlockers,
+    },
+  };
+}
+
+/** @deprecated Prefer evaluateFactoryPipelineState() so pending gates are not confused with invalid structure. */
 export function validateFactoryGates(gates: FactoryGates): FactoryValidationResult {
-  const errors: FactoryValidationIssue[] = [];
-  if (gates.conceptMap.status !== "approved") {
-    errors.push({ code: "gate_1_not_approved", message: "Gate 1 conceptual map approval is required before generation/output." });
-  }
-  if (gates.editorialQuality.status !== "approved") {
-    errors.push({ code: "gate_2_not_approved", message: "Gate 2 editorial quality approval is required before import-ready output." });
-  }
-  return { valid: errors.length === 0, errors, warnings: [] };
+  return evaluateFactoryPipelineState(gates).structural;
 }
 
 export function generationAllowed(gates: FactoryGates) {
-  return gates.conceptMap.status === "approved";
+  return evaluateFactoryPipelineState(gates).generation.allowed;
 }
 
 export function importReadyAllowed(gates: FactoryGates) {
-  return gates.conceptMap.status === "approved" && gates.editorialQuality.status === "approved";
+  return evaluateFactoryPipelineState(gates).importReadiness.ready;
 }
