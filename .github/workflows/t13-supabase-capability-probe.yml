@@ -1,0 +1,30 @@
+name: T13 Supabase capability probe
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report Supabase secret availability
+        env:
+          ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PROJECT_URL: ${{ secrets.SUPABASE_URL }}
+          ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          for name in ACCESS_TOKEN DB_PASSWORD SERVICE_ROLE_KEY PROJECT_URL ANON_KEY; do
+            value="${!name}"
+            if [ -n "$value" ]; then
+              echo "$name=yes"
+            else
+              echo "$name=no"
+            fi
+          done
