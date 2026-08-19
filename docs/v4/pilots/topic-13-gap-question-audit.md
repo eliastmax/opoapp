@@ -11,7 +11,7 @@ El lote autoritativo se obtiene en `topic-13-coverage-gap-questions-reviewed.ts`
 - Conceptos con >=4 preguntas originales: 12.
 - Conceptos con gap antes del lote: 22.
 - Preguntas nuevas exactas necesarias: 45.
-- Cobertura prospectiva si se validan y dan de alta las 45: 34/34 conceptos con al menos 4 preguntas primarias.
+- Cobertura actual tras T13-CONTENT.3: 34/34 conceptos con al menos 4 preguntas primarias reales en producción.
 
 ## Posición de respuestas
 
