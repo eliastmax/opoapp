@@ -7,7 +7,7 @@ import {
 } from "../content-factory/consumers/topic-18-approved-gate1";
 import {
   topic18GapQuestionCandidates,
-  topic18GapSourceReviewRequired,
+  topic18SourceReviewRequiredSlots,
 } from "../content-factory/consumers/topic-18-gap-questions";
 import {
   topic18Gate2Concepts,
@@ -30,6 +30,7 @@ function semanticUnit(unit: (typeof topic18Gate2Units)[number]) {
     confusions: unit.confusions,
     traps: unit.traps,
     mnemonics: unit.mnemonics,
+    sourceSubtopicName: unit.sourceSubtopicName,
   };
 }
 
@@ -71,13 +72,13 @@ describe("Content Factory Topic 18 Gate 2 draft", () => {
   });
 
   test("does not materialize the three C29 source-review slots as questions or mappings", () => {
-    expect(topic18GapSourceReviewRequired.map((entry) => entry.questionCode)).toEqual([
+    expect(topic18SourceReviewRequiredSlots.map((entry) => entry.questionCode)).toEqual([
       "SMS-T18-0245",
       "SMS-T18-0246",
       "SMS-T18-0247",
     ]);
     const mapped = new Set(topic18Gate2Mappings.map((entry) => entry.questionCode));
-    for (const blocked of topic18GapSourceReviewRequired) expect(mapped.has(blocked.questionCode)).toBe(false);
+    for (const blocked of topic18SourceReviewRequiredSlots) expect(mapped.has(blocked.questionCode)).toBe(false);
   });
 
   test("keeps the existing pilot semantics while replacing only source provenance in the portable package", () => {
