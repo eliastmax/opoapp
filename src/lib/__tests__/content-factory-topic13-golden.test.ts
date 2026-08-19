@@ -34,7 +34,6 @@ describe("Content Factory Topic 13 golden regression", () => {
       assignments: pkg.questionMappings.map((mapping) => ({
         questionCode: mapping.questionCode,
         primaryConceptCode: mapping.primaryConceptCode,
-        secondaryConceptCodes: mapping.secondaryConceptCodes,
       })),
     });
     const packageValidation = validateV4StudyContentPackage(pkg);
