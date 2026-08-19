@@ -3,6 +3,7 @@ import { stableConceptCode, stableUnitCode } from "./codes";
 import type {
   ContentFactoryJob,
   ExistingBankCluster,
+  ExistingBankSourceCluster,
   FactoryQuestionAssignment,
   FactoryQuestionMetadata,
   ProposedConcept,
@@ -55,11 +56,53 @@ export function clusterExistingBankQuestions(
     .sort((a, b) => a.key.localeCompare(b.key));
 }
 
+/**
+ * Extracts article numbers from common legal references such as `art. 24.1` or
+ * `arts. 23 y 32`. Page numbers are deliberately ignored. The result is only a
+ * clustering signal: one question may legitimately appear in several source
+ * clusters and still receive exactly one primary concept after Gate 1 review.
+ */
+export function extractLegalArticleNumbers(reference: string | null | undefined): number[] {
+  const value = cleaned(reference);
+  if (!value) return [];
+  const marker = /\barts?\.?\s*/i.exec(value);
+  if (!marker || marker.index == null) return [];
+  const tail = value.slice(marker.index + marker[0].length);
+  const beforePages = tail.split(/\bpp?\.?\s*/i)[0] ?? tail;
+  const numbers = [...beforePages.matchAll(/\b(\d{1,3})(?:\.\d+)?\b/g)]
+    .map((match) => Number(match[1]))
+    .filter((entry) => Number.isInteger(entry) && entry > 0);
+  return [...new Set(numbers)];
+}
+
+export function clusterExistingBankBySourceArticle(
+  questions: FactoryQuestionMetadata[],
+): ExistingBankSourceCluster[] {
+  const groups = new Map<number, { codes: Set<string>; refs: Set<string> }>();
+  for (const question of questions.filter((entry) => entry.active !== false)) {
+    const sourceReference = cleaned(question.sourceReference);
+    for (const article of extractLegalArticleNumbers(sourceReference)) {
+      const bucket = groups.get(article) ?? { codes: new Set<string>(), refs: new Set<string>() };
+      bucket.codes.add(question.code);
+      if (sourceReference) bucket.refs.add(sourceReference);
+      groups.set(article, bucket);
+    }
+  }
+  return [...groups.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([article, bucket]) => ({
+      article,
+      questionCodes: [...bucket.codes].sort(),
+      sourceReferences: [...bucket.refs].sort(),
+    }));
+}
+
 export type PreliminaryConceptMap = {
   units: ProposedStudyUnit[];
   concepts: ProposedConcept[];
   assignments: FactoryQuestionAssignment[];
   clusters: ExistingBankCluster[];
+  sourceClusters: ExistingBankSourceCluster[];
   warnings: string[];
 };
 
@@ -70,11 +113,12 @@ export type PreliminaryConceptMap = {
  */
 export function proposePreliminaryConceptMap(job: ContentFactoryJob): PreliminaryConceptMap {
   if (job.mode !== "existing_bank") {
-    return { units: [], concepts: [], assignments: [], clusters: [], warnings: [] };
+    return { units: [], concepts: [], assignments: [], clusters: [], sourceClusters: [], warnings: [] };
   }
 
   const questions = job.existingQuestions ?? [];
   const clusters = clusterExistingBankQuestions(questions);
+  const sourceClusters = clusterExistingBankBySourceArticle(questions);
   const unitTitles = sortedUnique(
     questions.map((question) => cleaned(question.apartado) ?? cleaned(question.subapartado)),
   );
@@ -114,6 +158,7 @@ export function proposePreliminaryConceptMap(job: ContentFactoryJob): Preliminar
       title: seed.title,
       description: `Semilla derivada de metadatos V2 (${seed.count} pregunta${seed.count === 1 ? "" : "s"}).`,
       position: index + 1,
+      confidence: "low",
       observations: ["No canónico hasta aprobación de Gate 1."],
     };
   });
@@ -145,5 +190,5 @@ export function proposePreliminaryConceptMap(job: ContentFactoryJob): Preliminar
     warnings.push("Hay preguntas sin etiqueta conceptual textual; requieren revisión de clustering.");
   }
 
-  return { units, concepts, assignments, clusters, warnings };
+  return { units, concepts, assignments, clusters, sourceClusters, warnings };
 }
