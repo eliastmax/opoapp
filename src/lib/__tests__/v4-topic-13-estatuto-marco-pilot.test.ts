@@ -1,7 +1,7 @@
 // @ts-expect-error bun:test is provided by the Bun test runtime
 import { describe, expect, test } from "bun:test";
 import { validateV4StudyContentPackage } from "../v4-content-package";
-import { topic13CoverageGapQuestions } from "../v4-pilots/topic-13-coverage-gap-questions";
+import { topic13ReviewedCoverageGapQuestions } from "../v4-pilots/topic-13-coverage-gap-questions-reviewed";
 import { topic13EstatutoMarcoPackage } from "../v4-pilots/topic-13-estatuto-marco";
 
 describe("V4 Topic 13 Estatuto Marco package", () => {
@@ -16,7 +16,7 @@ describe("V4 Topic 13 Estatuto Marco package", () => {
     expect(topic13EstatutoMarcoPackage.concepts).toHaveLength(34);
     expect(topic13EstatutoMarcoPackage.questionMappings).toHaveLength(99);
     expect(topic13EstatutoMarcoPackage.flashcards).toHaveLength(68);
-    expect(topic13CoverageGapQuestions).toHaveLength(45);
+    expect(topic13ReviewedCoverageGapQuestions).toHaveLength(45);
   });
 
   test("maps every original active bank question exactly once as primary", () => {
@@ -48,13 +48,10 @@ describe("V4 Topic 13 Estatuto Marco package", () => {
     expect(mappings("SMS-T13-C05")).toEqual(["SMS-T13-0018"]);
     expect(mappings("SMS-T13-C30")).toEqual(["SMS-T13-0019"]);
     expect(mappings("SMS-T13-C31")).toEqual(["SMS-T13-0020"]);
-
     expect(mappings("SMS-T13-C06")).toEqual(["SMS-T13-0021", "SMS-T13-0022"]);
     expect(mappings("SMS-T13-C32")).toEqual(["SMS-T13-0023"]);
-
     expect(mappings("SMS-T13-C17")).toEqual(["SMS-T13-0059"]);
     expect(mappings("SMS-T13-C33")).toEqual(["SMS-T13-0060", "SMS-T13-0061"]);
-
     expect(mappings("SMS-T13-C27")).toEqual(["SMS-T13-0094"]);
     expect(mappings("SMS-T13-C34")).toEqual(["SMS-T13-0095"]);
   });
@@ -71,10 +68,10 @@ describe("V4 Topic 13 Estatuto Marco package", () => {
     expect(result.warnings.filter((warning) => warning.code === "coverage_gap")).toHaveLength(22);
   });
 
-  test("the directed candidate batch closes every gap to exactly four questions", () => {
+  test("the reviewed candidate batch closes every gap to exactly four questions", () => {
     const result = validateV4StudyContentPackage(topic13EstatutoMarcoPackage);
     const candidatesByConcept = new Map<string, number>();
-    for (const candidate of topic13CoverageGapQuestions) {
+    for (const candidate of topic13ReviewedCoverageGapQuestions) {
       candidatesByConcept.set(candidate.conceptCode, (candidatesByConcept.get(candidate.conceptCode) ?? 0) + 1);
     }
 
@@ -89,15 +86,15 @@ describe("V4 Topic 13 Estatuto Marco package", () => {
     }
   });
 
-  test("candidate questions are unique, source-backed and structurally reviewable", () => {
-    const codes = topic13CoverageGapQuestions.map((entry) => entry.questionCode);
-    const stems = topic13CoverageGapQuestions.map((entry) => entry.question);
+  test("reviewed candidate questions are unique, source-backed and structurally reviewable", () => {
+    const codes = topic13ReviewedCoverageGapQuestions.map((entry) => entry.questionCode);
+    const stems = topic13ReviewedCoverageGapQuestions.map((entry) => entry.question);
     expect(new Set(codes).size).toBe(45);
     expect(new Set(stems).size).toBe(45);
     expect(codes[0]).toBe("SMS-T13-0100");
     expect(codes[44]).toBe("SMS-T13-0144");
 
-    for (const entry of topic13CoverageGapQuestions) {
+    for (const entry of topic13ReviewedCoverageGapQuestions) {
       expect(entry.options).toHaveLength(4);
       expect(new Set(entry.options).size).toBe(4);
       expect(["A", "B", "C", "D"]).toContain(entry.correctOption);
