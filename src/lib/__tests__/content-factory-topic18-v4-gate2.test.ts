@@ -4,10 +4,10 @@ import { validateV4StudyContentPackage } from "../v4-content-package";
 import {
   topic18Gate2Concepts,
   topic18Gate2Flashcards,
-  topic18Gate2QuestionMappings,
+  topic18Gate2Mappings,
+  topic18Gate2Package,
   topic18Gate2Units,
-  topic18Gate2V4Package,
-} from "../content-factory/consumers/topic-18-v4-gate2";
+} from "../content-factory/consumers/topic-18-v4-content";
 import { topic18SilencePilotPackage } from "../v4-pilots/topic-18-silence";
 
 function withoutSourceRefs<T extends { sourceRefs?: unknown }>(value: T) {
@@ -19,9 +19,9 @@ describe("Content Factory Topic 18 Gate 2 V4 draft", () => {
   test("materializes the approved 16-unit / 44-concept map with canonical-only sources", () => {
     expect(topic18Gate2Units).toHaveLength(16);
     expect(topic18Gate2Concepts).toHaveLength(44);
-    expect(topic18Gate2QuestionMappings).toHaveLength(260);
-    expect(new Set(topic18Gate2QuestionMappings.map((entry) => entry.questionCode)).size).toBe(260);
-    expect(topic18Gate2Flashcards).toHaveLength(52);
+    expect(topic18Gate2Mappings).toHaveLength(260);
+    expect(new Set(topic18Gate2Mappings.map((entry) => entry.questionCode)).size).toBe(260);
+    expect(topic18Gate2Flashcards).toHaveLength(93);
     expect(
       topic18Gate2Units.flatMap((unit) => unit.sourceRefs).every((ref) => `${ref.label} ${ref.reference}`.includes("Temario_new.pdf")),
     ).toBe(true);
@@ -48,24 +48,25 @@ describe("Content Factory Topic 18 Gate 2 V4 draft", () => {
   });
 
   test("maps 0239 to C30, maps all generated questions, and never invents blocked C29 rows", () => {
-    expect(topic18Gate2QuestionMappings.find((entry) => entry.questionCode === "SMS-T18-0239")?.primaryConceptCode).toBe("SMS-T18-C30");
+    expect(topic18Gate2Mappings.find((entry) => entry.questionCode === "SMS-T18-0239")?.primaryConceptCode).toBe("SMS-T18-C30");
     for (let code = 241; code <= 263; code += 1) {
       const questionCode = `SMS-T18-${String(code).padStart(4, "0")}`;
       if ([245, 246, 247].includes(code)) {
-        expect(topic18Gate2QuestionMappings.some((entry) => entry.questionCode === questionCode)).toBe(false);
+        expect(topic18Gate2Mappings.some((entry) => entry.questionCode === questionCode)).toBe(false);
       } else {
-        expect(topic18Gate2QuestionMappings.some((entry) => entry.questionCode === questionCode)).toBe(true);
+        expect(topic18Gate2Mappings.some((entry) => entry.questionCode === questionCode)).toBe(true);
       }
     }
   });
 
-  test("gives every canonical concept study-card support", () => {
-    const cardConceptCodes = new Set(topic18Gate2Flashcards.map((card) => card.conceptCode));
-    expect(topic18Gate2Concepts.every((concept) => cardConceptCodes.has(concept.code))).toBe(true);
+  test("gives every canonical concept at least two study cards", () => {
+    for (const concept of topic18Gate2Concepts) {
+      expect(topic18Gate2Flashcards.filter((card) => card.conceptCode === concept.code).length).toBeGreaterThanOrEqual(2);
+    }
   });
 
   test("passes V4 structural validation and leaves only the honest C29 coverage gap", () => {
-    const validation = validateV4StudyContentPackage(topic18Gate2V4Package);
+    const validation = validateV4StudyContentPackage(topic18Gate2Package);
     expect(validation.valid).toBe(true);
     expect(validation.errors).toEqual([]);
     expect(validation.coverage.underCoveredConceptIds).toEqual(["SMS-T18-C29"]);
