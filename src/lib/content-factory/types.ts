@@ -25,6 +25,13 @@ export type FactoryGates = {
   editorialQuality: FactoryEditorialGate;
 };
 
+export type FactoryCanonicalSourcePolicy = {
+  canonicalOnly: true;
+  document: string;
+  /** External verification is a separate governance task and never implicit. */
+  externalVerificationAllowed?: false;
+};
+
 export type FactoryQuestionMetadata = {
   code: string;
   active?: boolean;
@@ -52,18 +59,21 @@ export type ContentFactoryJob = {
   sourceRevision?: string | null;
   source: V4SourceRef[];
   references?: V4SourceRef[];
+  sourcePolicy?: FactoryCanonicalSourcePolicy;
   existingQuestions?: FactoryQuestionMetadata[];
 };
 
 export type ProposedStudyUnit = Pick<V4StudyUnitPackage, "code" | "title" | "position"> & {
   sourceSubtopicName?: string | null;
   sourceRefs: V4SourceRef[];
+  sourceReviewRequired?: boolean;
   observations?: string[];
 };
 
 export type ProposedConcept = V4ConceptPackage & {
   sourceRefs?: V4SourceRef[];
   confidence?: FactoryProposalConfidence;
+  sourceReviewRequired?: boolean;
   overlapCandidates?: string[];
   observations?: string[];
 };
@@ -74,6 +84,7 @@ export type FactoryQuestionAssignment = {
   secondaryConceptCodes?: string[];
   rationale?: string;
   confidence?: FactoryProposalConfidence;
+  sourceReviewRequired?: boolean;
 };
 
 export const FACTORY_EVIDENCE_DIMENSIONS = [
