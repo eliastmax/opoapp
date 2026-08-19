@@ -11,12 +11,12 @@ import type { V4SourceRef } from "../../v4-content-package";
 const TOPIC_TITLE =
   "La Ley 39/2015, de 1 de octubre, del Procedimiento Administrativo Común de las Administraciones Públicas (I). La actividad de las Administraciones Públicas: normas generales de actuación; términos y plazos. Los actos administrativos.";
 
-function refs(article: string, pageStart: number, pageEnd = pageStart): V4SourceRef[] {
+function sourceRef(article: string, pageStart: number, pageEnd = pageStart): V4SourceRef[] {
+  const pages = pageStart === pageEnd ? `p. ${pageStart}` : `pp. ${pageStart}-${pageEnd}`;
   return [
-    { label: "BOE — Ley 39/2015 consolidada", reference: `BOE-A-2015-10565, ${article}` },
     {
-      label: "Temario principal",
-      reference: pageStart === pageEnd ? `Temario_new.pdf, p. ${pageStart}` : `Temario_new.pdf, pp. ${pageStart}-${pageEnd}`,
+      label: "Temario_new.pdf",
+      reference: `Temario_new.pdf, ${article}, ${pages}`,
       pageStart,
       pageEnd,
     },
@@ -32,7 +32,7 @@ function unit(
   pageEnd = pageStart,
   observations: string[] = [],
 ): ProposedStudyUnit {
-  return { code, title, position, sourceRefs: refs(article, pageStart, pageEnd), observations };
+  return { code, title, position, sourceRefs: sourceRef(article, pageStart, pageEnd), observations };
 }
 
 function concept(
@@ -54,14 +54,16 @@ function concept(
     title,
     description,
     position,
-    sourceRefs: refs(article, pageStart, pageEnd),
+    sourceRefs: sourceRef(article, pageStart, pageEnd),
     confidence,
     overlapCandidates,
     observations,
   };
 }
 
-const questionCodes = Array.from({ length: 240 }, (_, index) => `SMS-T18-${String(index + 1).padStart(4, "0")}`);
+const questionCodes = Array.from({ length: 240 }, (_, index) =>
+  `SMS-T18-${String(index + 1).padStart(4, "0")}`,
+);
 
 export const topic18Gate1Job: ContentFactoryJob = {
   version: "1.0",
@@ -71,8 +73,13 @@ export const topic18Gate1Job: ContentFactoryJob = {
   mode: "existing_bank",
   codePrefix: "SMS-T18",
   coverageThreshold: 4,
-  sourceRevision: "BOE-A-2015-10565 consolidado (última actualización publicada 2024-11-06); contraste con Temario_new.pdf y banco V2 productivo realizado para CONTENT-FACTORY.2",
-  source: refs("arts. 13-52", 113, 149),
+  sourceRevision: "Temario_new.pdf · Tema 18 · pp. 113-149 · fuente canónica exclusiva",
+  sourcePolicy: {
+    canonicalOnly: true,
+    document: "Temario_new.pdf",
+    externalVerificationAllowed: false,
+  },
+  source: sourceRef("Tema 18, arts. 13-52", 113, 149),
   existingQuestions: questionCodes.map((code) => ({ code, active: true })),
 };
 
@@ -112,24 +119,24 @@ export const topic18Gate1Units: ProposedStudyUnit[] = [
 ];
 
 export const topic18Gate1Concepts: ProposedConcept[] = [
-  concept("SMS-T18-C01", "SMS-T18-U01", "Derechos de las personas ante las Administraciones", "Catálogo y alcance de los derechos generales del artículo 13.", 1, "art. 13", 113, 114),
-  concept("SMS-T18-C02", "SMS-T18-U01", "Derecho y obligación de relación electrónica", "Elección del canal, sujetos obligados y posible imposición reglamentaria de medios electrónicos.", 2, "art. 14", 114, 115),
-  concept("SMS-T18-C03", "SMS-T18-U02", "Lengua de los procedimientos", "Lengua de tramitación, derechos lingüísticos y reglas cuando concurren varias personas interesadas.", 3, "art. 15", 115, 116),
-  concept("SMS-T18-C04", "SMS-T18-U02", "Registro electrónico: estructura, asientos y recibos", "Creación del registro, interoperabilidad, contenido de asientos y recibos de presentación.", 4, "art. 16.1-3", 116, 117, "medium"),
-  concept("SMS-T18-C05", "SMS-T18-U02", "Presentación, digitalización, pagos y oficinas de registro", "Lugares y medios de presentación, digitalización, pagos y asistencia en materia de registros.", 5, "art. 16.4-8", 117, 118, "medium"),
-  concept("SMS-T18-C06", "SMS-T18-U03", "Archivo electrónico único", "Archivo de documentos electrónicos, conservación, seguridad, formatos y eliminación autorizada.", 6, "art. 17", 119),
-  concept("SMS-T18-C07", "SMS-T18-U03", "Colaboración de las personas", "Deberes de colaboración, inspección y límites derivados de derechos y legislación aplicable.", 7, "art. 18", 119, 120),
-  concept("SMS-T18-C08", "SMS-T18-U03", "Comparecencia ante oficinas públicas", "Exigencia legal, citación y certificación de comparecencia.", 8, "art. 19", 120),
-  concept("SMS-T18-C09", "SMS-T18-U03", "Responsabilidad de la tramitación", "Responsabilidad directa de titulares y personal encargado, impulso y remoción de obstáculos.", 9, "art. 20", 120),
-  concept("SMS-T18-C10", "SMS-T18-U04", "Obligación de resolver, excepciones y responsabilidad", "Deber de resolución expresa, excepciones y consecuencias de su incumplimiento.", 10, "art. 21.1 y 21.6", 121, 122, "medium"),
-  concept("SMS-T18-C11", "SMS-T18-U04", "Plazo máximo, inicio, información y medios", "Determinación del plazo máximo, cómputo inicial, información al interesado y medios personales/materiales.", 11, "art. 21.2-5", 121, 122, "medium", ["SMS-T18-C13"]),
-  concept("SMS-T18-C12", "SMS-T18-U05", "Suspensión del plazo máximo", "Supuestos potestativos y obligatorios de suspensión y duración de sus efectos.", 12, "art. 22", 122, 124),
-  concept("SMS-T18-C13", "SMS-T18-U06", "Ampliación excepcional del plazo máximo", "Presupuestos, límite, competencia y diferencia respecto de otras ampliaciones de trámites.", 13, "art. 23", 124, 124, "medium", ["SMS-T18-C11", "SMS-T18-C23"], ["Las preguntas 0137 y 0226 cruzan esta regla con los artículos 32 y 21.5; revisar primary definitivo."]),
+  concept("SMS-T18-C01", "SMS-T18-U01", "Derechos de las personas ante las Administraciones", "Derechos generales de las personas en sus relaciones con las Administraciones Públicas.", 1, "art. 13", 113, 114),
+  concept("SMS-T18-C02", "SMS-T18-U01", "Derecho y obligación de relación electrónica", "Reglas del derecho y de la obligación de relacionarse electrónicamente con las Administraciones.", 2, "art. 14", 114, 115),
+  concept("SMS-T18-C03", "SMS-T18-U02", "Lengua de los procedimientos", "Reglas sobre lengua de tramitación y derechos lingüísticos en el procedimiento.", 3, "art. 15", 115, 116),
+  concept("SMS-T18-C04", "SMS-T18-U02", "Registro electrónico: estructura, asientos y recibos", "Estructura del registro electrónico, asientos y recibos de presentación.", 4, "art. 16.1-3", 116, 117, "medium"),
+  concept("SMS-T18-C05", "SMS-T18-U02", "Presentación, digitalización, pagos y oficinas de registro", "Presentación de documentos y reglas relacionadas con digitalización, pagos y oficinas de asistencia.", 5, "art. 16.4-8", 117, 118, "medium"),
+  concept("SMS-T18-C06", "SMS-T18-U03", "Archivo electrónico único", "Reglas del archivo electrónico de documentos de procedimientos finalizados.", 6, "art. 17", 119),
+  concept("SMS-T18-C07", "SMS-T18-U03", "Colaboración de las personas", "Deberes y límites de colaboración de las personas con la Administración.", 7, "art. 18", 119, 120),
+  concept("SMS-T18-C08", "SMS-T18-U03", "Comparecencia ante oficinas públicas", "Reglas de comparecencia de las personas ante oficinas públicas.", 8, "art. 19", 120),
+  concept("SMS-T18-C09", "SMS-T18-U03", "Responsabilidad de la tramitación", "Responsabilidad e impulso de quienes tienen a su cargo la tramitación.", 9, "art. 20", 120),
+  concept("SMS-T18-C10", "SMS-T18-U04", "Obligación de resolver, excepciones y responsabilidad", "Obligación de resolución expresa, excepciones y responsabilidad por incumplimiento.", 10, "art. 21.1 y 21.6", 121, 122, "medium"),
+  concept("SMS-T18-C11", "SMS-T18-U04", "Plazo máximo, inicio, información y medios", "Reglas del plazo máximo para resolver y notificar y de su comunicación.", 11, "art. 21.2-5", 121, 122, "medium", ["SMS-T18-C13"]),
+  concept("SMS-T18-C12", "SMS-T18-U05", "Suspensión del plazo máximo", "Supuestos y efectos de suspensión del plazo máximo para resolver.", 12, "art. 22", 122, 124),
+  concept("SMS-T18-C13", "SMS-T18-U06", "Ampliación excepcional del plazo máximo", "Presupuestos y límites de la ampliación excepcional del plazo máximo para resolver.", 13, "art. 23", 124, 124, "medium", ["SMS-T18-C11", "SMS-T18-C23"], ["Las preguntas 0137 y 0226 cruzan reglas de plazo; revisar primary definitivo."]),
   concept(
     "SMS-T18-C14",
     "SMS-T18-U07",
     "Regla y excepciones del silencio a solicitud",
-    "Regla estimatoria, supuestos desestimatorios y excepciones del artículo 24.1.",
+    "Sentido general del silencio en procedimientos iniciados a solicitud y excepciones recogidas en el temario.",
     14,
     "art. 24.1",
     125,
@@ -141,8 +148,8 @@ export const topic18Gate1Concepts: ProposedConcept[] = [
   concept(
     "SMS-T18-C15",
     "SMS-T18-U07",
-    "Efectos, resolución posterior y acreditación",
-    "Efectos del silencio, sentido de la resolución posterior y acreditación/certificado.",
+    "Efectos, resolución posterior y acreditación del silencio",
+    "Efectos del silencio, resolución posterior y acreditación del acto presunto según el temario.",
     15,
     "art. 24.2-4",
     125,
@@ -155,7 +162,7 @@ export const topic18Gate1Concepts: ProposedConcept[] = [
     "SMS-T18-C16",
     "SMS-T18-U08",
     "Falta de resolución en procedimientos de oficio",
-    "Efectos de la falta de resolución según el tipo de procedimiento iniciado de oficio.",
+    "Efectos de la falta de resolución en procedimientos iniciados de oficio.",
     16,
     "art. 25",
     126,
@@ -164,34 +171,34 @@ export const topic18Gate1Concepts: ProposedConcept[] = [
     [],
     ["Concepto productivo existente; se conserva exactamente como ancla."],
   ),
-  concept("SMS-T18-C17", "SMS-T18-U09", "Emisión de documentos administrativos", "Requisitos de validez, emisión electrónica e identificación de documentos administrativos.", 17, "art. 26", 127),
-  concept("SMS-T18-C18", "SMS-T18-U09", "Copias auténticas", "Competencia, validez, solicitud, digitalización y efectos de las copias auténticas.", 18, "art. 27", 128, 130),
-  concept("SMS-T18-C19", "SMS-T18-U09", "Documentos aportados por los interesados", "Derecho a no aportar, consulta, aportación excepcional y responsabilidad sobre la veracidad documental.", 19, "art. 28", 130, 131),
+  concept("SMS-T18-C17", "SMS-T18-U09", "Emisión de documentos administrativos", "Reglas de emisión de documentos por las Administraciones Públicas.", 17, "art. 26", 127),
+  concept("SMS-T18-C18", "SMS-T18-U09", "Copias auténticas", "Validez y eficacia de las copias realizadas por las Administraciones Públicas.", 18, "art. 27", 128, 130),
+  concept("SMS-T18-C19", "SMS-T18-U09", "Documentos aportados por los interesados", "Reglas sobre documentos aportados por las personas interesadas al procedimiento.", 19, "art. 28", 130, 131),
   concept("SMS-T18-C20", "SMS-T18-U10", "Obligatoriedad y cómputo por horas y días", "Obligatoriedad de términos y plazos y reglas de cómputo por horas y días.", 20, "arts. 29 y 30.1-3", 132, 133, "medium"),
-  concept("SMS-T18-C21", "SMS-T18-U10", "Cómputo por meses/años y días inhábiles", "Reglas de fecha a fecha, vencimiento, inhábiles y calendarios.", 21, "art. 30.4-8", 133, 134, "medium", ["SMS-T18-C22"]),
-  concept("SMS-T18-C22", "SMS-T18-U10", "Cómputo de plazos en registros electrónicos", "Fecha y hora oficial, presentación en inhábiles y orden de entrada en registro electrónico.", 22, "art. 31", 134, 135, "medium", ["SMS-T18-C21"], ["La pregunta 0236 integra calendario territorial y registro; revisar primary definitivo."]),
-  concept("SMS-T18-C23", "SMS-T18-U11", "Ampliación de plazos de trámites", "Regla general, límite, notificación y régimen de ampliación del artículo 32.", 23, "art. 32", 135, 136, "medium", ["SMS-T18-C13", "SMS-T18-C24"]),
-  concept("SMS-T18-C24", "SMS-T18-U11", "Tramitación de urgencia", "Reducción de plazos, excepciones y relación con otras reglas de plazo.", 24, "art. 33", 136, 136, "medium", ["SMS-T18-C23"], ["Las preguntas 0154 y 0237 contienen contraste con motivación/ampliación; revisar primary definitivo."]),
-  concept("SMS-T18-C25", "SMS-T18-U12", "Producción y contenido de los actos", "Competencia, requisitos y adecuación del contenido al ordenamiento y al fin del acto.", 25, "art. 34", 136, 136, "medium", ["SMS-T18-C26"]),
-  concept("SMS-T18-C26", "SMS-T18-U12", "Motivación de los actos", "Supuestos que exigen motivación y suficiencia de hechos y fundamentos de derecho.", 26, "art. 35", 137, 138, "medium", ["SMS-T18-C25"], ["La pregunta 0238 integra potestad discrecional y límites del contenido; revisar frontera C25/C26."]),
-  concept("SMS-T18-C27", "SMS-T18-U12", "Forma de los actos", "Regla escrita, actos verbales y constancia cuando procede una serie de actos.", 27, "art. 36", 138),
-  concept("SMS-T18-C28", "SMS-T18-U13", "Inderogabilidad singular", "Prohibición de excepcionar singularmente una disposición general y consecuencias de la vulneración.", 28, "art. 37", 138, 139),
-  concept("SMS-T18-C29", "SMS-T18-U13", "Ejecutividad de los actos", "Regla de ejecutividad y distinción frente a firmeza o eficacia demorada.", 29, "art. 38", 139, 139, "medium", ["SMS-T18-C30"], ["La pregunta 0239 contrasta ejecutividad y eficacia demorada; revisar primary definitivo."]),
-  concept("SMS-T18-C30", "SMS-T18-U13", "Eficacia, demora y retroactividad", "Presunción de validez, eficacia desde la fecha, eficacia demorada y retroactividad favorable.", 30, "art. 39.1-3", 139, 140, "medium", ["SMS-T18-C29"]),
-  concept("SMS-T18-C31", "SMS-T18-U13", "Efectos en otras Administraciones y actuaciones de ejecución", "Observancia por otras Administraciones y requerimiento de cooperación para ejecutar actos.", 31, "art. 39.4-5", 140, 140, "medium"),
-  concept("SMS-T18-C32", "SMS-T18-U14", "Notificación: obligación, contenido y defectos", "Plazo, contenido mínimo y tratamiento de notificaciones con contenido incompleto.", 32, "art. 40", 140),
-  concept("SMS-T18-C33", "SMS-T18-U14", "Condiciones generales de las notificaciones", "Medio elegido u obligatorio, garantías, avisos, comparecencia espontánea y pluralidad de cauces.", 33, "art. 41", 141, 143, "medium"),
-  concept("SMS-T18-C34", "SMS-T18-U15", "Notificaciones en papel", "Entrega, segundo intento, domicilio y acceso electrónico complementario.", 34, "art. 42", 143),
-  concept("SMS-T18-C35", "SMS-T18-U15", "Notificaciones electrónicas", "Comparecencia electrónica, puesta a disposición, acceso y rechazo por transcurso del plazo.", 35, "art. 43", 144),
-  concept("SMS-T18-C36", "SMS-T18-U15", "Notificación infructuosa", "Publicación en BOE cuando los interesados son desconocidos o la notificación resulta imposible.", 36, "art. 44", 145),
-  concept("SMS-T18-C37", "SMS-T18-U15", "Publicación de actos", "Supuestos, contenido y efectos de la publicación sustitutiva o complementaria.", 37, "art. 45", 145),
-  concept("SMS-T18-C38", "SMS-T18-U15", "Protección en notificaciones y publicaciones", "Indicación somera y publicación separada cuando la publicidad puede lesionar derechos o intereses legítimos.", 38, "art. 46", 146),
-  concept("SMS-T18-C39", "SMS-T18-U16", "Nulidad de pleno derecho", "Causas de nulidad de actos y disposiciones administrativas y sus fronteras.", 39, "art. 47", 146, 147),
-  concept("SMS-T18-C40", "SMS-T18-U16", "Anulabilidad", "Infracción del ordenamiento, desviación de poder y reglas sobre defectos de forma y plazo.", 40, "art. 48", 147, 148),
-  concept("SMS-T18-C41", "SMS-T18-U16", "Límites a la extensión de la invalidez", "Invalidez parcial, independencia de actos sucesivos y partes separables.", 41, "art. 49", 148),
-  concept("SMS-T18-C42", "SMS-T18-U16", "Conversión de actos viciados", "Efectos de un acto nulo o anulable que reúne los elementos constitutivos de otro acto distinto.", 42, "art. 50", 148),
-  concept("SMS-T18-C43", "SMS-T18-U16", "Conservación de actos y trámites", "Conservación de actuaciones cuyo contenido habría permanecido igual sin la infracción.", 43, "art. 51", 148),
-  concept("SMS-T18-C44", "SMS-T18-U16", "Convalidación", "Convalidación de actos anulables, efectos y reglas especiales por incompetencia o falta de autorización.", 44, "art. 52", 148, 149),
+  concept("SMS-T18-C21", "SMS-T18-U10", "Cómputo por meses/años y días inhábiles", "Reglas de cómputo por meses o años y tratamiento de días inhábiles.", 21, "art. 30.4-8", 133, 134, "medium", ["SMS-T18-C22"]),
+  concept("SMS-T18-C22", "SMS-T18-U10", "Cómputo de plazos en registros electrónicos", "Reglas de cómputo de plazos vinculadas a los registros electrónicos.", 22, "art. 31", 134, 135, "medium", ["SMS-T18-C21"], ["La pregunta 0236 integra calendario y registro; revisar primary definitivo."]),
+  concept("SMS-T18-C23", "SMS-T18-U11", "Ampliación de plazos de trámites", "Reglas de ampliación de plazos de trámites del artículo 32.", 23, "art. 32", 135, 136, "medium", ["SMS-T18-C13", "SMS-T18-C24"]),
+  concept("SMS-T18-C24", "SMS-T18-U11", "Tramitación de urgencia", "Reglas y efectos de la tramitación de urgencia.", 24, "art. 33", 136, 136, "medium", ["SMS-T18-C23"], ["Las preguntas 0154 y 0237 contienen contraste con otras reglas de plazo; revisar primary definitivo."]),
+  concept("SMS-T18-C25", "SMS-T18-U12", "Producción y contenido de los actos", "Producción y contenido de los actos administrativos.", 25, "art. 34", 136, 136, "medium", ["SMS-T18-C26"]),
+  concept("SMS-T18-C26", "SMS-T18-U12", "Motivación de los actos", "Supuestos y requisitos de motivación de los actos administrativos.", 26, "art. 35", 137, 138, "medium", ["SMS-T18-C25"], ["La pregunta 0238 integra reglas próximas de producción y motivación; revisar primary definitivo."]),
+  concept("SMS-T18-C27", "SMS-T18-U12", "Forma de los actos", "Reglas sobre la forma de los actos administrativos.", 27, "art. 36", 138),
+  concept("SMS-T18-C28", "SMS-T18-U13", "Inderogabilidad singular", "Regla de inderogabilidad singular de disposiciones generales.", 28, "art. 37", 138, 139),
+  concept("SMS-T18-C29", "SMS-T18-U13", "Ejecutividad de los actos", "Regla de ejecutividad de los actos administrativos.", 29, "art. 38", 139, 139, "medium", ["SMS-T18-C30"], ["La pregunta 0239 contrasta ejecutividad y eficacia; revisar primary definitivo."]),
+  concept("SMS-T18-C30", "SMS-T18-U13", "Eficacia, demora y retroactividad", "Reglas generales de eficacia de los actos, eficacia demorada y retroactividad.", 30, "art. 39.1-3", 139, 140, "medium", ["SMS-T18-C29"]),
+  concept("SMS-T18-C31", "SMS-T18-U13", "Efectos en otras Administraciones y actuaciones de ejecución", "Reglas del artículo 39 sobre efectos respecto de otras Administraciones y actuaciones de ejecución.", 31, "art. 39.4-5", 140, 140, "medium"),
+  concept("SMS-T18-C32", "SMS-T18-U14", "Notificación: obligación, contenido y defectos", "Obligación de notificar, contenido y tratamiento de defectos de la notificación.", 32, "art. 40", 140),
+  concept("SMS-T18-C33", "SMS-T18-U14", "Condiciones generales de las notificaciones", "Condiciones generales para la práctica de las notificaciones.", 33, "art. 41", 141, 143, "medium"),
+  concept("SMS-T18-C34", "SMS-T18-U15", "Notificaciones en papel", "Práctica de las notificaciones en papel.", 34, "art. 42", 143),
+  concept("SMS-T18-C35", "SMS-T18-U15", "Notificaciones electrónicas", "Práctica de las notificaciones a través de medios electrónicos.", 35, "art. 43", 144),
+  concept("SMS-T18-C36", "SMS-T18-U15", "Notificación infructuosa", "Régimen de la notificación infructuosa.", 36, "art. 44", 145),
+  concept("SMS-T18-C37", "SMS-T18-U15", "Publicación de actos", "Supuestos y régimen de publicación de actos administrativos.", 37, "art. 45", 145),
+  concept("SMS-T18-C38", "SMS-T18-U15", "Protección en notificaciones y publicaciones", "Reglas de indicación en notificaciones y publicaciones cuando concurren los supuestos del artículo 46.", 38, "art. 46", 146),
+  concept("SMS-T18-C39", "SMS-T18-U16", "Nulidad de pleno derecho", "Supuestos de nulidad de pleno derecho recogidos en el temario.", 39, "art. 47", 146, 147),
+  concept("SMS-T18-C40", "SMS-T18-U16", "Anulabilidad", "Régimen de anulabilidad de los actos administrativos.", 40, "art. 48", 147, 148),
+  concept("SMS-T18-C41", "SMS-T18-U16", "Límites a la extensión de la invalidez", "Límites a la extensión de nulidad o anulabilidad de actos.", 41, "art. 49", 148),
+  concept("SMS-T18-C42", "SMS-T18-U16", "Conversión de actos viciados", "Regla de conversión de actos viciados.", 42, "art. 50", 148),
+  concept("SMS-T18-C43", "SMS-T18-U16", "Conservación de actos y trámites", "Regla de conservación de actos y trámites.", 43, "art. 51", 148),
+  concept("SMS-T18-C44", "SMS-T18-U16", "Convalidación", "Régimen de convalidación de actos anulables.", 44, "art. 52", 148, 149),
 ];
 
 const questionGroups: Record<string, string[]> = {
@@ -251,7 +258,7 @@ export const topic18Gate1Assignments: FactoryQuestionAssignment[] = Object.entri
       questionCode: fullCode(suffix),
       primaryConceptCode,
       confidence: topic18Gate1Concepts.find((entry) => entry.code === primaryConceptCode)?.confidence ?? "medium",
-      rationale: "Asignación preliminar por fuente legal, metadatos V2 y frontera conceptual propuesta; pendiente de Gate 1.",
+      rationale: "Asignación preliminar por referencias de Temario_new.pdf y metadatos V2; pendiente de Gate 1.",
     })),
 );
 
