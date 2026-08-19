@@ -15,6 +15,7 @@ export type Gate1ConceptReportRow = {
   title: string;
   description: string;
   confidence: FactoryProposalConfidence;
+  sourceReviewRequired: boolean;
   sourceReferences: string[];
   questionCodes: string[];
   primaryCount: number;
@@ -36,6 +37,7 @@ export type Gate1Report = {
     readyConcepts: number;
     readyPercent: number;
     coverageGaps: number;
+    sourceReviewRequired: number;
     unmappedQuestions: number;
     duplicatePrimaryQuestions: number;
     invalidConceptMappings: number;
@@ -109,6 +111,7 @@ export function buildGate1Report(input: {
       title: concept.title,
       description: concept.description,
       confidence: concept.confidence ?? "medium",
+      sourceReviewRequired: concept.sourceReviewRequired === true,
       sourceReferences: displaySourceReferences(concept),
       questionCodes: [...(questionCodesByConcept.get(concept.code) ?? new Set())].sort(),
       primaryCount: row?.primaryQuestionCount ?? 0,
@@ -122,11 +125,13 @@ export function buildGate1Report(input: {
 
   const counts = concepts.map((concept) => concept.primaryCount);
   const readyConcepts = concepts.filter((concept) => concept.ready).length;
+  const sourceReviewRequired = concepts.filter((concept) => concept.sourceReviewRequired).length;
   const warnings: string[] = [];
   if (coverage.mappingQa.unmappedQuestionCodes.length > 0) warnings.push("There are active questions without a primary concept.");
   if (coverage.mappingQa.duplicatePrimaryQuestionCodes.length > 0) warnings.push("There are questions with multiple primary assignments.");
   if (coverage.mappingQa.invalidConceptMappings.length > 0) warnings.push("There are mappings to concepts outside the proposed map.");
   if (concepts.some((concept) => concept.possibleOverlaps.length > 0)) warnings.push("Possible overlapping concept titles require Gate 1 review.");
+  if (sourceReviewRequired > 0) warnings.push("Some concepts are marked source_review_required; do not resolve them from external sources.");
 
   return {
     job: {
@@ -144,6 +149,7 @@ export function buildGate1Report(input: {
       readyConcepts,
       readyPercent: concepts.length === 0 ? 0 : (readyConcepts / concepts.length) * 100,
       coverageGaps: concepts.length - readyConcepts,
+      sourceReviewRequired,
       unmappedQuestions: coverage.mappingQa.unmappedQuestionCodes.length,
       duplicatePrimaryQuestions: coverage.mappingQa.duplicatePrimaryQuestionCodes.length,
       invalidConceptMappings: coverage.mappingQa.invalidConceptMappings.length,
@@ -172,6 +178,7 @@ export function renderGate1ReportMarkdown(report: Gate1Report) {
     `- Mediana: ${s.medianPrimaryQuestions}`,
     `- Ready: ${s.readyConcepts}/${s.concepts} (${s.readyPercent.toFixed(1)}%)`,
     `- Coverage gaps: ${s.coverageGaps}`,
+    `- source_review_required: ${s.sourceReviewRequired}`,
     `- Sin asignar: ${s.unmappedQuestions}`,
     `- Múltiples primary: ${s.duplicatePrimaryQuestions}`,
     `- Mappings a concepto inválido: ${s.invalidConceptMappings}`,
@@ -179,10 +186,10 @@ export function renderGate1ReportMarkdown(report: Gate1Report) {
     "",
     "## Conceptos",
     "",
-    "| Código | Unidad | Concepto | Primarias | Estado | Faltan | Fuente | Confianza | Solapamientos | Observaciones |",
-    "|---|---|---|---:|---|---:|---|---|---|---|",
+    "| Código | Unidad | Concepto | Primarias | Estado | Faltan | Fuente | Confianza | Source review | Solapamientos | Observaciones |",
+    "|---|---|---|---:|---|---:|---|---|---|---|---|",
     ...report.concepts.map((row) =>
-      `| ${row.code} | ${row.unitCode} · ${row.unitTitle} | ${row.title} | ${row.primaryCount} | ${row.ready ? "ready" : "coverage_gap"} | ${row.missing} | ${row.sourceReferences.join(" · ") || "—"} | ${row.confidence} | ${row.possibleOverlaps.join(", ") || "—"} | ${row.observations.join(" · ") || "—"} |`,
+      `| ${row.code} | ${row.unitCode} · ${row.unitTitle} | ${row.title} | ${row.primaryCount} | ${row.ready ? "ready" : "coverage_gap"} | ${row.missing} | ${row.sourceReferences.join(" · ") || "—"} | ${row.confidence} | ${row.sourceReviewRequired ? "source_review_required" : "—"} | ${row.possibleOverlaps.join(", ") || "—"} | ${row.observations.join(" · ") || "—"} |`,
     ),
   ];
   if (report.warnings.length > 0) {
