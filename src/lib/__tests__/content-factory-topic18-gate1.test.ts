@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   topic18Gate1Assignments,
   topic18Gate1Concepts,
+  topic18Gate1Job,
   topic18Gate1Report,
   topic18Gate1Units,
 } from "../content-factory/consumers/topic-18-gate1";
@@ -31,6 +32,18 @@ describe("Content Factory Topic 18 Gate 1 consumer", () => {
     expect(topic18Gate1Report.summary.duplicatePrimaryQuestions).toBe(0);
     expect(topic18Gate1Report.summary.invalidConceptMappings).toBe(0);
     expect(topic18Gate1Report.summary.invalidQuestionMappings).toBe(0);
+  });
+
+  test("uses Temario_new.pdf as the sole canonical substantive source", () => {
+    expect(topic18Gate1Job.sourcePolicy).toEqual({
+      canonicalOnly: true,
+      document: "Temario_new.pdf",
+      externalVerificationAllowed: false,
+    });
+    expect(topic18Gate1Job.source.every((entry) => `${entry.label} ${entry.reference}`.includes("Temario_new.pdf"))).toBe(true);
+    expect(topic18Gate1Units.flatMap((entry) => entry.sourceRefs).every((entry) => `${entry.label} ${entry.reference}`.includes("Temario_new.pdf"))).toBe(true);
+    expect(topic18Gate1Concepts.flatMap((entry) => entry.sourceRefs ?? []).every((entry) => `${entry.label} ${entry.reference}`.includes("Temario_new.pdf"))).toBe(true);
+    expect(topic18Gate1Report.summary.sourceReviewRequired).toBe(0);
   });
 
   test("produces the reviewed Gate 1 dimensions and exact coverage arithmetic", () => {
