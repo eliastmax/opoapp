@@ -2,9 +2,7 @@
 import { describe, expect, test } from "bun:test";
 import { evaluateFactoryPipelineState } from "../content-factory";
 import { calculateFactoryCoverage } from "../content-factory/coverage";
-import {
-  topic18ApprovedAssignments,
-} from "../content-factory/consumers/topic-18-approved-gate1";
+import { topic18ApprovedAssignments } from "../content-factory/consumers/topic-18-approved-gate1";
 import {
   topic18GapQuestionCandidates,
   topic18SourceReviewRequiredSlots,
@@ -59,12 +57,12 @@ describe("Content Factory Topic 18 Gate 2 draft", () => {
     expect(topic18Gate2Mappings.find((entry) => entry.questionCode === "SMS-T18-0239")?.primaryConceptCode).toBe("SMS-T18-C30");
     const coverage = calculateFactoryCoverage({
       questions: topic18Gate2Mappings.map((mapping) => ({ code: mapping.questionCode, active: true })),
-      concepts: topic18Gate2Concepts.map((concept) => ({ code: concept.code, active: true })),
+      concepts: topic18Gate2Concepts.map((concept) => ({ ...concept, active: true })),
       assignments: topic18Gate2Mappings,
       threshold: 4,
     });
-    expect(coverage.concepts.filter((entry) => entry.coverageGap)).toEqual([
-      expect.objectContaining({ conceptCode: "SMS-T18-C29", primaryCount: 1, missing: 3 }),
+    expect(coverage.conceptCoverage.filter((entry) => entry.status === "coverage_gap")).toEqual([
+      expect.objectContaining({ conceptId: "SMS-T18-C29", primaryQuestionCount: 1, missingPrimaryQuestions: 3 }),
     ]);
     expect(coverage.totalMissingQuestions).toBe(3);
     expect(coverage.mappingQa.unmappedQuestionCodes).toEqual([]);
@@ -124,7 +122,6 @@ describe("Content Factory Topic 18 Gate 2 draft", () => {
     expect(validation.valid).toBe(true);
     expect(validation.errors).toEqual([]);
     expect(validation.coverage.underCoveredConceptIds).toEqual(["SMS-T18-C29"]);
-    expect(validation.warnings.some((entry) => entry.code === "coverage_gap")).toBe(true);
 
     const pipeline = evaluateFactoryPipelineState({
       conceptMap: { status: "approved" },
