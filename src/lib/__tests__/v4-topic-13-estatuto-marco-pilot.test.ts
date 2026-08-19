@@ -48,7 +48,7 @@ describe("V4 Topic 13 Estatuto Marco materialized package", () => {
     const result = validateV4StudyContentPackage(topic13EstatutoMarcoMaterializedPackage);
     const ready = result.coverage.conceptCoverage.filter((row) => row.status === "ready");
     const gaps = result.coverage.conceptCoverage.filter((row) => row.status === "coverage_gap");
-    const zero = result.coverage.conceptCoverage.filter((row) => row.status === "zero_coverage");
+    const zero = result.coverage.conceptCoverage.filter((row) => row.primaryQuestionCount === 0);
 
     expect(result.coverage.activeQuestionCount).toBe(144);
     expect(result.coverage.mappedPrimaryQuestionCount).toBe(144);
