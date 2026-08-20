@@ -3,12 +3,8 @@ import { jaccard, normalizeText } from "../similarity";
 import { extractLegalArticleNumbers } from "./analyze-existing-bank";
 import { stableConceptCode, stableUnitCode } from "./codes";
 import { artifactsAffectedBySubject, stableFactoryExceptionId } from "./exceptions";
-import { runContentFactoryTopic } from "./fast-pipeline";
 import type {
   FactoryException,
-  FactoryFastPipelineInput,
-  FactoryFastPipelineOperations,
-  FactoryFastPipelineRun,
   FactoryStructuralDraft,
 } from "./fast-pipeline-types";
 import type {
@@ -693,21 +689,6 @@ export function buildSemanticTopicDraft(input: BuildSemanticTopicDraftInput): Se
     blockers: dedupedExceptions.filter((exception) => exception.blocker).length,
   };
   return { version: CONTENT_FACTORY_SEMANTIC_DRAFT_VERSION, topic: { oppositionCode: input.job.oppositionCode, topicNumber: input.job.topicNumber, topicTitle: input.job.topicTitle, codePrefix: input.job.codePrefix }, sourcePolicy: policy, units, concepts, mappings, unitProposals, conceptProposals, mappingProposals, studyScaffolds, semanticExceptions: dedupedExceptions, metrics, structuralDraft: { units, concepts, assignments: mappings } };
-}
-
-export function runContentFactoryTopicFromSemanticDraft(input: Omit<FactoryFastPipelineInput, "draft" | "extraExceptions"> & { semanticDraft: SemanticTopicDraft; operations?: FactoryFastPipelineOperations }): FactoryFastPipelineRun {
-  return runContentFactoryTopic({
-    ...input,
-    draft: {
-      units: input.semanticDraft.units,
-      concepts: input.semanticDraft.concepts,
-      assignments: input.semanticDraft.mappings,
-      content: null,
-      generatedQuestions: [],
-    },
-    extraExceptions: input.semanticDraft.semanticExceptions,
-    operations: input.operations,
-  });
 }
 
 export type SemanticGoldenBenchmark = {
