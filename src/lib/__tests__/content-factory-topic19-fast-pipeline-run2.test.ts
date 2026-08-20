@@ -48,4 +48,16 @@ describe("Content Factory Topic 19 FAST PIPELINE RUN 2", () => {
       expect(String(row.referencia_fuente)).toContain("Temario_new.pdf");
     }
   });
+
+  test("normalizes only hierarchy labels for import_questions_batch", () => {
+    expect(topic19ProductionPlan.v2QuestionsForImport).toHaveLength(5);
+    topic19ProductionPlan.v2QuestionsForImport.forEach((transport, index) => {
+      const approved = topic19ProductionPlan.v2Questions[index];
+      expect(transport.materia).toBe("Ley 39/2015 — Procedimiento administrativo común");
+      expect(String(transport.tema)).toStartWith("La Ley 39/2015, de 1 de octubre");
+      const { materia: _m1, tema: _t1, ...transportSubstantive } = transport;
+      const { materia: _m2, tema: _t2, ...approvedSubstantive } = approved;
+      expect(transportSubstantive).toEqual(approvedSubstantive);
+    });
+  });
 });
