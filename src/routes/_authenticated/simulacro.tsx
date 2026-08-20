@@ -60,7 +60,11 @@ function SimulacroPage() {
       if (simulation.selected_count < questionCount) {
         toast.warning(`El banco solo permite usar ${simulation.selected_count} preguntas`);
       }
-      navigate({ to: "/test/$id", params: { id: simulation.test_id } });
+      navigate({
+        to: "/test/$id",
+        params: { id: simulation.test_id },
+        search: { block: undefined, session: undefined },
+      });
     } catch (error) {
       toast.error((error as Error).message);
       setStarting(false);

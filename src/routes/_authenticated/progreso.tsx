@@ -65,6 +65,8 @@ import {
   type ProgressMapTopic,
 } from "@/lib/progress-map";
 import { cn } from "@/lib/utils";
+import { formatDueDate } from "@/lib/v4-experience";
+import type { V4TodayContextRow } from "@/lib/v4-today-plan";
 
 export const Route = createFileRoute("/_authenticated/progreso")({
   component: ProgresoPage,
@@ -134,23 +136,28 @@ function ProgresoPage() {
       "verified-progress-v1.0",
       "learning-stages-v2.0",
       "retention-v1.0",
+      "mastery-v4.0",
     ],
     queryFn: async () => {
-      const [progressResult, verifiedResult, stagesResult, retentionResult] = await Promise.all([
-        supabase.rpc("get_topic_progress_summary"),
-        supabase.rpc("get_verified_progress_summary"),
-        supabase.rpc("get_learning_stage_progress"),
-        supabase.rpc("get_retention_review_summary"),
-      ]);
+      const [progressResult, verifiedResult, stagesResult, retentionResult, v4Result] =
+        await Promise.all([
+          supabase.rpc("get_topic_progress_summary"),
+          supabase.rpc("get_verified_progress_summary"),
+          supabase.rpc("get_learning_stage_progress"),
+          supabase.rpc("get_retention_review_summary"),
+          supabase.rpc("prepare_my_v4_today_context"),
+        ]);
       if (progressResult.error) throw progressResult.error;
       if (verifiedResult.error) throw verifiedResult.error;
       if (stagesResult.error) throw stagesResult.error;
       if (retentionResult.error) throw retentionResult.error;
+      if (v4Result.error) throw v4Result.error;
       return {
         progress: progressResult.data ?? [],
         verified: verifiedResult.data ?? [],
         stages: stagesResult.data ?? [],
         retention: (retentionResult.data ?? []) as RetentionSummaryRow[],
+        v4: (v4Result.data ?? []) as V4TodayContextRow[],
       };
     },
   });
@@ -175,7 +182,9 @@ function ProgresoPage() {
     <div className="space-y-4">
       <header className="pt-2">
         <h1 className="text-2xl font-bold">Progreso</h1>
-        <p className="text-sm text-muted-foreground">Tu mapa de preparación por tema</p>
+        <p className="text-sm text-muted-foreground">
+          Qué sabes, qué necesita atención y qué viene después
+        </p>
       </header>
 
       {isLoading ? (
@@ -200,6 +209,7 @@ function ProgresoPage() {
         </Card>
       ) : (
         <>
+          <V4KnowledgeOverview rows={data?.v4 ?? []} />
           <ProgressMapOverview entries={mapEntries} />
 
           <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Filtrar temas">
@@ -624,6 +634,66 @@ function LearningStagesProgress({ row }: { row: LearningStageProgress }) {
         </div>
       )}
     </div>
+  );
+}
+
+function V4KnowledgeOverview({ rows }: { rows: V4TodayContextRow[] }) {
+  if (rows.length === 0) return null;
+  const unique = [...new Map(rows.map((row) => [row.concept_id, row])).values()];
+  const counts = {
+    unseen: unique.filter((row) => row.state === "unseen").length,
+    seen: unique.filter((row) => row.state === "seen").length,
+    verifying: unique.filter((row) => row.state === "verifying").length,
+    consolidating: unique.filter((row) => row.state === "consolidating").length,
+    retained: unique.filter((row) => row.state === "retained").length,
+  };
+  const attention = unique.filter((row) => row.needs_attention).length;
+  const nextDue =
+    unique
+      .map((row) => row.next_review_on)
+      .filter((value): value is string => Boolean(value))
+      .sort()[0] ?? null;
+  return (
+    <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-card to-primary/6 p-0">
+      <div className="p-4">
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
+          Conocimiento real
+        </p>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <Metric label="En comprobación" value={counts.verifying} />
+          <Metric label="Consolidando" value={counts.consolidating} />
+          <Metric label="Retenidos" value={counts.retained} />
+        </div>
+        <div
+          className="mt-3 h-2 overflow-hidden rounded-full bg-muted"
+          aria-label="Distribución del conocimiento"
+        >
+          <div className="flex h-full">
+            {(
+              [counts.seen, counts.verifying, counts.consolidating, counts.retained] as number[]
+            ).map((count, index) => (
+              <span
+                key={index}
+                className={["bg-sky-300", "bg-sky-500", "bg-primary", "bg-success"][index]}
+                style={{ width: `${(count / unique.length) * 100}%` }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 divide-x border-t bg-background/50 text-xs">
+        <div className="p-3">
+          <p className="font-bold">
+            {attention > 0 ? `${attention} necesitan atención` : "Sin alertas activas"}
+          </p>
+          <p className="mt-0.5 text-muted-foreground">Debilidades recientes</p>
+        </div>
+        <div className="p-3">
+          <p className="font-bold">{nextDue ? formatDueDate(nextDue) : "Sin fecha pendiente"}</p>
+          <p className="mt-0.5 text-muted-foreground">Próxima revisión</p>
+        </div>
+      </div>
+    </Card>
   );
 }
 

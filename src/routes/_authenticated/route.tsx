@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, redirect, Link, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Home, PlusSquare, Gauge, Upload, Settings } from "lucide-react";
+import { Home, PlusSquare, Gauge, BookOpen, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -14,27 +14,31 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 const nav = [
-  { to: "/inicio", label: "Inicio", icon: Home },
-  { to: "/crear", label: "Crear", icon: PlusSquare },
+  { to: "/inicio", label: "Hoy", icon: Home },
+  { to: "/estudio", label: "Estudio", icon: BookOpen },
+  { to: "/crear", label: "Practicar", icon: PlusSquare },
   { to: "/progreso", label: "Progreso", icon: Gauge },
-  { to: "/importar", label: "Importar", icon: Upload },
   { to: "/ajustes", label: "Ajustes", icon: Settings },
 ] as const;
 
 function AuthLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const testInProgress = pathname.startsWith("/test/");
+  const focusedJourney =
+    pathname.startsWith("/test/") ||
+    pathname.startsWith("/sesion") ||
+    pathname.startsWith("/estudiar/") ||
+    pathname.startsWith("/recordar/");
   return (
     <div className="min-h-screen flex flex-col">
       <main
         className={cn(
-          "flex-1 w-full max-w-md mx-auto px-4 pt-4",
-          testInProgress ? "pb-24" : "pb-28",
+          "flex-1 w-full max-w-md mx-auto px-4 pt-[calc(env(safe-area-inset-top,0px)+1rem)]",
+          focusedJourney ? "pb-6" : "pb-28",
         )}
       >
         <Outlet />
       </main>
-      {!testInProgress && (
+      {!focusedJourney && (
         <nav className="fixed bottom-0 inset-x-0 border-t border-border/80 bg-card/90 backdrop-blur-xl safe-bottom z-40 shadow-[0_-10px_30px_-24px_oklch(0.28_0.08_250/0.5)]">
           <div className="max-w-md mx-auto grid grid-cols-5 px-1">
             {nav.map((item) => {
@@ -45,7 +49,7 @@ function AuthLayout() {
                   key={item.to}
                   to={item.to}
                   className={cn(
-                    "group flex flex-col items-center justify-center gap-1 py-2 min-h-14 text-[11px] font-medium transition-colors",
+                    "group flex min-h-14 flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium transition-colors sm:text-[11px]",
                     active ? "text-primary" : "text-muted-foreground",
                   )}
                 >

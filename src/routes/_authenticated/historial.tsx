@@ -176,8 +176,16 @@ function HistoryCard({
   };
 }) {
   const linkProps = test.completado
-    ? { to: "/resultados/$id" as const, params: { id: test.id } }
-    : { to: "/test/$id" as const, params: { id: test.id } };
+    ? {
+        to: "/resultados/$id" as const,
+        params: { id: test.id },
+        search: { block: undefined, session: undefined },
+      }
+    : {
+        to: "/test/$id" as const,
+        params: { id: test.id },
+        search: { block: undefined, session: undefined },
+      };
   const percentage = Number(test.porcentaje ?? 0);
   const isSimulation = test.tipo === "simulacro";
   const isMultiTopic = test.tipo.startsWith("multitema_");

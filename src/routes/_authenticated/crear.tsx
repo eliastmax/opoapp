@@ -275,7 +275,11 @@ function CrearPage() {
           toast.warning("No había preguntas compatibles de los tres niveles para este formato");
         }
 
-        navigate({ to: "/test/$id", params: { id: created.test_id } });
+        navigate({
+          to: "/test/$id",
+          params: { id: created.test_id },
+          search: { block: undefined, session: undefined },
+        });
         return;
       }
 
@@ -301,7 +305,11 @@ function CrearPage() {
             `El test cubre ${created.covered_topic_count} de ${created.requested_topic_count} temas por falta de preguntas compatibles`,
           );
         }
-        navigate({ to: "/test/$id", params: { id: created.test_id } });
+        navigate({
+          to: "/test/$id",
+          params: { id: created.test_id },
+          search: { block: undefined, session: undefined },
+        });
         return;
       }
 
@@ -321,7 +329,11 @@ function CrearPage() {
           toast.warning(`Solo hay ${created.selected_count} preguntas disponibles`);
         }
 
-        navigate({ to: "/test/$id", params: { id: created.test_id } });
+        navigate({
+          to: "/test/$id",
+          params: { id: created.test_id },
+          search: { block: undefined, session: undefined },
+        });
         return;
       }
 
@@ -402,7 +414,11 @@ function CrearPage() {
       const { error: eAns } = await supabase.from("test_answers").insert(answers);
       if (eAns) throw eAns;
 
-      navigate({ to: "/test/$id", params: { id: test.id } });
+      navigate({
+        to: "/test/$id",
+        params: { id: test.id },
+        search: { block: undefined, session: undefined },
+      });
     } catch (e) {
       toast.error((e as Error).message);
       setStarting(false);

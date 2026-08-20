@@ -53,6 +53,10 @@ import {
 } from "@/lib/result-impact";
 
 export const Route = createFileRoute("/_authenticated/resultados/$id")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    block: typeof search.block === "string" ? search.block : undefined,
+    session: typeof search.session === "string" ? search.session : undefined,
+  }),
   component: ResultadosPage,
 });
 
@@ -90,8 +94,25 @@ type AnswerRow = {
 
 function ResultadosPage() {
   const { id } = Route.useParams();
+  const search = Route.useSearch();
   const navigate = useNavigate();
   const [tab, setTab] = useState<"fallos" | "dudas" | "todas">("fallos");
+  const [continuingSession, setContinuingSession] = useState(false);
+
+  async function continueGuidedSession() {
+    if (!search.block) return;
+    setContinuingSession(true);
+    const result = await supabase.rpc("complete_my_v4_daily_block", {
+      p_block_id: search.block,
+      p_linked_test_id: id,
+    });
+    if (result.error) {
+      toast.error(result.error.message);
+      setContinuingSession(false);
+      return;
+    }
+    navigate({ to: "/sesion" });
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ["resultados", id],
@@ -208,7 +229,11 @@ function ResultadosPage() {
       toast.error(answersError.message);
       return;
     }
-    navigate({ to: "/test/$id", params: { id: newTest.id } });
+    navigate({
+      to: "/test/$id",
+      params: { id: newTest.id },
+      search: { block: undefined, session: undefined },
+    });
   }
 
   async function repetirDudas() {
@@ -263,7 +288,11 @@ function ResultadosPage() {
       toast.error(answersError.message);
       return;
     }
-    navigate({ to: "/test/$id", params: { id: newTest.id } });
+    navigate({
+      to: "/test/$id",
+      params: { id: newTest.id },
+      search: { block: undefined, session: undefined },
+    });
   }
 
   async function copyTestReport() {
@@ -536,14 +565,25 @@ function ResultadosPage() {
             Siguiente paso
           </div>
           <h2 className="mt-1 font-bold">
-            {t.fallos > 0
-              ? "Refuerza ahora las respuestas falladas"
-              : dudosas.length > 0
-                ? "Aclara las respuestas que dejaste con duda"
-                : "Continúa con una nueva sesión"}
+            {search.block
+              ? "OpoTest ya ha registrado esta comprobación"
+              : t.fallos > 0
+                ? "Refuerza ahora las respuestas falladas"
+                : dudosas.length > 0
+                  ? "Aclara las respuestas que dejaste con duda"
+                  : "Continúa con una nueva sesión"}
           </h2>
         </div>
-        {revisar.length > 0 ? (
+        {search.block ? (
+          <Button
+            className="h-12 w-full"
+            disabled={continuingSession}
+            onClick={() => void continueGuidedSession()}
+          >
+            {continuingSession ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Continuar sesión <ArrowRight className="h-4 w-4" />
+          </Button>
+        ) : revisar.length > 0 ? (
           <Button asChild className="h-12 w-full">
             <a href="#revision">
               {falladas.length > 0
@@ -559,20 +599,22 @@ function ResultadosPage() {
             </Button>
           </Link>
         )}
-        <div className="flex items-center justify-center gap-3 text-xs font-medium">
-          {revisar.length > 0 && (
-            <Link to="/crear" className="text-primary hover:underline">
-              Otro test
+        {!search.block && (
+          <div className="flex items-center justify-center gap-3 text-xs font-medium">
+            {revisar.length > 0 && (
+              <Link to="/crear" className="text-primary hover:underline">
+                Otro test
+              </Link>
+            )}
+            {revisar.length > 0 && <span className="text-muted-foreground/50">·</span>}
+            <Link
+              to="/inicio"
+              className="text-muted-foreground hover:text-foreground hover:underline"
+            >
+              Terminar por hoy
             </Link>
-          )}
-          {revisar.length > 0 && <span className="text-muted-foreground/50">·</span>}
-          <Link
-            to="/inicio"
-            className="text-muted-foreground hover:text-foreground hover:underline"
-          >
-            Terminar por hoy
-          </Link>
-        </div>
+          </div>
+        )}
       </Card>
 
       {revisar.length > 0 && reviewBlock}
