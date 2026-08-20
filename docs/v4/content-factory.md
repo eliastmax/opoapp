@@ -21,6 +21,7 @@ Los importadores productivos siguen fuera de la Factory y detrás de la frontera
 - `types.ts`: job, metadatos V2, conceptos, mappings, dimensiones y contenido;
 - `analyze-existing-bank.ts`: análisis/clustering preliminar legacy;
 - `semantic-draft.ts`: **Semantic Accelerator**;
+- `semantic-fast-pipeline.ts`: entrada que fusiona excepciones semánticas en el mismo Governance Packet de Fast Pipeline;
 - `coverage.ts`: coverage y QA de mappings;
 - `generation-plan.ts`: slots dirigidos;
 - `question-quality.ts`: QA adversarial;
@@ -162,7 +163,7 @@ El detalle completo sigue disponible en el draft/audit pack; Gobernanza revisa p
 `SemanticTopicDraft.structuralDraft` es compatible directamente con Fast Pipeline.
 
 ```ts
-const run1 = runContentFactoryTopicFromSemanticDraft({
+const run1 = runContentFactoryTopicWithSemanticDraft({
   job,
   semanticDraft: semantic,
   operations: {
@@ -173,7 +174,9 @@ const run1 = runContentFactoryTopicFromSemanticDraft({
 });
 ```
 
-El builder elimina la escritura manual del provider estructural. Las operaciones editoriales posteriores reciben además `studyScaffolds` como material ya estructurado para generar contenido/cards/preguntas exclusivamente desde la fuente.
+Esta entrada usa el runner normal y fusiona las excepciones semánticas en **la misma** `exceptionQueue`, Governance Packet y readiness. No existe una segunda bandeja de revisión.
+
+El builder elimina la escritura manual del provider estructural. Las operaciones editoriales posteriores pueden usar `studyScaffolds` como material ya estructurado para generar contenido/cards/preguntas exclusivamente desde la fuente.
 
 ---
 
