@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import {
   emptyPreparationProfileDraft,
   practiceDaysFromDatabase,
@@ -27,6 +28,9 @@ export type SavePreparationProfileInput = {
   currentTopicId: string | null;
   complete: boolean;
 };
+
+type SavePreparationProfileRpcArgs =
+  Database["public"]["Functions"]["save_preparation_profile"]["Args"];
 
 export const preparationProfileQueryKey = (oppositionId: string) => [
   "preparation-profile",
@@ -104,7 +108,9 @@ export function useSavePreparationProfile() {
       currentTopicId,
       complete,
     }: SavePreparationProfileInput) => {
-      const { error } = await supabase.rpc("save_preparation_profile", {
+      // PostgreSQL RPC parameters accept NULL unless declared STRICT, but the
+      // generated Supabase function metadata cannot represent that nullability.
+      const rpcArgs = {
         p_opposition_id: draft.oppositionId,
         p_exam_precision: draft.examTiming?.precision ?? null,
         p_exam_value: draft.examTiming?.value ?? null,
@@ -114,7 +120,9 @@ export function useSavePreparationProfile() {
         p_current_topic_id: currentTopicId,
         p_topic_assessments: draft.topicAssessments,
         p_complete: complete,
-      });
+      } as unknown as SavePreparationProfileRpcArgs;
+
+      const { error } = await supabase.rpc("save_preparation_profile", rpcArgs);
       if (error) throw error;
     },
     onSuccess: async (_, variables) => {

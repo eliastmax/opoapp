@@ -3,6 +3,10 @@ import {
   type V4CoverageAudit,
   type V4CoverageMapping,
 } from "./v4-content-coverage";
+import {
+  validateV4SourceCapacity,
+  type V4SourceCapacity,
+} from "./v4-source-capacity";
 
 export const V4_STUDY_CONTENT_VERSION = "4.0" as const;
 
@@ -33,6 +37,8 @@ export type V4ConceptPackage = {
   title: string;
   description: string;
   position: number;
+  /** Omitted means the unchanged standard four-question mastery policy. */
+  sourceCapacity?: V4SourceCapacity;
 };
 
 export type V4QuestionConceptMappingPackage = {
@@ -75,6 +81,7 @@ export type V4ContentValidationIssue = {
     | "duplicate_question_mapping"
     | "invalid_unit"
     | "invalid_concept"
+    | "invalid_source_capacity"
     | "missing_unit_source"
     | "unknown_unit"
     | "unknown_primary_concept"
@@ -120,13 +127,7 @@ function validSourceRef(source: V4SourceRef) {
   return true;
 }
 
-/**
- * Validates a generated V4 topic package before any database import.
- *
- * Structural/reference failures are errors. Coverage gaps are warnings because
- * they are useful generator output: they tell us where more validated questions
- * are required before the concept can support full mastery.
- */
+/** Structural/reference failures are errors. Actionable coverage gaps are warnings. */
 export function validateV4StudyContentPackage(
   pkg: V4StudyContentPackage,
 ): V4ContentValidationResult {
@@ -134,61 +135,29 @@ export function validateV4StudyContentPackage(
   const warnings: V4ContentValidationIssue[] = [];
 
   if (pkg.version !== V4_STUDY_CONTENT_VERSION) {
-    errors.push({
-      code: "invalid_version",
-      message: `Expected content version ${V4_STUDY_CONTENT_VERSION}.`,
-      path: "version",
-    });
+    errors.push({ code: "invalid_version", message: `Expected content version ${V4_STUDY_CONTENT_VERSION}.`, path: "version" });
   }
   if (!normalized(pkg.oppositionCode)) {
-    errors.push({
-      code: "missing_opposition_code",
-      message: "oppositionCode is required.",
-      path: "oppositionCode",
-    });
+    errors.push({ code: "missing_opposition_code", message: "oppositionCode is required.", path: "oppositionCode" });
   }
   if (!Number.isInteger(pkg.topicNumber) || pkg.topicNumber < 1) {
-    errors.push({
-      code: "invalid_topic_number",
-      message: "topicNumber must be a positive integer.",
-      path: "topicNumber",
-    });
+    errors.push({ code: "invalid_topic_number", message: "topicNumber must be a positive integer.", path: "topicNumber" });
   }
   if (pkg.units.length === 0) {
-    errors.push({
-      code: "empty_units",
-      message: "A V4 topic package needs at least one study unit.",
-      path: "units",
-    });
+    errors.push({ code: "empty_units", message: "A V4 topic package needs at least one study unit.", path: "units" });
   }
   if (pkg.concepts.length === 0) {
-    errors.push({
-      code: "empty_concepts",
-      message: "A V4 topic package needs at least one concept.",
-      path: "concepts",
-    });
+    errors.push({ code: "empty_concepts", message: "A V4 topic package needs at least one concept.", path: "concepts" });
   }
 
   for (const code of duplicateValues(pkg.units.map((unit) => unit.code))) {
-    errors.push({
-      code: "duplicate_unit_code",
-      message: `Duplicate study-unit code: ${code}.`,
-      path: "units",
-    });
+    errors.push({ code: "duplicate_unit_code", message: `Duplicate study-unit code: ${code}.`, path: "units" });
   }
   for (const code of duplicateValues(pkg.concepts.map((concept) => concept.code))) {
-    errors.push({
-      code: "duplicate_concept_code",
-      message: `Duplicate concept code: ${code}.`,
-      path: "concepts",
-    });
+    errors.push({ code: "duplicate_concept_code", message: `Duplicate concept code: ${code}.`, path: "concepts" });
   }
   for (const code of duplicateValues(pkg.flashcards.map((card) => card.code))) {
-    errors.push({
-      code: "duplicate_flashcard_code",
-      message: `Duplicate flashcard code: ${code}.`,
-      path: "flashcards",
-    });
+    errors.push({ code: "duplicate_flashcard_code", message: `Duplicate flashcard code: ${code}.`, path: "flashcards" });
   }
   for (const code of duplicateValues(pkg.questionMappings.map((mapping) => mapping.questionCode))) {
     errors.push({
@@ -204,188 +173,135 @@ export function validateV4StudyContentPackage(
   pkg.units.forEach((unit, index) => {
     const base = `units[${index}]`;
     if (
-      !normalized(unit.code) ||
-      !normalized(unit.title) ||
-      !Number.isInteger(unit.position) ||
-      unit.position < 0 ||
-      !Number.isInteger(unit.estimatedMinutes) ||
-      unit.estimatedMinutes < 1 ||
-      unit.estimatedMinutes > 30 ||
-      !normalized(unit.studySummary) ||
-      unit.examKeys.some((item) => !normalized(item)) ||
-      unit.confusions.some((item) => !normalized(item)) ||
-      unit.traps.some((item) => !normalized(item)) ||
-      unit.mnemonics.some((item) => !normalized(item)) ||
-      unit.sourceRefs.some((source) => !validSourceRef(source))
+      !normalized(unit.code) || !normalized(unit.title) || !Number.isInteger(unit.position) || unit.position < 0 ||
+      !Number.isInteger(unit.estimatedMinutes) || unit.estimatedMinutes < 1 || unit.estimatedMinutes > 30 ||
+      !normalized(unit.studySummary) || unit.examKeys.some((item) => !normalized(item)) ||
+      unit.confusions.some((item) => !normalized(item)) || unit.traps.some((item) => !normalized(item)) ||
+      unit.mnemonics.some((item) => !normalized(item)) || unit.sourceRefs.some((source) => !validSourceRef(source))
     ) {
-      errors.push({
-        code: "invalid_unit",
-        message: `Study unit ${unit.code || index} has an invalid required field or source reference.`,
-        path: base,
-      });
+      errors.push({ code: "invalid_unit", message: `Study unit ${unit.code || index} has an invalid required field or source reference.`, path: base });
     }
     if (unit.sourceRefs.length === 0) {
-      errors.push({
-        code: "missing_unit_source",
-        message: `Study unit ${unit.code || index} must cite at least one validated source.`,
-        path: `${base}.sourceRefs`,
-      });
+      errors.push({ code: "missing_unit_source", message: `Study unit ${unit.code || index} must cite at least one validated source.`, path: `${base}.sourceRefs` });
     }
   });
 
-  pkg.concepts.forEach((concept, index) => {
+  const coverageConcepts = pkg.concepts.map((concept, index) => {
     if (!unitCodes.has(normalized(concept.unitCode))) {
-      errors.push({
-        code: "unknown_unit",
-        message: `Concept ${concept.code} references unknown unit ${concept.unitCode}.`,
-        path: `concepts[${index}].unitCode`,
-      });
+      errors.push({ code: "unknown_unit", message: `Concept ${concept.code} references unknown unit ${concept.unitCode}.`, path: `concepts[${index}].unitCode` });
     }
-    if (
-      !normalized(concept.code) ||
-      !normalized(concept.title) ||
-      !Number.isInteger(concept.position) ||
-      concept.position < 0
-    ) {
-      errors.push({
-        code: "invalid_concept",
-        message: `Concept at index ${index} has an invalid code, title or position.`,
-        path: `concepts[${index}]`,
-      });
+    if (!normalized(concept.code) || !normalized(concept.title) || !Number.isInteger(concept.position) || concept.position < 0) {
+      errors.push({ code: "invalid_concept", message: `Concept at index ${index} has an invalid code, title or position.`, path: `concepts[${index}]` });
     }
+
+    let sourceCapacity: V4SourceCapacity | undefined;
+    if (concept.sourceCapacity !== undefined) {
+      const capacity = validateV4SourceCapacity(concept.sourceCapacity);
+      if (!capacity.valid) {
+        errors.push({
+          code: "invalid_source_capacity",
+          message: `Concept ${concept.code || index}: ${capacity.error}`,
+          path: `concepts[${index}].sourceCapacity`,
+        });
+      } else {
+        sourceCapacity = capacity.value;
+      }
+    }
+    return { id: normalized(concept.code), sourceCapacity };
   });
 
   pkg.questionMappings.forEach((mapping, index) => {
     const primary = normalized(mapping.primaryConceptCode);
     const secondaries = (mapping.secondaryConceptCodes ?? []).map(normalized);
     if (!normalized(mapping.questionCode)) {
-      errors.push({
-        code: "duplicate_question_mapping",
-        message: `Question mapping at index ${index} has an empty questionCode.`,
-        path: `questionMappings[${index}].questionCode`,
-      });
+      errors.push({ code: "duplicate_question_mapping", message: `Question mapping at index ${index} has an empty questionCode.`, path: `questionMappings[${index}].questionCode` });
     }
     if (!conceptCodes.has(primary)) {
-      errors.push({
-        code: "unknown_primary_concept",
-        message: `Question ${mapping.questionCode} references unknown primary concept ${mapping.primaryConceptCode}.`,
-        path: `questionMappings[${index}].primaryConceptCode`,
-      });
+      errors.push({ code: "unknown_primary_concept", message: `Question ${mapping.questionCode} references unknown primary concept ${mapping.primaryConceptCode}.`, path: `questionMappings[${index}].primaryConceptCode` });
     }
     for (const secondary of secondaries) {
       if (!conceptCodes.has(secondary)) {
-        errors.push({
-          code: "unknown_secondary_concept",
-          message: `Question ${mapping.questionCode} references unknown secondary concept ${secondary}.`,
-          path: `questionMappings[${index}].secondaryConceptCodes`,
-        });
+        errors.push({ code: "unknown_secondary_concept", message: `Question ${mapping.questionCode} references unknown secondary concept ${secondary}.`, path: `questionMappings[${index}].secondaryConceptCodes` });
       }
     }
     for (const duplicate of duplicateValues(secondaries)) {
-      errors.push({
-        code: "duplicate_secondary_concept",
-        message: `Question ${mapping.questionCode} repeats secondary concept ${duplicate}.`,
-        path: `questionMappings[${index}].secondaryConceptCodes`,
-      });
+      errors.push({ code: "duplicate_secondary_concept", message: `Question ${mapping.questionCode} repeats secondary concept ${duplicate}.`, path: `questionMappings[${index}].secondaryConceptCodes` });
     }
     if (secondaries.includes(primary)) {
-      errors.push({
-        code: "primary_repeated_as_secondary",
-        message: `Question ${mapping.questionCode} repeats its primary concept as secondary.`,
-        path: `questionMappings[${index}]`,
-      });
+      errors.push({ code: "primary_repeated_as_secondary", message: `Question ${mapping.questionCode} repeats its primary concept as secondary.`, path: `questionMappings[${index}]` });
     }
   });
 
   pkg.flashcards.forEach((card, index) => {
     if (!conceptCodes.has(normalized(card.conceptCode))) {
-      errors.push({
-        code: "unknown_flashcard_concept",
-        message: `Flashcard ${card.code} references unknown concept ${card.conceptCode}.`,
-        path: `flashcards[${index}].conceptCode`,
-      });
+      errors.push({ code: "unknown_flashcard_concept", message: `Flashcard ${card.code} references unknown concept ${card.conceptCode}.`, path: `flashcards[${index}].conceptCode` });
     }
     if (
-      !normalized(card.code) ||
-      !normalized(card.prompt) ||
-      !normalized(card.answer) ||
-      !Number.isInteger(card.position) ||
-      card.position < 0 ||
+      !normalized(card.code) || !normalized(card.prompt) || !normalized(card.answer) ||
+      !Number.isInteger(card.position) || card.position < 0 ||
       (card.sourceRefs ?? []).some((source) => !validSourceRef(source))
     ) {
-      errors.push({
-        code: "invalid_flashcard",
-        message: `Flashcard ${card.code || index} has an invalid required field or source reference.`,
-        path: `flashcards[${index}]`,
-      });
+      errors.push({ code: "invalid_flashcard", message: `Flashcard ${card.code || index} has an invalid required field or source reference.`, path: `flashcards[${index}]` });
     }
   });
 
-  const validQuestionCodes = pkg.questionMappings
-    .map((mapping) => normalized(mapping.questionCode))
-    .filter(Boolean);
+  const validQuestionCodes = pkg.questionMappings.map((mapping) => normalized(mapping.questionCode)).filter(Boolean);
   const coverageMappings = pkg.questionMappings.flatMap((mapping): V4CoverageMapping[] => {
-    const rows: V4CoverageMapping[] = [
-      {
-        questionId: normalized(mapping.questionCode),
-        conceptId: normalized(mapping.primaryConceptCode),
-        role: "primary",
-      },
-    ];
+    const rows: V4CoverageMapping[] = [{
+      questionId: normalized(mapping.questionCode),
+      conceptId: normalized(mapping.primaryConceptCode),
+      role: "primary",
+    }];
     for (const conceptCode of mapping.secondaryConceptCodes ?? []) {
-      rows.push({
-        questionId: normalized(mapping.questionCode),
-        conceptId: normalized(conceptCode),
-        role: "secondary",
-      });
+      rows.push({ questionId: normalized(mapping.questionCode), conceptId: normalized(conceptCode), role: "secondary" });
     }
     return rows;
   });
 
-  const coverage = auditV4ConceptCoverage({
-    questions: [...new Set(validQuestionCodes)].map((id) => ({ id })),
-    concepts: [...conceptCodes].filter(Boolean).map((id) => ({ id })),
-    mappings: coverageMappings,
-  });
+  let coverage: V4CoverageAudit;
+  try {
+    coverage = auditV4ConceptCoverage({
+      questions: [...new Set(validQuestionCodes)].map((id) => ({ id })),
+      concepts: coverageConcepts.filter((concept) => Boolean(concept.id)),
+      mappings: coverageMappings,
+    });
+  } catch (error) {
+    errors.push({
+      code: "invalid_source_capacity",
+      message: error instanceof Error ? error.message : "Invalid source-capacity coverage.",
+      path: "concepts",
+    });
+    coverage = auditV4ConceptCoverage({
+      questions: [...new Set(validQuestionCodes)].map((id) => ({ id })),
+      concepts: [...conceptCodes].filter(Boolean).map((id) => ({ id })),
+      mappings: coverageMappings,
+    });
+  }
 
   const cardsByConcept = new Map<string, number>();
   for (const card of pkg.flashcards) {
     const code = normalized(card.conceptCode);
     cardsByConcept.set(code, (cardsByConcept.get(code) ?? 0) + 1);
   }
-
   for (const concept of pkg.concepts) {
     const code = normalized(concept.code);
     if ((cardsByConcept.get(code) ?? 0) === 0) {
-      warnings.push({
-        code: "concept_without_flashcards",
-        message: `Concept ${code} has no flashcards.`,
-        path: "flashcards",
-      });
+      warnings.push({ code: "concept_without_flashcards", message: `Concept ${code} has no flashcards.`, path: "flashcards" });
     }
   }
 
   for (const row of coverage.conceptCoverage) {
     if (row.primaryQuestionCount === 0) {
-      warnings.push({
-        code: "unmapped_concept",
-        message: `Concept ${row.conceptId} has no primary questions mapped.`,
-        path: "questionMappings",
-      });
+      warnings.push({ code: "unmapped_concept", message: `Concept ${row.conceptId} has no primary questions mapped.`, path: "questionMappings" });
     }
-    if (row.status === "coverage_gap") {
+    if (row.actionableMissingPrimaryQuestions > 0) {
       warnings.push({
         code: "coverage_gap",
-        message: `Concept ${row.conceptId} has ${row.primaryQuestionCount} primary questions and needs ${row.missingPrimaryQuestions} more to meet the V4 mastery-coverage contract.`,
+        message: `Concept ${row.conceptId} has ${row.primaryQuestionCount} primary questions and needs ${row.actionableMissingPrimaryQuestions} more supported primary questions. Nominal V4 threshold: ${row.nominalThreshold}.`,
         path: "questionMappings",
       });
     }
   }
 
-  return {
-    valid: errors.length === 0,
-    errors,
-    warnings,
-    coverage,
-  };
+  return { valid: errors.length === 0, errors, warnings, coverage };
 }

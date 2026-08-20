@@ -1,4 +1,8 @@
 import { V4_MASTERY_THRESHOLDS } from "./v4-mastery-config";
+import {
+  sourceLimitedRetentionDistinctQuestions,
+  type V4SourceCapacity,
+} from "./v4-source-capacity";
 
 export type ConceptMasteryState =
   | "unseen"
@@ -31,6 +35,8 @@ export type ConceptMasteryInput = {
   unitCompleted?: boolean;
   questionEvidence?: ConceptQuestionEvidence[];
   flashcardEvidence?: ConceptFlashcardEvidence[];
+  /** Catalog metadata. Omitted means the unchanged standard V4 policy. */
+  sourceCapacity?: V4SourceCapacity;
 };
 
 export type ConceptMasteryEvaluation = {
@@ -132,6 +138,7 @@ export function evaluateConceptMastery(input: ConceptMasteryInput): ConceptMaste
   const flashcardEvidence = input.flashcardEvidence ?? [];
   const latestQuestions = latestAttemptPerQuestion(questionEvidence);
   const latestCards = latestAttemptPerCard(flashcardEvidence);
+  const sourceLimited = input.sourceCapacity?.status === "source_limited" ? input.sourceCapacity : null;
 
   const hasExposure = Boolean(input.unitCompleted) || questionEvidence.length > 0 || flashcardEvidence.length > 0;
   const distinctQuestions = latestQuestions.length;
@@ -167,11 +174,15 @@ export function evaluateConceptMastery(input: ConceptMasteryInput): ConceptMaste
   const recentUnsafe = recentQuestions.filter((attempt) => !safeCorrect(attempt)).length;
   const twoConsecutiveUnsafe =
     recentQuestions.length >= 2 && recentQuestions.slice(-2).every((attempt) => !safeCorrect(attempt));
-  const recentInstability = recentUnsafe >= 2 || twoConsecutiveUnsafe;
 
   const questionAttention = recentQuestions.some((attempt) => !safeCorrect(attempt));
   const flashcardAttention = recentCards.some((review) => !review.correct);
   const needsAttention = questionAttention || flashcardAttention;
+  // Standard keeps the exact former instability rule. With a source-limited
+  // atomic pool, one unsafe latest question may represent the whole concept;
+  // treat that as instability so an established state still falls at most one step.
+  const recentInstability =
+    recentUnsafe >= 2 || twoConsecutiveUnsafe || Boolean(sourceLimited && questionAttention);
 
   let candidate: ConceptMasteryState = "unseen";
   let reasonCode: ConceptMasteryEvaluation["reasonCode"] = "no_evidence";
@@ -186,17 +197,25 @@ export function evaluateConceptMastery(input: ConceptMasteryInput): ConceptMaste
     reasonCode = "limited_question_evidence";
   }
 
+  const requiredDistinctQuestions = sourceLimited
+    ? sourceLimited.sourceSupportedCeiling
+    : V4_MASTERY_THRESHOLDS.minDistinctQuestions;
+  const requiredSafeCorrectQuestions = sourceLimited
+    ? sourceLimited.sourceSupportedCeiling
+    : V4_MASTERY_THRESHOLDS.minSafeCorrectQuestions;
+  const requiredSafeAccuracy = sourceLimited ? 1 : V4_MASTERY_THRESHOLDS.minSafeAccuracy;
+
   const enoughForConsolidation =
-    distinctQuestions >= V4_MASTERY_THRESHOLDS.minDistinctQuestions &&
-    safeCorrectQuestions >= V4_MASTERY_THRESHOLDS.minSafeCorrectQuestions &&
+    distinctQuestions >= requiredDistinctQuestions &&
+    safeCorrectQuestions >= requiredSafeCorrectQuestions &&
     safeAccuracy !== null &&
-    safeAccuracy >= V4_MASTERY_THRESHOLDS.minSafeAccuracy;
+    safeAccuracy >= requiredSafeAccuracy;
 
   if (enoughForConsolidation && distinctSessions < V4_MASTERY_THRESHOLDS.minDistinctSessions) {
     reasonCode = "needs_more_sessions";
   } else if (
-    distinctQuestions >= V4_MASTERY_THRESHOLDS.minDistinctQuestions &&
-    (safeAccuracy ?? 0) < V4_MASTERY_THRESHOLDS.minSafeAccuracy
+    distinctQuestions >= requiredDistinctQuestions &&
+    (safeAccuracy ?? 0) < requiredSafeAccuracy
   ) {
     reasonCode = "accuracy_not_safe";
   } else if (
@@ -207,11 +226,14 @@ export function evaluateConceptMastery(input: ConceptMasteryInput): ConceptMaste
     reasonCode = "consolidating";
   }
 
+  const requiredRetentionDistinctQuestions = sourceLimited
+    ? sourceLimitedRetentionDistinctQuestions(sourceLimited)
+    : V4_MASTERY_THRESHOLDS.minRetentionDistinctQuestions;
   const enoughForRetention =
     candidate === "consolidating" &&
     hasThreeDayPass &&
     hasSevenDayPass &&
-    retentionDistinctQuestions >= V4_MASTERY_THRESHOLDS.minRetentionDistinctQuestions &&
+    retentionDistinctQuestions >= requiredRetentionDistinctQuestions &&
     retentionDistinctSessions >= V4_MASTERY_THRESHOLDS.minRetentionDistinctSessions;
 
   if (enoughForRetention) {

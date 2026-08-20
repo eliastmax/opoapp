@@ -5,6 +5,7 @@ import type {
   V4SourceRef,
   V4StudyUnitPackage,
 } from "../v4-content-package";
+import type { V4SourceCapacity } from "../v4-source-capacity";
 
 export const CONTENT_FACTORY_VERSION = "1.0" as const;
 export const DEFAULT_QUESTION_CODE_DIGITS = 4;
@@ -28,7 +29,6 @@ export type FactoryGates = {
 export type FactoryCanonicalSourcePolicy = {
   canonicalOnly: true;
   document: string;
-  /** External verification is a separate governance task and never implicit. */
   externalVerificationAllowed?: false;
 };
 
@@ -68,12 +68,7 @@ export type FactorySourceCapacity =
       status: "source_review_required";
       reason: string;
     }
-  | {
-      status: "source_limited";
-      /** Maximum number of genuinely independent primary questions supported by the canonical source. */
-      sourceSupportedCeiling: number;
-      reason: string;
-    };
+  | V4SourceCapacity;
 
 export type ProposedStudyUnit = Pick<V4StudyUnitPackage, "code" | "title" | "position"> & {
   sourceSubtopicName?: string | null;
@@ -82,7 +77,7 @@ export type ProposedStudyUnit = Pick<V4StudyUnitPackage, "code" | "title" | "pos
   observations?: string[];
 };
 
-export type ProposedConcept = V4ConceptPackage & {
+export type ProposedConcept = Omit<V4ConceptPackage, "sourceCapacity"> & {
   sourceRefs?: V4SourceRef[];
   confidence?: FactoryProposalConfidence;
   /** @deprecated Prefer sourceCapacity.status === "source_review_required". */
@@ -102,18 +97,8 @@ export type FactoryQuestionAssignment = {
 };
 
 export const FACTORY_EVIDENCE_DIMENSIONS = [
-  "rule",
-  "exception",
-  "subject",
-  "effect",
-  "deadline",
-  "dies_a_quo",
-  "interruption",
-  "requirement",
-  "competence",
-  "literal",
-  "contrast",
-  "mini_case",
+  "rule", "exception", "subject", "effect", "deadline", "dies_a_quo",
+  "interruption", "requirement", "competence", "literal", "contrast", "mini_case",
 ] as const;
 
 export type FactoryEvidenceDimension = (typeof FACTORY_EVIDENCE_DIMENSIONS)[number];
@@ -135,7 +120,7 @@ export type FactoryGeneratedQuestionCandidate = {
 
 export type FactoryStudyContent = {
   units: V4StudyUnitPackage[];
-  concepts: V4ConceptPackage[];
+  concepts: ProposedConcept[];
   flashcards: V4FlashcardPackage[];
 };
 

@@ -1,7 +1,16 @@
 import type { Database } from "@/integrations/supabase/types";
 
-export type VerifiedProgressRow =
+type GeneratedVerifiedProgressRow =
   Database["public"]["Functions"]["get_verified_progress_summary"]["Returns"][number];
+type NullableVerifiedProgressFields =
+  | "accuracy_change"
+  | "baseline_accuracy"
+  | "current_accuracy";
+export type VerifiedProgressRow = {
+  [Key in keyof GeneratedVerifiedProgressRow]: Key extends NullableVerifiedProgressFields
+    ? GeneratedVerifiedProgressRow[Key] | null
+    : GeneratedVerifiedProgressRow[Key];
+};
 
 export type ComparisonState =
   "insuficiente" | "mejora_verificada" | "estable" | "descenso_observado";

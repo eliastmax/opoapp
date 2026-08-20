@@ -1,4 +1,5 @@
 import type { ConceptMasteryState } from "./concept-mastery";
+import type { V4SourceCapacity } from "./v4-source-capacity";
 
 export type V4ConceptCheckMode = "review" | "repair" | "verify";
 
@@ -13,14 +14,23 @@ export function v4RetentionCheckpointForState(
   return null;
 }
 
-export function v4ConceptCheckQuestionRange(mode: V4ConceptCheckMode) {
+export function v4ConceptCheckQuestionRange(
+  mode: V4ConceptCheckMode,
+  sourceCapacity?: V4SourceCapacity,
+) {
+  const ceiling = sourceCapacity?.status === "source_limited"
+    ? sourceCapacity.sourceSupportedCeiling
+    : null;
+
   switch (mode) {
     case "review":
-      return { min: 1, max: 2 } as const;
+      return { min: 1, max: ceiling === null ? 2 : Math.min(2, ceiling) } as const;
     case "repair":
-      return { min: 1, max: 3 } as const;
+      return { min: 1, max: ceiling === null ? 3 : Math.min(3, ceiling) } as const;
     case "verify":
-      return { min: 2, max: 4 } as const;
+      return ceiling === null
+        ? ({ min: 2, max: 4 } as const)
+        : ({ min: 1, max: ceiling } as const);
   }
 }
 
@@ -42,6 +52,7 @@ export function validateV4ConceptCheckRequest(input: {
   conceptId: string | null | undefined;
   questionCount: number;
   mode: string;
+  sourceCapacity?: V4SourceCapacity;
 }): V4ConceptCheckValidation {
   const conceptId = input.conceptId?.trim() ?? "";
   if (!conceptId) {
@@ -52,7 +63,7 @@ export function validateV4ConceptCheckRequest(input: {
     return { ok: false, code: "invalid_mode", message: "Unsupported V4 concept check mode." };
   }
 
-  const range = v4ConceptCheckQuestionRange(input.mode);
+  const range = v4ConceptCheckQuestionRange(input.mode, input.sourceCapacity);
   if (
     !Number.isInteger(input.questionCount) ||
     input.questionCount < range.min ||
