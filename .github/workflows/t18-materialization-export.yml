@@ -1,9 +1,9 @@
 name: T18 Materialization Export
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/v4-content-t18-materialize
+      - main
 
 permissions:
   contents: read
