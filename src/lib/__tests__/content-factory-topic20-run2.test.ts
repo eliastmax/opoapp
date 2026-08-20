@@ -4,11 +4,10 @@ import {
   TOPIC20_RUN2_GOVERNANCE_EXCEPTION_ID,
   topic20FastPipelineRun2,
   topic20ProductionPlan,
+  topic20Run2AppliedDecision,
   topic20Run2Regenerated0222,
 } from "../content-factory/consumers/topic-20-run2";
-import {
-  topic20FastPipelineRun1B,
-} from "../content-factory/consumers/topic-20-semantic-benchmark";
+import { topic20FastPipelineRun1B } from "../content-factory/consumers/topic-20-semantic-benchmark";
 
 const coverage = topic20FastPipelineRun2.finalCoverage;
 const run1BGenerated = new Map(
@@ -25,7 +24,13 @@ const run2Generated = new Map(
 );
 
 describe("Content Factory Topic 20 RUN 2 final", () => {
-  test("applies Governance targeted regeneration and becomes import-ready", () => {
+  test("applies the Governance question patch and becomes import-ready", () => {
+    expect(topic20Run2AppliedDecision.decisionIds).toEqual([
+      TOPIC20_RUN2_GOVERNANCE_EXCEPTION_ID,
+    ]);
+    expect(topic20Run2AppliedDecision.resolvedExceptionIds).toContain(
+      TOPIC20_RUN2_GOVERNANCE_EXCEPTION_ID,
+    );
     expect(topic20FastPipelineRun2.runNumber).toBe(2);
     expect(topic20FastPipelineRun2.gates.conceptMap.status).toBe("approved");
     expect(topic20FastPipelineRun2.gates.editorialQuality.status).toBe("approved");
@@ -37,24 +42,11 @@ describe("Content Factory Topic 20 RUN 2 final", () => {
     expect(topic20FastPipelineRun2.portable?.importReady).toBe(true);
   });
 
-  test("changes only 0222 substantively inside the C01 regeneration scope", () => {
-    expect(topic20FastPipelineRun2.regeneration?.affectedConceptCodes).toEqual(["SMS-T20-C01"]);
-    expect(topic20FastPipelineRun2.regeneration?.removedGeneratedQuestionCodes).toEqual([
-      "SMS-T20-0221",
-      "SMS-T20-0222",
-      "SMS-T20-0223",
-    ]);
-    expect(topic20FastPipelineRun2.regeneration?.generatedQuestionCodes).toEqual([
-      "SMS-T20-0221",
-      "SMS-T20-0222",
-      "SMS-T20-0223",
-    ]);
-
-    expect(run2Generated.get("SMS-T20-0221")?.v2).toEqual(run1BGenerated.get("SMS-T20-0221")?.v2);
-    expect(run2Generated.get("SMS-T20-0223")?.v2).toEqual(run1BGenerated.get("SMS-T20-0223")?.v2);
-    expect(run2Generated.get("SMS-T20-0224")?.v2).toEqual(run1BGenerated.get("SMS-T20-0224")?.v2);
-    expect(run2Generated.get("SMS-T20-0225")?.v2).toEqual(run1BGenerated.get("SMS-T20-0225")?.v2);
-    expect(run2Generated.get("SMS-T20-0226")?.v2).toEqual(run1BGenerated.get("SMS-T20-0226")?.v2);
+  test("changes only 0222 substantively and preserves every stable generated code", () => {
+    expect([...run2Generated.keys()].sort()).toEqual([...run1BGenerated.keys()].sort());
+    for (const code of ["SMS-T20-0221", "SMS-T20-0223", "SMS-T20-0224", "SMS-T20-0225", "SMS-T20-0226"]) {
+      expect(run2Generated.get(code)?.v2).toEqual(run1BGenerated.get(code)?.v2);
+    }
 
     const before = run1BGenerated.get("SMS-T20-0222")!;
     const after = run2Generated.get("SMS-T20-0222")!;
@@ -87,6 +79,7 @@ describe("Content Factory Topic 20 RUN 2 final", () => {
     expect(topic20FastPipelineRun2.draft.generatedQuestions).toHaveLength(6);
     expect(topic20FastPipelineRun2.draft.content?.flashcards).toHaveLength(60);
     expect(topic20ProductionPlan.v2Questions).toHaveLength(6);
+    expect(topic20ProductionPlan.v2QuestionsForImport).toHaveLength(6);
     expect(topic20ProductionPlan.v4Package?.questionMappings).toHaveLength(226);
 
     expect(coverage?.factoryConceptCoverage.filter((row) => row.status === "ready")).toHaveLength(30);
@@ -97,12 +90,17 @@ describe("Content Factory Topic 20 RUN 2 final", () => {
     expect(coverage?.mappingQa.duplicatePrimaryQuestionCodes).toHaveLength(0);
   });
 
-  test("keeps all six generated questions canonical and V2-complete", () => {
-    for (const candidate of topic20FastPipelineRun2.draft.generatedQuestions) {
-      expect(candidate.v2.documento_referencia).toBe("Temario_new.pdf");
-      expect(String(candidate.v2.referencia_fuente)).toContain("Temario_new.pdf");
-      expect(Number(candidate.v2.pagina_inicio)).toBeGreaterThanOrEqual(44);
-      expect(Number(candidate.v2.pagina_fin)).toBeLessThanOrEqual(76);
-    }
+  test("keeps all six generated questions canonical and normalizes only import hierarchy labels", () => {
+    topic20ProductionPlan.v2Questions.forEach((approved, index) => {
+      expect(approved.documento_referencia).toBe("Temario_new.pdf");
+      expect(String(approved.referencia_fuente)).toContain("Temario_new.pdf");
+      expect(Number(approved.pagina_inicio)).toBeGreaterThanOrEqual(44);
+      expect(Number(approved.pagina_fin)).toBeLessThanOrEqual(76);
+      const transport = topic20ProductionPlan.v2QuestionsForImport[index];
+      expect(transport.materia).toBe("Ley 40/2015 — Régimen jurídico del sector público");
+      const { materia: _m1, tema: _t1, ...transportSubstantive } = transport;
+      const { materia: _m2, tema: _t2, ...approvedSubstantive } = approved;
+      expect(transportSubstantive).toEqual(approvedSubstantive);
+    });
   });
 });
