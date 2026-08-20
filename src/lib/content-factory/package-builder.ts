@@ -1,20 +1,19 @@
 import {
   V4_STUDY_CONTENT_VERSION,
   validateV4StudyContentPackage,
+  type V4ConceptPackage,
   type V4QuestionConceptMappingPackage,
   type V4StudyContentPackage,
 } from "../v4-content-package";
 import { auditGeneratedQuestionCandidates, type FactoryQuestionQualityReport } from "./question-quality";
-import {
-  evaluateFactoryPipelineState,
-  validateContentFactoryJob,
-} from "./validators";
+import { evaluateFactoryPipelineState, validateContentFactoryJob } from "./validators";
 import type {
   ContentFactoryJob,
   FactoryGates,
   FactoryGeneratedQuestionCandidate,
   FactoryQuestionAssignment,
   FactoryStudyContent,
+  ProposedConcept,
   V2QuestionRow,
 } from "./types";
 
@@ -29,6 +28,7 @@ export type ContentFactoryPortableOutput = {
     pipeline: ReturnType<typeof evaluateFactoryPipelineState>;
     questions: FactoryQuestionQualityReport;
     v4: ReturnType<typeof validateV4StudyContentPackage>;
+    sourceReviewRequiredConceptCodes: string[];
   };
   importReady: boolean;
 };
@@ -52,11 +52,23 @@ function canonicalMappings(
   ];
 }
 
+function productionConcept(concept: ProposedConcept): V4ConceptPackage {
+  return {
+    code: concept.code,
+    unitCode: concept.unitCode,
+    title: concept.title,
+    description: concept.description,
+    position: concept.position,
+    ...(concept.sourceCapacity?.status === "source_limited"
+      ? { sourceCapacity: concept.sourceCapacity }
+      : {}),
+  };
+}
+
 /**
  * Produces the portable handoff only. It never calls Supabase or either importer.
- * A draft can be structurally valid while Gate 2 is still pending. `importReady`
- * remains stricter: both human gates, structural QA, V2 QA, V4 QA and full
- * concept coverage must all pass.
+ * source_review_required remains an editorial blocker and is never serialized as
+ * production concept metadata. Approved source_limited capacity is transported.
  */
 export function buildContentFactoryPortableOutput(input: {
   job: ContentFactoryJob;
@@ -66,13 +78,17 @@ export function buildContentFactoryPortableOutput(input: {
   generatedQuestions?: FactoryGeneratedQuestionCandidate[];
 }): ContentFactoryPortableOutput {
   const generatedQuestions = input.generatedQuestions ?? [];
+  const sourceReviewRequiredConceptCodes = input.content.concepts
+    .filter((concept) => concept.sourceReviewRequired || concept.sourceCapacity?.status === "source_review_required")
+    .map((concept) => concept.code)
+    .sort();
   const v4Package: V4StudyContentPackage = {
     version: V4_STUDY_CONTENT_VERSION,
     oppositionCode: input.job.oppositionCode,
     topicNumber: input.job.topicNumber,
     sourceRevision: input.job.sourceRevision,
     units: input.content.units,
-    concepts: input.content.concepts,
+    concepts: input.content.concepts.map(productionConcept),
     questionMappings: canonicalMappings(input.assignments, generatedQuestions),
     flashcards: input.content.flashcards,
   };
@@ -96,8 +112,10 @@ export function buildContentFactoryPortableOutput(input: {
       pipeline,
       questions: questionValidation,
       v4: v4Validation,
+      sourceReviewRequiredConceptCodes,
     },
     importReady:
+      sourceReviewRequiredConceptCodes.length === 0 &&
       pipeline.importReadiness.ready &&
       jobValidation.valid &&
       pipeline.structural.valid &&
