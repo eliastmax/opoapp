@@ -187,4 +187,10 @@ export const topic20ManualInterventionLedger = [
     action: "Technical article/page source-span preparation because Semantic Accelerator does not ingest PDF bytes directly; no unit, concept or mapping boundary was authored.",
     semanticDecision: false,
   },
+  {
+    id: "T20-MANUAL-03",
+    category: "C" as const,
+    action: "Attempted downstream study-content/question materialization, but the available structured input did not contain the canonical PDF body text and Content Factory exposes no PDF-text ingest/generator operation. No external or auxiliary source was substituted; content and six generation slots remain unmaterialized.",
+    semanticDecision: false,
+  },
 ] as const;
