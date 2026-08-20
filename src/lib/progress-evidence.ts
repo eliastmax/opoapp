@@ -1,7 +1,15 @@
 import type { Database } from "@/integrations/supabase/types";
 
-export type TopicProgressRow =
+type GeneratedTopicProgressRow =
   Database["public"]["Functions"]["get_topic_progress_summary"]["Returns"][number];
+export type TopicProgressRow = Omit<
+  GeneratedTopicProgressRow,
+  "first_activity_at" | "last_activity_at" | "mastery_percentage"
+> & {
+  first_activity_at: string | null;
+  last_activity_at: string | null;
+  mastery_percentage: number | null;
+};
 
 export type EvidenceState = "sin_base" | "inicial" | "suficiente" | "robusta";
 export type CoverageMilestone = "sin_empezar" | "en_marcha" | "casi_completo" | "completo";

@@ -2,8 +2,17 @@ import type { Database } from "@/integrations/supabase/types";
 
 export type LearningStage = "aprendizaje" | "consolidacion" | "tribunal";
 export type PracticeStage = LearningStage | "mezcladas";
-export type LearningStageProgress =
+type GeneratedLearningStageProgress =
   Database["public"]["Functions"]["get_learning_stage_progress"]["Returns"][number];
+export type LearningStageProgress = Omit<
+  GeneratedLearningStageProgress,
+  "learning_mastery" | "consolidation_mastery" | "global_mastery" | "robustness_percentage"
+> & {
+  learning_mastery: number | null;
+  consolidation_mastery: number | null;
+  global_mastery: number | null;
+  robustness_percentage: number | null;
+};
 export type LearningRouteSummary = {
   completed: boolean;
   badge: string;

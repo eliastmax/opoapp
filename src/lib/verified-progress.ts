@@ -1,7 +1,15 @@
 import type { Database } from "@/integrations/supabase/types";
 
-export type VerifiedProgressRow =
+type GeneratedVerifiedProgressRow =
   Database["public"]["Functions"]["get_verified_progress_summary"]["Returns"][number];
+export type VerifiedProgressRow = Omit<
+  GeneratedVerifiedProgressRow,
+  "accuracy_change" | "baseline_accuracy" | "current_accuracy"
+> & {
+  accuracy_change: number | null;
+  baseline_accuracy: number | null;
+  current_accuracy: number | null;
+};
 
 export type ComparisonState =
   "insuficiente" | "mejora_verificada" | "estable" | "descenso_observado";
