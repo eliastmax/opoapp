@@ -14,6 +14,14 @@ const checksMigration = readFileSync(
   new URL("../../../supabase/migrations/20260820004519_v4_source_limited_checks.sql", import.meta.url),
   "utf8",
 );
+const standardCheckRouterFixMigration = readFileSync(
+  new URL("../../../supabase/migrations/20260820133006_v4_standard_concept_check_router_fix.sql", import.meta.url),
+  "utf8",
+);
+const standardMasteryRouterFixMigration = readFileSync(
+  new URL("../../../supabase/migrations/20260820133300_v4_standard_mastery_router_fix.sql", import.meta.url),
+  "utf8",
+);
 
 describe("V4 source-limited database contract", () => {
   test("stores source limitation on concepts and never on user mastery", () => {
@@ -61,6 +69,24 @@ describe("V4 source-limited database contract", () => {
     expect(checksMigration).toContain("p_mode = 'review' AND pool.retention_targeted_count = 0");
     expect(checksMigration).toContain("pool.targeted_count");
     expect(checksMigration).toContain("v_active_primary_questions < v_ceiling");
+  });
+
+  test("routes standard concepts with null capacity to the preserved standard selector", () => {
+    expect(standardCheckRouterFixMigration).toContain(
+      "COALESCE(concept.source_capacity_status = 'source_limited', FALSE)",
+    );
+    expect(standardCheckRouterFixMigration).toContain("create_v4_source_limited_concept_check");
+    expect(standardCheckRouterFixMigration).toContain("create_v4_concept_check_standard");
+    expect(standardCheckRouterFixMigration).not.toContain("ALTER TABLE");
+  });
+
+  test("routes standard mastery refresh with null capacity to the preserved standard engine", () => {
+    expect(standardMasteryRouterFixMigration).toContain(
+      "COALESCE(concept.source_capacity_status = 'source_limited', FALSE)",
+    );
+    expect(standardMasteryRouterFixMigration).toContain("refresh_source_limited_concept_mastery");
+    expect(standardMasteryRouterFixMigration).toContain("refresh_my_v4_concept_mastery_standard");
+    expect(standardMasteryRouterFixMigration).not.toContain("ALTER TABLE");
   });
 
   test("Today receives catalog capacity instead of guessing from question count", () => {
