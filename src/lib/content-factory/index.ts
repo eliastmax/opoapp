@@ -1,10 +1,12 @@
 export * from "./analyze-existing-bank";
+export * from "./canonical-source-ingest";
 export * from "./codes";
 export * from "./coverage";
 export * from "./exceptions";
 export * from "./fast-pipeline";
 export * from "./fast-pipeline-types";
 export * from "./generation-plan";
+export * from "./material-exceptions";
 export * from "./package-builder";
 export * from "./question-quality";
 export * from "./reports";
@@ -12,3 +14,4 @@ export * from "./semantic-draft";
 export * from "./semantic-fast-pipeline";
 export * from "./types";
 export * from "./validators";
+export * from "./work-packets";
