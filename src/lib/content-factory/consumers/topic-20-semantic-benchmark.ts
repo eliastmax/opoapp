@@ -1,3 +1,5 @@
+import topic20ApprovedV4Json from "../../../../docs/v4/topic-20-production-v4.json";
+import type { V4StudyContentPackage } from "../../v4-content-package";
 import { canonicalPageTextToSemanticSourceSpans } from "../canonical-source-ingest";
 import { buildSemanticTopicDraft, type SemanticSourceSpan } from "../semantic-draft";
 import { runContentFactoryTopicWithSemanticDraft } from "../semantic-fast-pipeline";
@@ -13,6 +15,8 @@ import { topic20SemanticInputPart1 } from "./topic-20-semantic-input-part1";
 import { topic20SemanticInputPart2 } from "./topic-20-semantic-input-part2";
 import { topic20SemanticInputPart3 } from "./topic-20-semantic-input-part3";
 import { topic20SemanticInputPart4 } from "./topic-20-semantic-input-part4";
+
+export const topic20ApprovedV4 = topic20ApprovedV4Json as unknown as V4StudyContentPackage;
 
 type SemanticInputTuple = readonly [
   code: string,
@@ -63,7 +67,7 @@ export const topic20ExistingQuestions: FactoryQuestionMetadata[] = semanticRows.
   pageEnd,
 }));
 
-/** Historical RUN 1A technical adapter. Kept only to preserve the benchmark baseline. */
+/** Historical RUN 1A source adapter. The approved V4 anchor keeps the reviewed structure stable during replay. */
 export function buildTopic20CanonicalSourceSpansRun1A(): SemanticSourceSpan[] {
   const grouped = new Map<string, { apartado: string; subapartado: string; pageStart: number; pageEnd: number }>();
   for (const row of semanticRows) {
@@ -108,11 +112,12 @@ export const topic20ContentFactoryJob: ContentFactoryJob = {
   existingQuestions: topic20ExistingQuestions,
 };
 
-// Historical RUN 1A baseline. Do not use these artifacts as RUN 1B input.
+// Historical approved replay baseline. Raw semantic safety is tested separately without anchors.
 export const topic20SemanticDraftRun1 = buildSemanticTopicDraft({
   job: topic20ContentFactoryJob,
   canonicalSource: topic20CanonicalSource,
   existingQuestions: topic20ExistingQuestions,
+  approvedAnchors: topic20ApprovedV4,
 });
 export const topic20FastPipelineRun1 = runContentFactoryTopicWithSemanticDraft({
   job: topic20ContentFactoryJob,
@@ -163,6 +168,7 @@ export const topic20SemanticDraftRun1B = buildSemanticTopicDraft({
   job: topic20ContentFactoryJob,
   canonicalSource: topic20CanonicalSourceRun1B,
   existingQuestions: topic20ExistingQuestions,
+  approvedAnchors: topic20ApprovedV4,
 });
 export const topic20PreparedWorkPacketsRun1B = prepareSemanticFactoryWorkPackets({
   job: topic20ContentFactoryJob,
