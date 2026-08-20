@@ -8,19 +8,21 @@ import {
   topic18Gate2V4Package,
 } from "./topic-18-v4-gate2";
 import { topic18Gate2SecondCards } from "./topic-18-v4-second-cards";
-import { topic18ApprovedGate1Report } from "./topic-18-approved-gate1";
-import { topic18Gate1Concepts } from "./topic-18-gate1";
+import {
+  topic18ApprovedConcepts,
+  topic18ApprovedGate1Report,
+} from "./topic-18-approved-gate1";
 import { topic18Gate21QuestionCandidates } from "./topic-18-gap-questions-gate21";
 import { topic18SourceLimitedSlots } from "./topic-18-source-limited";
 
 const approvedCapacityByCode = new Map<string, V4SourceCapacity>();
-for (const concept of topic18Gate1Concepts) {
+for (const concept of topic18ApprovedConcepts) {
   if (concept.sourceCapacity?.status === "source_limited") {
     approvedCapacityByCode.set(concept.code, concept.sourceCapacity);
   }
 }
 
-/** Generic promotion of approved Factory source_limited metadata into the V4 draft. */
+/** Generic promotion of approved Factory source_limited metadata into the V4 package. */
 export const topic18Gate2Concepts = topic18Gate2RawConcepts.map((concept) => {
   const sourceCapacity = approvedCapacityByCode.get(concept.code);
   return sourceCapacity ? { ...concept, sourceCapacity } : concept;
@@ -41,5 +43,5 @@ export const topic18Gate2EditorialState = {
   generatedQuestions: topic18Gate21QuestionCandidates.length,
   sourceLimitedSlots: topic18SourceLimitedSlots,
   flashcards: topic18Gate2Flashcards.length,
-  importReady: false,
+  importReady: true,
 } as const;
