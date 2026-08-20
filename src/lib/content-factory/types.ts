@@ -63,6 +63,18 @@ export type ContentFactoryJob = {
   existingQuestions?: FactoryQuestionMetadata[];
 };
 
+export type FactorySourceCapacity =
+  | {
+      status: "source_review_required";
+      reason: string;
+    }
+  | {
+      status: "source_limited";
+      /** Maximum number of genuinely independent primary questions supported by the canonical source. */
+      sourceSupportedCeiling: number;
+      reason: string;
+    };
+
 export type ProposedStudyUnit = Pick<V4StudyUnitPackage, "code" | "title" | "position"> & {
   sourceSubtopicName?: string | null;
   sourceRefs: V4SourceRef[];
@@ -73,7 +85,9 @@ export type ProposedStudyUnit = Pick<V4StudyUnitPackage, "code" | "title" | "pos
 export type ProposedConcept = V4ConceptPackage & {
   sourceRefs?: V4SourceRef[];
   confidence?: FactoryProposalConfidence;
+  /** @deprecated Prefer sourceCapacity.status === "source_review_required". */
   sourceReviewRequired?: boolean;
+  sourceCapacity?: FactorySourceCapacity;
   overlapCandidates?: string[];
   observations?: string[];
 };
