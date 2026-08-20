@@ -12,10 +12,13 @@ export function planDirectedQuestionGeneration(input: {
   usedQuestionCodes: Iterable<string>;
   preferredDimensionsByConcept?: Record<string, FactoryEvidenceDimension[]>;
 }): FactoryQuestionGenerationSlot[] {
-  const missingRows = input.coverage.conceptCoverage.filter(
-    (row) => row.missingPrimaryQuestions > 0,
+  const actionableRows = input.coverage.factoryConceptCoverage.filter(
+    (row) => row.status === "coverage_gap" && row.actionableMissingPrimaryQuestions > 0,
   );
-  const total = missingRows.reduce((sum, row) => sum + row.missingPrimaryQuestions, 0);
+  const total = actionableRows.reduce(
+    (sum, row) => sum + row.actionableMissingPrimaryQuestions,
+    0,
+  );
   const codes = allocateStableQuestionCodes({
     codePrefix: input.codePrefix,
     usedCodes: input.usedQuestionCodes,
@@ -24,10 +27,10 @@ export function planDirectedQuestionGeneration(input: {
 
   const slots: FactoryQuestionGenerationSlot[] = [];
   let codeIndex = 0;
-  for (const row of missingRows) {
+  for (const row of actionableRows) {
     const preferred = input.preferredDimensionsByConcept?.[row.conceptId] ?? [];
     const dimensions = [...new Set([...preferred, ...FACTORY_EVIDENCE_DIMENSIONS])];
-    for (let index = 0; index < row.missingPrimaryQuestions; index += 1) {
+    for (let index = 0; index < row.actionableMissingPrimaryQuestions; index += 1) {
       slots.push({
         questionCode: codes[codeIndex++],
         conceptCode: row.conceptId,

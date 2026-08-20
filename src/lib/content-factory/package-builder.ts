@@ -5,7 +5,10 @@ import {
   type V4StudyContentPackage,
 } from "../v4-content-package";
 import { auditGeneratedQuestionCandidates, type FactoryQuestionQualityReport } from "./question-quality";
-import { importReadyAllowed, validateContentFactoryJob, validateFactoryGates } from "./validators";
+import {
+  evaluateFactoryPipelineState,
+  validateContentFactoryJob,
+} from "./validators";
 import type {
   ContentFactoryJob,
   FactoryGates,
@@ -23,7 +26,7 @@ export type ContentFactoryPortableOutput = {
   v4Package: V4StudyContentPackage;
   validation: {
     job: ReturnType<typeof validateContentFactoryJob>;
-    gates: ReturnType<typeof validateFactoryGates>;
+    pipeline: ReturnType<typeof evaluateFactoryPipelineState>;
     questions: FactoryQuestionQualityReport;
     v4: ReturnType<typeof validateV4StudyContentPackage>;
   };
@@ -51,7 +54,9 @@ function canonicalMappings(
 
 /**
  * Produces the portable handoff only. It never calls Supabase or either importer.
- * `importReady` becomes true only after both human gates and all structural QA pass.
+ * A draft can be structurally valid while Gate 2 is still pending. `importReady`
+ * remains stricter: both human gates, structural QA, V2 QA, V4 QA and full
+ * concept coverage must all pass.
  */
 export function buildContentFactoryPortableOutput(input: {
   job: ContentFactoryJob;
@@ -73,7 +78,7 @@ export function buildContentFactoryPortableOutput(input: {
   };
 
   const jobValidation = validateContentFactoryJob(input.job);
-  const gateValidation = validateFactoryGates(input.gates);
+  const pipeline = evaluateFactoryPipelineState(input.gates);
   const questionValidation = auditGeneratedQuestionCandidates({
     candidates: generatedQuestions,
     concepts: input.content.concepts,
@@ -88,14 +93,14 @@ export function buildContentFactoryPortableOutput(input: {
     v4Package,
     validation: {
       job: jobValidation,
-      gates: gateValidation,
+      pipeline,
       questions: questionValidation,
       v4: v4Validation,
     },
     importReady:
-      importReadyAllowed(input.gates) &&
+      pipeline.importReadiness.ready &&
       jobValidation.valid &&
-      gateValidation.valid &&
+      pipeline.structural.valid &&
       questionValidation.valid &&
       v4Validation.valid &&
       v4Validation.coverage.underCoveredConceptIds.length === 0,

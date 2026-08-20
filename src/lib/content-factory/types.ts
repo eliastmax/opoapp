@@ -11,6 +11,7 @@ export const DEFAULT_QUESTION_CODE_DIGITS = 4;
 
 export type ContentFactoryMode = "existing_bank" | "greenfield";
 export type FactoryGateStatus = "pending" | "approved" | "rejected";
+export type FactoryProposalConfidence = "low" | "medium" | "high";
 
 export type FactoryEditorialGate = {
   status: FactoryGateStatus;
@@ -22,6 +23,13 @@ export type FactoryEditorialGate = {
 export type FactoryGates = {
   conceptMap: FactoryEditorialGate;
   editorialQuality: FactoryEditorialGate;
+};
+
+export type FactoryCanonicalSourcePolicy = {
+  canonicalOnly: true;
+  document: string;
+  /** External verification is a separate governance task and never implicit. */
+  externalVerificationAllowed?: false;
 };
 
 export type FactoryQuestionMetadata = {
@@ -51,16 +59,35 @@ export type ContentFactoryJob = {
   sourceRevision?: string | null;
   source: V4SourceRef[];
   references?: V4SourceRef[];
+  sourcePolicy?: FactoryCanonicalSourcePolicy;
   existingQuestions?: FactoryQuestionMetadata[];
 };
+
+export type FactorySourceCapacity =
+  | {
+      status: "source_review_required";
+      reason: string;
+    }
+  | {
+      status: "source_limited";
+      /** Maximum number of genuinely independent primary questions supported by the canonical source. */
+      sourceSupportedCeiling: number;
+      reason: string;
+    };
 
 export type ProposedStudyUnit = Pick<V4StudyUnitPackage, "code" | "title" | "position"> & {
   sourceSubtopicName?: string | null;
   sourceRefs: V4SourceRef[];
+  sourceReviewRequired?: boolean;
   observations?: string[];
 };
 
 export type ProposedConcept = V4ConceptPackage & {
+  sourceRefs?: V4SourceRef[];
+  confidence?: FactoryProposalConfidence;
+  /** @deprecated Prefer sourceCapacity.status === "source_review_required". */
+  sourceReviewRequired?: boolean;
+  sourceCapacity?: FactorySourceCapacity;
   overlapCandidates?: string[];
   observations?: string[];
 };
@@ -70,7 +97,8 @@ export type FactoryQuestionAssignment = {
   primaryConceptCode: string;
   secondaryConceptCodes?: string[];
   rationale?: string;
-  confidence?: "low" | "medium" | "high";
+  confidence?: FactoryProposalConfidence;
+  sourceReviewRequired?: boolean;
 };
 
 export const FACTORY_EVIDENCE_DIMENSIONS = [
@@ -117,6 +145,12 @@ export type ExistingBankCluster = {
   subapartado: string | null;
   conceptLabels: string[];
   learningObjectives: string[];
+  questionCodes: string[];
+  sourceReferences: string[];
+};
+
+export type ExistingBankSourceCluster = {
+  article: number;
   questionCodes: string[];
   sourceReferences: string[];
 };
