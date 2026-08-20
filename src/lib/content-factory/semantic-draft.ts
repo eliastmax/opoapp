@@ -279,28 +279,12 @@ function buildQuestionWork(questions: FactoryQuestionMetadata[], spans: Semantic
   });
 }
 
-class UnionFind {
-  private readonly parent: number[];
-  constructor(size: number) { this.parent = Array.from({ length: size }, (_, index) => index); }
-  find(value: number): number {
-    const parent = this.parent[value];
-    if (parent === value) return value;
-    this.parent[value] = this.find(parent);
-    return this.parent[value];
-  }
-  union(left: number, right: number) {
-    const a = this.find(left);
-    const b = this.find(right);
-    if (a !== b) this.parent[b] = a;
-  }
-}
-
 function sharedSpan(left: QuestionWork, right: QuestionWork) {
   const ids = new Set(left.evidenceSpans.map((span) => span.id));
   return right.evidenceSpans.some((span) => ids.has(span.id));
 }
 
-function shouldMerge(left: QuestionWork, right: QuestionWork) {
+function questionsCompatible(left: QuestionWork, right: QuestionWork) {
   if (left.unitKey !== right.unitKey) return false;
   const labelLeft = normalizeText(left.conceptLabel);
   const labelRight = normalizeText(right.conceptLabel);
@@ -313,12 +297,20 @@ function shouldMerge(left: QuestionWork, right: QuestionWork) {
   const sameSubpart = subLeft.length > 0 && subLeft === subRight;
   const sameSource = sharedSpan(left, right) || intersects(left.articleNumbers, right.articleNumbers);
   if (sameLabel || sameObjective) return true;
-  if (sameSubpart && sameSource) return true;
+
+  // Structural proximity is contextual evidence, not concept identity by itself.
   const labelSimilarity = labelLeft && labelRight ? jaccard(labelLeft, labelRight) : 0;
   const objectiveSimilarity = objectiveLeft && objectiveRight ? jaccard(objectiveLeft, objectiveRight) : 0;
   if (labelSimilarity >= 0.72 && (sameSource || sameSubpart)) return true;
   if (objectiveSimilarity >= 0.72 && sameSource) return true;
   return labelSimilarity >= 0.55 && objectiveSimilarity >= 0.55 && sameSource;
+}
+
+function clustersCompatible(left: number[], right: number[], rows: QuestionWork[]) {
+  // Complete-link guard: every cross-cluster pair must remain semantically compatible.
+  return left.every((leftIndex) =>
+    right.every((rightIndex) => questionsCompatible(rows[leftIndex], rows[rightIndex])),
+  );
 }
 
 function conceptTitle(rows: QuestionWork[], spans: SemanticSourceSpan[]) {
@@ -331,21 +323,29 @@ function conceptTitle(rows: QuestionWork[], spans: SemanticSourceSpan[]) {
 }
 
 function clusterQuestions(rows: QuestionWork[]) {
-  const eligibleIndexes = rows.map((row, index) => ({ row, index })).filter(({ row }) => row.canonical);
-  const union = new UnionFind(rows.length);
-  for (let left = 0; left < eligibleIndexes.length; left += 1) {
-    for (let right = left + 1; right < eligibleIndexes.length; right += 1) {
-      const a = eligibleIndexes[left];
-      const b = eligibleIndexes[right];
-      if (shouldMerge(a.row, b.row)) union.union(a.index, b.index);
+  let clusters = rows
+    .map((row, index) => ({ row, index }))
+    .filter(({ row }) => row.canonical)
+    .sort((left, right) => left.row.question.code.localeCompare(right.row.question.code, "es"))
+    .map(({ index }) => [index]);
+
+  // Deterministic complete-link agglomeration: a bridge cannot join incompatible groups.
+  let merged = true;
+  while (merged) {
+    merged = false;
+    outer: for (let left = 0; left < clusters.length; left += 1) {
+      for (let right = left + 1; right < clusters.length; right += 1) {
+        if (!clustersCompatible(clusters[left], clusters[right], rows)) continue;
+        clusters[left] = [...clusters[left], ...clusters[right]].sort((a, b) =>
+          rows[a].question.code.localeCompare(rows[b].question.code, "es"),
+        );
+        clusters.splice(right, 1);
+        merged = true;
+        break outer;
+      }
     }
   }
-  const groups = new Map<number, number[]>();
-  for (const { index } of eligibleIndexes) {
-    const root = union.find(index);
-    groups.set(root, [...(groups.get(root) ?? []), index]);
-  }
-  return [...groups.values()];
+  return clusters;
 }
 
 function minPage(spans: SemanticSourceSpan[]) {
