@@ -47,8 +47,13 @@ describe("Content Factory Topic 18 Gate 2 V4 draft", () => {
     }
   });
 
-  test("maps 0239 to C30, maps all generated questions, and never invents blocked C29 rows", () => {
+  test("maps 0239 to C30, maps the sole C29 primary, and never invents blocked C29 rows", () => {
     expect(topic18Gate2Mappings.find((entry) => entry.questionCode === "SMS-T18-0239")?.primaryConceptCode).toBe("SMS-T18-C30");
+    expect(
+      topic18Gate2Mappings
+        .filter((entry) => entry.primaryConceptCode === "SMS-T18-C29")
+        .map((entry) => entry.questionCode),
+    ).toEqual(["SMS-T18-0199"]);
     for (let code = 241; code <= 263; code += 1) {
       const questionCode = `SMS-T18-${String(code).padStart(4, "0")}`;
       if ([245, 246, 247].includes(code)) {
@@ -65,10 +70,26 @@ describe("Content Factory Topic 18 Gate 2 V4 draft", () => {
     }
   });
 
-  test("passes V4 structural validation and leaves only the honest C29 coverage gap", () => {
+  test("passes V4 structural validation with 43 standard ready and one completed source-limited concept", () => {
     const validation = validateV4StudyContentPackage(topic18Gate2Package);
     expect(validation.valid).toBe(true);
     expect(validation.errors).toEqual([]);
-    expect(validation.coverage.underCoveredConceptIds).toEqual(["SMS-T18-C29"]);
+    expect(validation.coverage.underCoveredConceptIds).toEqual([]);
+    expect(validation.coverage.nominalUnderCoveredConceptIds).toEqual(["SMS-T18-C29"]);
+    expect(validation.coverage.unmappedQuestionIds).toEqual([]);
+    expect(validation.coverage.duplicatePrimaryQuestionIds).toEqual([]);
+    expect(validation.coverage.conceptCoverage.filter((entry) => entry.status === "ready")).toHaveLength(43);
+    expect(validation.coverage.conceptCoverage.filter((entry) => entry.status === "source_limited")).toEqual([
+      expect.objectContaining({
+        conceptId: "SMS-T18-C29",
+        primaryQuestionCount: 1,
+        status: "source_limited",
+        missingPrimaryQuestions: 3,
+        actionableMissingPrimaryQuestions: 0,
+        nominalThreshold: 4,
+        sourceSupportedCeiling: 1,
+        blockedAdditionalQuestions: 3,
+      }),
+    ]);
   });
 });
