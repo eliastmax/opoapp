@@ -1,4 +1,5 @@
 import { V4_MASTERY_THRESHOLDS } from "./v4-mastery-config";
+import type { V4SourceCapacity } from "./v4-source-capacity";
 
 export type V4CoverageQuestion = {
   id: string;
@@ -8,6 +9,7 @@ export type V4CoverageQuestion = {
 export type V4CoverageConcept = {
   id: string;
   active?: boolean;
+  sourceCapacity?: V4SourceCapacity;
 };
 
 export type V4CoverageMapping = {
@@ -19,8 +21,13 @@ export type V4CoverageMapping = {
 export type V4ConceptCoverageRow = {
   conceptId: string;
   primaryQuestionCount: number;
-  status: "ready" | "coverage_gap";
+  status: "ready" | "coverage_gap" | "source_limited";
+  /** Nominal gap against the standard mastery floor; never hidden. */
   missingPrimaryQuestions: number;
+  actionableMissingPrimaryQuestions: number;
+  nominalThreshold: number;
+  sourceSupportedCeiling: number | null;
+  blockedAdditionalQuestions: number;
 };
 
 export type V4CoverageAudit = {
@@ -30,18 +37,17 @@ export type V4CoverageAudit = {
   unmappedQuestionIds: string[];
   duplicatePrimaryQuestionIds: string[];
   conceptCoverage: V4ConceptCoverageRow[];
+  /** Concepts for which more primary questions can legitimately be created. */
   underCoveredConceptIds: string[];
+  /** Concepts below the nominal threshold, including completed source-limited concepts. */
+  nominalUnderCoveredConceptIds: string[];
 };
 
 /**
- * Audits the canonical V4 mapping before import.
- *
- * Secondary mappings never satisfy the baseline mastery-coverage requirement.
- * A concept needs enough distinct primary questions to make the mastery model
- * measurable without relying on memorising one repeated question.
- *
- * Factory analysis may raise the threshold for a content job. The default stays
- * tied to the live V4 mastery contract so existing callers keep identical behavior.
+ * Audits canonical V4 mapping before import.
+ * Standard concepts retain the four-primary floor. A source-limited concept may
+ * have a lower approved evidence ceiling, but the nominal four-question deficit
+ * remains visible for editorial diagnostics.
  */
 export function auditV4ConceptCoverage(input: {
   questions: V4CoverageQuestion[];
@@ -55,12 +61,10 @@ export function auditV4ConceptCoverage(input: {
     throw new Error("minimumPrimaryQuestions must be a positive integer.");
   }
 
-  const activeQuestionIds = new Set(
-    input.questions.filter((question) => question.active !== false).map((question) => question.id),
-  );
-  const activeConceptIds = new Set(
-    input.concepts.filter((concept) => concept.active !== false).map((concept) => concept.id),
-  );
+  const activeQuestions = input.questions.filter((question) => question.active !== false);
+  const activeConcepts = input.concepts.filter((concept) => concept.active !== false);
+  const activeQuestionIds = new Set(activeQuestions.map((question) => question.id));
+  const activeConceptIds = new Set(activeConcepts.map((concept) => concept.id));
 
   const primaryConceptsByQuestion = new Map<string, string[]>();
   const primaryQuestionsByConcept = new Map<string, Set<string>>();
@@ -88,18 +92,43 @@ export function auditV4ConceptCoverage(input: {
     .map(([questionId]) => questionId)
     .sort();
 
-  const conceptCoverage = [...activeConceptIds]
-    .map((conceptId): V4ConceptCoverageRow => {
-      const primaryQuestionCount = primaryQuestionsByConcept.get(conceptId)?.size ?? 0;
-      const missingPrimaryQuestions = Math.max(
-        0,
-        minimumPrimaryQuestions - primaryQuestionCount,
-      );
+  const conceptCoverage = activeConcepts
+    .map((concept): V4ConceptCoverageRow => {
+      const primaryQuestionCount = primaryQuestionsByConcept.get(concept.id)?.size ?? 0;
+      const missingPrimaryQuestions = Math.max(0, minimumPrimaryQuestions - primaryQuestionCount);
+      const ceiling = concept.sourceCapacity?.status === "source_limited"
+        ? concept.sourceCapacity.sourceSupportedCeiling
+        : null;
+
+      if (ceiling !== null) {
+        if (!Number.isInteger(ceiling) || ceiling < 1 || ceiling > 3 || ceiling >= minimumPrimaryQuestions) {
+          throw new Error(`${concept.id}: invalid sourceSupportedCeiling.`);
+        }
+        if (primaryQuestionCount > ceiling) {
+          throw new Error(`${concept.id}: primary question count exceeds sourceSupportedCeiling.`);
+        }
+        const actionableMissingPrimaryQuestions = Math.max(0, ceiling - primaryQuestionCount);
+        return {
+          conceptId: concept.id,
+          primaryQuestionCount,
+          status: actionableMissingPrimaryQuestions > 0 ? "coverage_gap" : "source_limited",
+          missingPrimaryQuestions,
+          actionableMissingPrimaryQuestions,
+          nominalThreshold: minimumPrimaryQuestions,
+          sourceSupportedCeiling: ceiling,
+          blockedAdditionalQuestions: minimumPrimaryQuestions - ceiling,
+        };
+      }
+
       return {
-        conceptId,
+        conceptId: concept.id,
         primaryQuestionCount,
         status: missingPrimaryQuestions === 0 ? "ready" : "coverage_gap",
         missingPrimaryQuestions,
+        actionableMissingPrimaryQuestions: missingPrimaryQuestions,
+        nominalThreshold: minimumPrimaryQuestions,
+        sourceSupportedCeiling: null,
+        blockedAdditionalQuestions: 0,
       };
     })
     .sort((a, b) => a.conceptId.localeCompare(b.conceptId));
@@ -114,7 +143,10 @@ export function auditV4ConceptCoverage(input: {
     duplicatePrimaryQuestionIds,
     conceptCoverage,
     underCoveredConceptIds: conceptCoverage
-      .filter((row) => row.status === "coverage_gap")
+      .filter((row) => row.actionableMissingPrimaryQuestions > 0)
+      .map((row) => row.conceptId),
+    nominalUnderCoveredConceptIds: conceptCoverage
+      .filter((row) => row.missingPrimaryQuestions > 0)
       .map((row) => row.conceptId),
   };
 }
