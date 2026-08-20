@@ -319,8 +319,8 @@ describe("CONTENT-FACTORY.3 Fast Pipeline", () => {
     expect(run2.draft.assignments.find((mapping) => mapping.questionCode === "SYN-Q04")?.primaryConceptCode).toBe("SYN-C02");
     expect(run2.regeneration?.affectedConceptCodes).toEqual(["SYN-C01", "SYN-C02"]);
     expect(run2.regeneration?.recomputedCoverageConceptCodes).toEqual(["SYN-C01", "SYN-C02"]);
-    expect(run2.regeneration?.removedGeneratedQuestionCodes).toEqual(["SYN-Q12"]);
-    expect(run2.regeneration?.generatedQuestionCodes).toEqual(["SYN-Q12"]);
+    expect(run2.regeneration?.removedGeneratedQuestionCodes).toEqual(["SYN-Q-0001"]);
+    expect(run2.regeneration?.generatedQuestionCodes).toEqual(["SYN-Q-0001"]);
     expect(run2.draft.generatedQuestions).toHaveLength(1);
     expect(run2.draft.generatedQuestions[0].conceptCode).toBe("SYN-C01");
     expect(run2.regeneration?.preservedArtifacts).toContainEqual({ kind: "concept", id: "SYN-C03" });
