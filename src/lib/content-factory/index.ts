@@ -9,5 +9,6 @@ export * from "./package-builder";
 export * from "./question-quality";
 export * from "./reports";
 export * from "./semantic-draft";
+export * from "./semantic-fast-pipeline";
 export * from "./types";
 export * from "./validators";
