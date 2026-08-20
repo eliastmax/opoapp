@@ -9,25 +9,33 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedSimulacroRouteImport } from './routes/_authenticated/simulacro'
-import { Route as AuthenticatedProgresoRouteImport } from './routes/_authenticated/progreso'
-import { Route as AuthenticatedPreparacionRouteImport } from './routes/_authenticated/preparacion'
-import { Route as AuthenticatedPreguntasRouteImport } from './routes/_authenticated/preguntas'
-import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated/inicio'
-import { Route as AuthenticatedImportarRouteImport } from './routes/_authenticated/importar'
-import { Route as AuthenticatedHistorialRouteImport } from './routes/_authenticated/historial'
-import { Route as AuthenticatedCrearRouteImport } from './routes/_authenticated/crear'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedAjustesRouteImport } from './routes/_authenticated/ajustes'
-import { Route as AuthenticatedTestIdRouteImport } from './routes/_authenticated/test.$id'
+import { Route as AuthenticatedCrearRouteImport } from './routes/_authenticated/crear'
+import { Route as AuthenticatedEstudioRouteImport } from './routes/_authenticated/estudio'
+import { Route as AuthenticatedHistorialRouteImport } from './routes/_authenticated/historial'
+import { Route as AuthenticatedImportarRouteImport } from './routes/_authenticated/importar'
+import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated/inicio'
+import { Route as AuthenticatedPreguntasRouteImport } from './routes/_authenticated/preguntas'
+import { Route as AuthenticatedPreparacionRouteImport } from './routes/_authenticated/preparacion'
+import { Route as AuthenticatedProgresoRouteImport } from './routes/_authenticated/progreso'
+import { Route as AuthenticatedSesionRouteImport } from './routes/_authenticated/sesion'
+import { Route as AuthenticatedSimulacroRouteImport } from './routes/_authenticated/simulacro'
+import { Route as AuthenticatedEstudiarUnitIdRouteImport } from './routes/_authenticated/estudiar.$unitId'
+import { Route as AuthenticatedRecordarUnitIdRouteImport } from './routes/_authenticated/recordar.$unitId'
 import { Route as AuthenticatedResultadosIdRouteImport } from './routes/_authenticated/resultados.$id'
+import { Route as AuthenticatedTestIdRouteImport } from './routes/_authenticated/test.$id'
 
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -35,23 +43,44 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedSimulacroRoute = AuthenticatedSimulacroRouteImport.update({
-  id: '/simulacro',
-  path: '/simulacro',
+const AuthenticatedAjustesRoute = AuthenticatedAjustesRouteImport.update({
+  id: '/ajustes',
+  path: '/ajustes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedProgresoRoute = AuthenticatedProgresoRouteImport.update({
-  id: '/progreso',
-  path: '/progreso',
+const AuthenticatedCrearRoute = AuthenticatedCrearRouteImport.update({
+  id: '/crear',
+  path: '/crear',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEstudioRoute = AuthenticatedEstudioRouteImport.update({
+  id: '/estudio',
+  path: '/estudio',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHistorialRoute = AuthenticatedHistorialRouteImport.update({
+  id: '/historial',
+  path: '/historial',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedImportarRoute = AuthenticatedImportarRouteImport.update({
+  id: '/importar',
+  path: '/importar',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedInicioRoute = AuthenticatedInicioRouteImport.update({
+  id: '/inicio',
+  path: '/inicio',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPreguntasRoute = AuthenticatedPreguntasRouteImport.update({
+  id: '/preguntas',
+  path: '/preguntas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPreparacionRoute =
@@ -60,47 +89,44 @@ const AuthenticatedPreparacionRoute =
     path: '/preparacion',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedPreguntasRoute = AuthenticatedPreguntasRouteImport.update({
-  id: '/preguntas',
-  path: '/preguntas',
+const AuthenticatedProgresoRoute = AuthenticatedProgresoRouteImport.update({
+  id: '/progreso',
+  path: '/progreso',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedInicioRoute = AuthenticatedInicioRouteImport.update({
-  id: '/inicio',
-  path: '/inicio',
+const AuthenticatedSesionRoute = AuthenticatedSesionRouteImport.update({
+  id: '/sesion',
+  path: '/sesion',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedImportarRoute = AuthenticatedImportarRouteImport.update({
-  id: '/importar',
-  path: '/importar',
+const AuthenticatedSimulacroRoute = AuthenticatedSimulacroRouteImport.update({
+  id: '/simulacro',
+  path: '/simulacro',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedHistorialRoute = AuthenticatedHistorialRouteImport.update({
-  id: '/historial',
-  path: '/historial',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedCrearRoute = AuthenticatedCrearRouteImport.update({
-  id: '/crear',
-  path: '/crear',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedAjustesRoute = AuthenticatedAjustesRouteImport.update({
-  id: '/ajustes',
-  path: '/ajustes',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedTestIdRoute = AuthenticatedTestIdRouteImport.update({
-  id: '/test/$id',
-  path: '/test/$id',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+const AuthenticatedEstudiarUnitIdRoute =
+  AuthenticatedEstudiarUnitIdRouteImport.update({
+    id: '/estudiar/$unitId',
+    path: '/estudiar/$unitId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRecordarUnitIdRoute =
+  AuthenticatedRecordarUnitIdRouteImport.update({
+    id: '/recordar/$unitId',
+    path: '/recordar/$unitId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedResultadosIdRoute =
   AuthenticatedResultadosIdRouteImport.update({
     id: '/resultados/$id',
     path: '/resultados/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedTestIdRoute = AuthenticatedTestIdRouteImport.update({
+  id: '/test/$id',
+  path: '/test/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -108,13 +134,17 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/ajustes': typeof AuthenticatedAjustesRoute
   '/crear': typeof AuthenticatedCrearRoute
+  '/estudio': typeof AuthenticatedEstudioRoute
   '/historial': typeof AuthenticatedHistorialRoute
   '/importar': typeof AuthenticatedImportarRoute
   '/inicio': typeof AuthenticatedInicioRoute
   '/preguntas': typeof AuthenticatedPreguntasRoute
   '/preparacion': typeof AuthenticatedPreparacionRoute
   '/progreso': typeof AuthenticatedProgresoRoute
+  '/sesion': typeof AuthenticatedSesionRoute
   '/simulacro': typeof AuthenticatedSimulacroRoute
+  '/estudiar/$unitId': typeof AuthenticatedEstudiarUnitIdRoute
+  '/recordar/$unitId': typeof AuthenticatedRecordarUnitIdRoute
   '/resultados/$id': typeof AuthenticatedResultadosIdRoute
   '/test/$id': typeof AuthenticatedTestIdRoute
 }
@@ -124,13 +154,17 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/ajustes': typeof AuthenticatedAjustesRoute
   '/crear': typeof AuthenticatedCrearRoute
+  '/estudio': typeof AuthenticatedEstudioRoute
   '/historial': typeof AuthenticatedHistorialRoute
   '/importar': typeof AuthenticatedImportarRoute
   '/inicio': typeof AuthenticatedInicioRoute
   '/preguntas': typeof AuthenticatedPreguntasRoute
   '/preparacion': typeof AuthenticatedPreparacionRoute
   '/progreso': typeof AuthenticatedProgresoRoute
+  '/sesion': typeof AuthenticatedSesionRoute
   '/simulacro': typeof AuthenticatedSimulacroRoute
+  '/estudiar/$unitId': typeof AuthenticatedEstudiarUnitIdRoute
+  '/recordar/$unitId': typeof AuthenticatedRecordarUnitIdRoute
   '/resultados/$id': typeof AuthenticatedResultadosIdRoute
   '/test/$id': typeof AuthenticatedTestIdRoute
 }
@@ -142,13 +176,17 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/ajustes': typeof AuthenticatedAjustesRoute
   '/_authenticated/crear': typeof AuthenticatedCrearRoute
+  '/_authenticated/estudio': typeof AuthenticatedEstudioRoute
   '/_authenticated/historial': typeof AuthenticatedHistorialRoute
   '/_authenticated/importar': typeof AuthenticatedImportarRoute
   '/_authenticated/inicio': typeof AuthenticatedInicioRoute
   '/_authenticated/preguntas': typeof AuthenticatedPreguntasRoute
   '/_authenticated/preparacion': typeof AuthenticatedPreparacionRoute
   '/_authenticated/progreso': typeof AuthenticatedProgresoRoute
+  '/_authenticated/sesion': typeof AuthenticatedSesionRoute
   '/_authenticated/simulacro': typeof AuthenticatedSimulacroRoute
+  '/_authenticated/estudiar/$unitId': typeof AuthenticatedEstudiarUnitIdRoute
+  '/_authenticated/recordar/$unitId': typeof AuthenticatedRecordarUnitIdRoute
   '/_authenticated/resultados/$id': typeof AuthenticatedResultadosIdRoute
   '/_authenticated/test/$id': typeof AuthenticatedTestIdRoute
 }
@@ -160,13 +198,17 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/ajustes'
     | '/crear'
+    | '/estudio'
     | '/historial'
     | '/importar'
     | '/inicio'
     | '/preguntas'
     | '/preparacion'
     | '/progreso'
+    | '/sesion'
     | '/simulacro'
+    | '/estudiar/$unitId'
+    | '/recordar/$unitId'
     | '/resultados/$id'
     | '/test/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -176,13 +218,17 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/ajustes'
     | '/crear'
+    | '/estudio'
     | '/historial'
     | '/importar'
     | '/inicio'
     | '/preguntas'
     | '/preparacion'
     | '/progreso'
+    | '/sesion'
     | '/simulacro'
+    | '/estudiar/$unitId'
+    | '/recordar/$unitId'
     | '/resultados/$id'
     | '/test/$id'
   id:
@@ -193,13 +239,17 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/_authenticated/ajustes'
     | '/_authenticated/crear'
+    | '/_authenticated/estudio'
     | '/_authenticated/historial'
     | '/_authenticated/importar'
     | '/_authenticated/inicio'
     | '/_authenticated/preguntas'
     | '/_authenticated/preparacion'
     | '/_authenticated/progreso'
+    | '/_authenticated/sesion'
     | '/_authenticated/simulacro'
+    | '/_authenticated/estudiar/$unitId'
+    | '/_authenticated/recordar/$unitId'
     | '/_authenticated/resultados/$id'
     | '/_authenticated/test/$id'
   fileRoutesById: FileRoutesById
@@ -213,18 +263,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -234,60 +277,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/simulacro': {
-      id: '/_authenticated/simulacro'
-      path: '/simulacro'
-      fullPath: '/simulacro'
-      preLoaderRoute: typeof AuthenticatedSimulacroRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/progreso': {
-      id: '/_authenticated/progreso'
-      path: '/progreso'
-      fullPath: '/progreso'
-      preLoaderRoute: typeof AuthenticatedProgresoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/preparacion': {
-      id: '/_authenticated/preparacion'
-      path: '/preparacion'
-      fullPath: '/preparacion'
-      preLoaderRoute: typeof AuthenticatedPreparacionRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/preguntas': {
-      id: '/_authenticated/preguntas'
-      path: '/preguntas'
-      fullPath: '/preguntas'
-      preLoaderRoute: typeof AuthenticatedPreguntasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/inicio': {
-      id: '/_authenticated/inicio'
-      path: '/inicio'
-      fullPath: '/inicio'
-      preLoaderRoute: typeof AuthenticatedInicioRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/importar': {
-      id: '/_authenticated/importar'
-      path: '/importar'
-      fullPath: '/importar'
-      preLoaderRoute: typeof AuthenticatedImportarRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/historial': {
-      id: '/_authenticated/historial'
-      path: '/historial'
-      fullPath: '/historial'
-      preLoaderRoute: typeof AuthenticatedHistorialRouteImport
+    '/_authenticated/ajustes': {
+      id: '/_authenticated/ajustes'
+      path: '/ajustes'
+      fullPath: '/ajustes'
+      preLoaderRoute: typeof AuthenticatedAjustesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/crear': {
@@ -297,18 +305,81 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCrearRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/ajustes': {
-      id: '/_authenticated/ajustes'
-      path: '/ajustes'
-      fullPath: '/ajustes'
-      preLoaderRoute: typeof AuthenticatedAjustesRouteImport
+    '/_authenticated/estudio': {
+      id: '/_authenticated/estudio'
+      path: '/estudio'
+      fullPath: '/estudio'
+      preLoaderRoute: typeof AuthenticatedEstudioRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/test/$id': {
-      id: '/_authenticated/test/$id'
-      path: '/test/$id'
-      fullPath: '/test/$id'
-      preLoaderRoute: typeof AuthenticatedTestIdRouteImport
+    '/_authenticated/historial': {
+      id: '/_authenticated/historial'
+      path: '/historial'
+      fullPath: '/historial'
+      preLoaderRoute: typeof AuthenticatedHistorialRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/importar': {
+      id: '/_authenticated/importar'
+      path: '/importar'
+      fullPath: '/importar'
+      preLoaderRoute: typeof AuthenticatedImportarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inicio': {
+      id: '/_authenticated/inicio'
+      path: '/inicio'
+      fullPath: '/inicio'
+      preLoaderRoute: typeof AuthenticatedInicioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/preguntas': {
+      id: '/_authenticated/preguntas'
+      path: '/preguntas'
+      fullPath: '/preguntas'
+      preLoaderRoute: typeof AuthenticatedPreguntasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/preparacion': {
+      id: '/_authenticated/preparacion'
+      path: '/preparacion'
+      fullPath: '/preparacion'
+      preLoaderRoute: typeof AuthenticatedPreparacionRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/progreso': {
+      id: '/_authenticated/progreso'
+      path: '/progreso'
+      fullPath: '/progreso'
+      preLoaderRoute: typeof AuthenticatedProgresoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/sesion': {
+      id: '/_authenticated/sesion'
+      path: '/sesion'
+      fullPath: '/sesion'
+      preLoaderRoute: typeof AuthenticatedSesionRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/simulacro': {
+      id: '/_authenticated/simulacro'
+      path: '/simulacro'
+      fullPath: '/simulacro'
+      preLoaderRoute: typeof AuthenticatedSimulacroRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/estudiar/$unitId': {
+      id: '/_authenticated/estudiar/$unitId'
+      path: '/estudiar/$unitId'
+      fullPath: '/estudiar/$unitId'
+      preLoaderRoute: typeof AuthenticatedEstudiarUnitIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/recordar/$unitId': {
+      id: '/_authenticated/recordar/$unitId'
+      path: '/recordar/$unitId'
+      fullPath: '/recordar/$unitId'
+      preLoaderRoute: typeof AuthenticatedRecordarUnitIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/resultados/$id': {
@@ -318,19 +389,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedResultadosIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/test/$id': {
+      id: '/_authenticated/test/$id'
+      path: '/test/$id'
+      fullPath: '/test/$id'
+      preLoaderRoute: typeof AuthenticatedTestIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAjustesRoute: typeof AuthenticatedAjustesRoute
   AuthenticatedCrearRoute: typeof AuthenticatedCrearRoute
+  AuthenticatedEstudioRoute: typeof AuthenticatedEstudioRoute
   AuthenticatedHistorialRoute: typeof AuthenticatedHistorialRoute
   AuthenticatedImportarRoute: typeof AuthenticatedImportarRoute
   AuthenticatedInicioRoute: typeof AuthenticatedInicioRoute
   AuthenticatedPreguntasRoute: typeof AuthenticatedPreguntasRoute
   AuthenticatedPreparacionRoute: typeof AuthenticatedPreparacionRoute
   AuthenticatedProgresoRoute: typeof AuthenticatedProgresoRoute
+  AuthenticatedSesionRoute: typeof AuthenticatedSesionRoute
   AuthenticatedSimulacroRoute: typeof AuthenticatedSimulacroRoute
+  AuthenticatedEstudiarUnitIdRoute: typeof AuthenticatedEstudiarUnitIdRoute
+  AuthenticatedRecordarUnitIdRoute: typeof AuthenticatedRecordarUnitIdRoute
   AuthenticatedResultadosIdRoute: typeof AuthenticatedResultadosIdRoute
   AuthenticatedTestIdRoute: typeof AuthenticatedTestIdRoute
 }
@@ -338,13 +420,17 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAjustesRoute: AuthenticatedAjustesRoute,
   AuthenticatedCrearRoute: AuthenticatedCrearRoute,
+  AuthenticatedEstudioRoute: AuthenticatedEstudioRoute,
   AuthenticatedHistorialRoute: AuthenticatedHistorialRoute,
   AuthenticatedImportarRoute: AuthenticatedImportarRoute,
   AuthenticatedInicioRoute: AuthenticatedInicioRoute,
   AuthenticatedPreguntasRoute: AuthenticatedPreguntasRoute,
   AuthenticatedPreparacionRoute: AuthenticatedPreparacionRoute,
   AuthenticatedProgresoRoute: AuthenticatedProgresoRoute,
+  AuthenticatedSesionRoute: AuthenticatedSesionRoute,
   AuthenticatedSimulacroRoute: AuthenticatedSimulacroRoute,
+  AuthenticatedEstudiarUnitIdRoute: AuthenticatedEstudiarUnitIdRoute,
+  AuthenticatedRecordarUnitIdRoute: AuthenticatedRecordarUnitIdRoute,
   AuthenticatedResultadosIdRoute: AuthenticatedResultadosIdRoute,
   AuthenticatedTestIdRoute: AuthenticatedTestIdRoute,
 }

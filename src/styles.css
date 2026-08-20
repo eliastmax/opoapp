@@ -71,6 +71,8 @@
   html,
   body {
     height: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
   }
   body {
     background-color: var(--color-background);
@@ -85,6 +87,9 @@
   }
   button {
     touch-action: manipulation;
+  }
+  summary::-webkit-details-marker {
+    display: none;
   }
 }
 

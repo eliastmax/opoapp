@@ -23,11 +23,16 @@ import { formatExamTime, remainingExamSeconds } from "@/lib/exam-simulation";
 import { weeklyRoadmapQueryKey } from "@/hooks/use-weekly-roadmap";
 
 export const Route = createFileRoute("/_authenticated/test/$id")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    block: typeof search.block === "string" ? search.block : undefined,
+    session: typeof search.session === "string" ? search.session : undefined,
+  }),
   component: TestPage,
 });
 
 function TestPage() {
   const { id } = Route.useParams();
+  const search = Route.useSearch();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [current, setCurrent] = useState(0);
@@ -71,13 +76,13 @@ function TestPage() {
         qc.invalidateQueries({ queryKey: ["dashboard"] }),
         qc.invalidateQueries({ queryKey: weeklyRoadmapQueryKey }),
       ]);
-      navigate({ to: "/resultados/$id", params: { id }, replace: true });
+      navigate({ to: "/resultados/$id", params: { id }, search, replace: true });
     } catch (error) {
       toast.error((error as Error).message);
       setFinishing(false);
       autoFinishRequested.current = false;
     }
-  }, [finishing, id, navigate, qc]);
+  }, [finishing, id, navigate, qc, search]);
 
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
@@ -130,6 +135,7 @@ function TestPage() {
   );
   const doubts = useMemo(() => data?.answers.filter((a) => a.marked_doubt).length ?? 0, [data]);
   const remaining = total - answered;
+  const guided = Boolean(search.block);
 
   if (isLoading)
     return (
@@ -141,7 +147,7 @@ function TestPage() {
   if (!data) return null;
 
   if (data.test.completado) {
-    navigate({ to: "/resultados/$id", params: { id }, replace: true });
+    navigate({ to: "/resultados/$id", params: { id }, search, replace: true });
     return null;
   }
 
@@ -228,7 +234,12 @@ function TestPage() {
   return (
     <div className="space-y-3 pb-20">
       <header className="sticky top-0 z-20 -mx-4 -mt-4 border-b border-border/60 bg-background/90 px-4 pb-3 pt-4 backdrop-blur-xl">
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center text-xs">
+        {guided && (
+          <p className="mb-2 text-center text-[11px] font-bold uppercase tracking-[0.14em] text-primary">
+            Comprobar · Demostrar
+          </p>
+        )}
+        <div className="flex items-center gap-2 text-xs">
           <div className="flex items-baseline gap-1">
             <span className="text-lg font-bold text-foreground">{current + 1}</span>
             <span className="font-medium text-muted-foreground">de {total}</span>
@@ -247,22 +258,27 @@ function TestPage() {
               {formatExamTime(examSecondsRemaining)}
             </div>
           ) : (
-            <span />
+            <span className="flex-1" />
           )}
-          <button
-            type="button"
-            onClick={() => setConfirmExit(true)}
-            className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <LogOut className="h-3.5 w-3.5" /> Salir
-          </button>
-          <button
-            type="button"
-            onClick={() => setReportOpen(true)}
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-border bg-background/80 px-3 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <AlertTriangle className="h-3.5 w-3.5" /> Avisar
-          </button>
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setReportOpen(true)}
+              aria-label="Avisar de un problema"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <AlertTriangle className="h-3.5 w-3.5" />
+              <span className="hidden min-[370px]:inline">Avisar</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmExit(true)}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span className="hidden min-[370px]:inline">Salir</span>
+            </button>
+          </div>
         </div>
         <div className="mt-1.5 flex items-center gap-3">
           <Progress value={((current + 1) / total) * 100} className="h-1.5 flex-1" />
