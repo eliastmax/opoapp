@@ -5,9 +5,11 @@ import {
   topic20CanonicalSourceRun1B,
   topic20ExistingQuestions,
   topic20FastPipelineRun1,
+  topic20FastPipelineRun1B,
   topic20FastPipelineRun1BSourceOnly,
   topic20ManualInterventionLedger,
   topic20PreparedWorkPacketsRun1B,
+  topic20Run1BFinalMetrics,
   topic20Run1BSourceMetrics,
   topic20SemanticBenchmarkMetrics,
   topic20SemanticDraftRun1,
@@ -28,8 +30,8 @@ describe("Content Factory Topic 20 Semantic Accelerator real benchmark", () => {
 
   test("RUN 1B uses CanonicalPageText -> automatic SemanticSourceSpan without manual spans", () => {
     expect(topic20Run1BSourceMetrics.inputPages).toBe(37);
-    expect(topic20Run1BSourceMetrics.extractedTextCharacters).toBeGreaterThan(60000);
-    expect(topic20CanonicalSourceRun1B.length).toBeGreaterThan(30);
+    expect(topic20Run1BSourceMetrics.extractedTextCharacters).toBe(62632);
+    expect(topic20CanonicalSourceRun1B).toHaveLength(38);
     expect(topic20CanonicalSourceRun1B.every((span) => (span.text ?? "").trim().length > 0)).toBe(true);
     expect(topic20SemanticDraftRun1B.mappings).toHaveLength(220);
     expect(topic20ManualInterventionLedger.every((entry) => entry.semanticDecision === false)).toBe(true);
@@ -38,23 +40,52 @@ describe("Content Factory Topic 20 Semantic Accelerator real benchmark", () => {
   test("RUN 1B emits executable canonical work packets and no confidence-only/technical blockers", () => {
     expect(topic20PreparedWorkPacketsRun1B.executableStudyContent).toBe(true);
     expect(topic20PreparedWorkPacketsRun1B.executableQuestions).toBe(true);
-    expect(topic20PreparedWorkPacketsRun1B.studyContent).toHaveLength(topic20SemanticDraftRun1B.concepts.length);
-    expect(topic20PreparedWorkPacketsRun1B.flashcards).toHaveLength(topic20SemanticDraftRun1B.concepts.length);
-    expect(topic20PreparedWorkPacketsRun1B.questions).toHaveLength(topic20FastPipelineRun1BSourceOnly.generationSlots.length);
-    expect(topic20Run1BSourceMetrics.confidenceOnlyBlockers).toBe(0);
-    expect(topic20Run1BSourceMetrics.missingStudyContent).toBe(0);
-    expect(topic20Run1BSourceMetrics.missingQuestionGenerator).toBe(0);
+    expect(topic20PreparedWorkPacketsRun1B.studyContent).toHaveLength(30);
+    expect(topic20PreparedWorkPacketsRun1B.flashcards).toHaveLength(30);
+    expect(topic20PreparedWorkPacketsRun1B.questions).toHaveLength(6);
+    expect(topic20Run1BFinalMetrics.confidenceOnlyBlockers).toBe(0);
+    expect(topic20Run1BFinalMetrics.missingStudyContent).toBe(0);
+    expect(topic20Run1BFinalMetrics.missingQuestionGenerator).toBe(0);
   });
 
-  test("RUN 1B source-stage reaches Governance Packet without silent map repair", () => {
-    expect(topic20FastPipelineRun1BSourceOnly.runNumber).toBe(1);
-    expect(topic20FastPipelineRun1BSourceOnly.governancePacket.exceptions).toEqual(topic20FastPipelineRun1BSourceOnly.exceptionQueue);
-    expect(topic20FastPipelineRun1BSourceOnly.readiness.importReady).toBe(false);
+  test("RUN 1B materializes study content, flashcards and exact gap questions", () => {
+    expect(topic20Run1BFinalMetrics.studyUnitsMaterialized).toBe(7);
+    expect(topic20Run1BFinalMetrics.studyConceptsMaterialized).toBe(30);
+    expect(topic20Run1BFinalMetrics.flashcards).toBe(60);
+    expect(topic20Run1BFinalMetrics.questionsGenerated).toBe(6);
+    expect(topic20Run1BFinalMetrics.parserValidRows).toBe(6);
+    expect(topic20Run1BFinalMetrics.questionQaErrors).toBe(0);
+    expect(topic20FastPipelineRun1B.draft.generatedQuestions.map((candidate) => String(candidate.v2.codigo))).toEqual([
+      "SMS-T20-0221",
+      "SMS-T20-0222",
+      "SMS-T20-0223",
+      "SMS-T20-0224",
+      "SMS-T20-0225",
+      "SMS-T20-0226",
+    ]);
+    expect(topic20FastPipelineRun1B.draft.generatedQuestions.every((candidate) => candidate.v2.documento_referencia === "Temario_new.pdf")).toBe(true);
+  });
+
+  test("RUN 1B closes provisional coverage without map repair or source-capacity invention", () => {
+    expect(topic20Run1BFinalMetrics.coverageReady).toBe(30);
+    expect(topic20Run1BFinalMetrics.actionableGapConcepts).toBe(0);
+    expect(topic20Run1BFinalMetrics.actionableMissingQuestions).toBe(0);
+    expect(topic20Run1BFinalMetrics.coverageSourceReviewRequired).toBe(0);
+    expect(topic20Run1BFinalMetrics.coverageSourceLimited).toBe(0);
+    expect(topic20Run1BFinalMetrics.coverageUnmapped).toBe(0);
+    expect(topic20Run1BFinalMetrics.coverageMultiplePrimary).toBe(0);
+    expect(topic20Run1BFinalMetrics.sourceLimitedCandidates).toBe(0);
     expect(topic20SemanticDraftRun1B.concepts.every((concept) => concept.sourceCapacity == null)).toBe(true);
   });
 
-  test("prints definitive source-stage metrics and packet targets", () => {
-    const materialExceptions = topic20FastPipelineRun1BSourceOnly.exceptionQueue.map((exception) => ({
+  test("RUN 1B reaches the normal Governance Packet as RUN 1 and remains non-production", () => {
+    expect(topic20FastPipelineRun1B.runNumber).toBe(1);
+    expect(topic20FastPipelineRun1B.governancePacket.exceptions).toEqual(topic20FastPipelineRun1B.exceptionQueue);
+    expect(topic20FastPipelineRun1B.readiness.importReady).toBe(false);
+  });
+
+  test("prints definitive RUN 1B metrics and remaining material exceptions", () => {
+    const finalExceptions = topic20FastPipelineRun1B.exceptionQueue.map((exception) => ({
       id: exception.id,
       type: exception.type,
       blocker: exception.blocker,
@@ -62,27 +93,13 @@ describe("Content Factory Topic 20 Semantic Accelerator real benchmark", () => {
       explanation: exception.explanation,
       alternatives: exception.alternatives ?? [],
     }));
-    const concepts = topic20SemanticDraftRun1B.concepts.map((concept) => ({
-      code: concept.code,
-      unitCode: concept.unitCode,
-      title: concept.title,
-      confidence: concept.confidence,
-      sourceRefs: concept.sourceRefs,
-    }));
-    const slots = topic20PreparedWorkPacketsRun1B.questions.map((packet) => ({
-      questionCode: packet.questionCode,
-      conceptCode: packet.conceptCode,
-      unitCode: packet.unitCode,
-      dimension: packet.dimension,
-      sourceRefs: packet.sourceRefs,
-      sourceText: packet.sourceSpans.map((span) => span.text).join("\n"),
-      existingQuestions: packet.existingQuestions,
-    }));
-    console.info("TOPIC20_RUN1B_SOURCE_METRICS", JSON.stringify(topic20Run1BSourceMetrics));
-    console.info("TOPIC20_RUN1B_CONCEPTS", JSON.stringify(concepts));
-    console.info("TOPIC20_RUN1B_MATERIAL_EXCEPTIONS", JSON.stringify(materialExceptions));
-    console.info("TOPIC20_RUN1B_GENERATION_PACKETS", JSON.stringify(slots));
+    const qaFlags = topic20FastPipelineRun1B.questionQa?.issues ?? [];
+    console.info("TOPIC20_RUN1B_FINAL_METRICS", JSON.stringify(topic20Run1BFinalMetrics));
+    console.info("TOPIC20_RUN1B_FINAL_EXCEPTIONS", JSON.stringify(finalExceptions));
+    console.info("TOPIC20_RUN1B_QA_FLAGS", JSON.stringify(qaFlags));
     console.info("TOPIC20_RUN1B_MANUAL_INTERVENTIONS", JSON.stringify(topic20ManualInterventionLedger));
-    expect(topic20Run1BSourceMetrics.units).toBeGreaterThan(0);
+    expect(topic20Run1BFinalMetrics.units).toBe(7);
+    expect(topic20Run1BFinalMetrics.conceptsHigh + topic20Run1BFinalMetrics.conceptsMedium + topic20Run1BFinalMetrics.conceptsLow).toBe(30);
+    expect(topic20Run1BFinalMetrics.mappingsHigh + topic20Run1BFinalMetrics.mappingsMedium + topic20Run1BFinalMetrics.mappingsLow).toBe(220);
   });
 });
