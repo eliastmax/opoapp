@@ -14,6 +14,10 @@ const checksMigration = readFileSync(
   new URL("../../../supabase/migrations/20260820004519_v4_source_limited_checks.sql", import.meta.url),
   "utf8",
 );
+const standardRouterFixMigration = readFileSync(
+  new URL("../../../supabase/migrations/20260820131800_v4_standard_concept_check_router_fix.sql", import.meta.url),
+  "utf8",
+);
 
 describe("V4 source-limited database contract", () => {
   test("stores source limitation on concepts and never on user mastery", () => {
@@ -61,6 +65,19 @@ describe("V4 source-limited database contract", () => {
     expect(checksMigration).toContain("p_mode = 'review' AND pool.retention_targeted_count = 0");
     expect(checksMigration).toContain("pool.targeted_count");
     expect(checksMigration).toContain("v_active_primary_questions < v_ceiling");
+  });
+
+  test("routes standard concepts with null capacity to the preserved standard selector", () => {
+    expect(standardRouterFixMigration).toContain(
+      "COALESCE(concept.source_capacity_status = 'source_limited', FALSE)",
+    );
+    expect(standardRouterFixMigration).toContain(
+      "create_v4_source_limited_concept_check",
+    );
+    expect(standardRouterFixMigration).toContain(
+      "create_v4_concept_check_standard",
+    );
+    expect(standardRouterFixMigration).not.toContain("ALTER TABLE");
   });
 
   test("Today receives catalog capacity instead of guessing from question count", () => {
