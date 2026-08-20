@@ -148,6 +148,8 @@ type ConceptCluster = {
   minPage: number;
 };
 
+type AnchorMappingIndex = Map<string, FactoryQuestionAssignment>;
+
 function clean(value?: string | null) {
   return value?.trim() ?? "";
 }
@@ -284,8 +286,12 @@ function sharedSpan(left: QuestionWork, right: QuestionWork) {
   return right.evidenceSpans.some((span) => ids.has(span.id));
 }
 
-function questionsCompatible(left: QuestionWork, right: QuestionWork) {
+function questionsCompatible(left: QuestionWork, right: QuestionWork, anchoredMappings: AnchorMappingIndex) {
+  const leftAnchor = anchoredMappings.get(left.question.code)?.primaryConceptCode;
+  const rightAnchor = anchoredMappings.get(right.question.code)?.primaryConceptCode;
+  if (leftAnchor && rightAnchor) return leftAnchor === rightAnchor;
   if (left.unitKey !== right.unitKey) return false;
+
   const labelLeft = normalizeText(left.conceptLabel);
   const labelRight = normalizeText(right.conceptLabel);
   const objectiveLeft = normalizeText(left.objective);
@@ -299,10 +305,8 @@ function questionsCompatible(left: QuestionWork, right: QuestionWork) {
   const sameSource = sharedSpan(left, right) || sameArticle;
   if (sameLabel || sameObjective) return true;
 
-  // A canonical legal article plus the same subpart is a bounded structural-semantic
-  // signal. A shared parser span alone is deliberately insufficient.
-  if (sameArticle && sameSubpart) return true;
-
+  // Article, subpart and span are contextual corroboration only. They cannot establish
+  // concept identity without a real semantic signal in label/objective.
   const labelSimilarity = labelLeft && labelRight ? jaccard(labelLeft, labelRight) : 0;
   const objectiveSimilarity = objectiveLeft && objectiveRight ? jaccard(objectiveLeft, objectiveRight) : 0;
   if (labelSimilarity >= 0.72 && (sameSource || sameSubpart)) return true;
@@ -310,11 +314,11 @@ function questionsCompatible(left: QuestionWork, right: QuestionWork) {
   return labelSimilarity >= 0.55 && objectiveSimilarity >= 0.55 && sameSource;
 }
 
-function clustersCompatible(left: number[], right: number[], rows: QuestionWork[]) {
+function clustersCompatible(left: number[], right: number[], rows: QuestionWork[], anchoredMappings: AnchorMappingIndex) {
   // Complete-link guard: every cross-cluster pair must remain semantically compatible.
   // A bridge member can no longer connect two groups that are incompatible with each other.
   return left.every((leftIndex) =>
-    right.every((rightIndex) => questionsCompatible(rows[leftIndex], rows[rightIndex])),
+    right.every((rightIndex) => questionsCompatible(rows[leftIndex], rows[rightIndex], anchoredMappings)),
   );
 }
 
@@ -327,7 +331,7 @@ function conceptTitle(rows: QuestionWork[], spans: SemanticSourceSpan[]) {
     || "Concepto provisional";
 }
 
-function clusterQuestions(rows: QuestionWork[]) {
+function clusterQuestions(rows: QuestionWork[], anchoredMappings: AnchorMappingIndex) {
   let clusters = rows
     .map((row, index) => ({ row, index }))
     .filter(({ row }) => row.canonical)
@@ -341,7 +345,7 @@ function clusterQuestions(rows: QuestionWork[]) {
     merged = false;
     outer: for (let left = 0; left < clusters.length; left += 1) {
       for (let right = left + 1; right < clusters.length; right += 1) {
-        if (!clustersCompatible(clusters[left], clusters[right], rows)) continue;
+        if (!clustersCompatible(clusters[left], clusters[right], rows, anchoredMappings)) continue;
         clusters[left] = [...clusters[left], ...clusters[right]].sort((a, b) =>
           rows[a].question.code.localeCompare(rows[b].question.code, "es"),
         );
@@ -448,9 +452,15 @@ function anchorConcepts(input: BuildSemanticTopicDraftInput) {
   return packages.flatMap((pkg) => pkg.concepts);
 }
 
-function anchorMappings(input: BuildSemanticTopicDraftInput) {
+function anchorMappings(input: BuildSemanticTopicDraftInput): AnchorMappingIndex {
   const packages = [input.approvedAnchors, input.existingV4].filter(Boolean) as V4StudyContentPackage[];
-  return new Map(packages.flatMap((pkg) => pkg.questionMappings).map((mapping) => [mapping.questionCode, mapping]));
+  return new Map(packages.flatMap((pkg) => pkg.questionMappings).map((mapping) => [mapping.questionCode, {
+    questionCode: mapping.questionCode,
+    primaryConceptCode: mapping.primaryConceptCode,
+    secondaryConceptCodes: mapping.secondaryConceptCodes,
+    confidence: "high" as const,
+    rationale: "Approved anchor.",
+  }]));
 }
 
 function codeForUnit(title: string, position: number, input: BuildSemanticTopicDraftInput) {
@@ -579,7 +589,9 @@ export function buildSemanticTopicDraft(input: BuildSemanticTopicDraftInput): Se
     return { unit, meta: { confidence, reason: hasSource ? "V2 section signals and canonical spans converge on the same unit boundary." : "Unit boundary comes from V2 section metadata without a precise canonical span match.", evidence: { spanIds: spans.map((span) => span.id), sourceRefs: refs, signals: stableSortStrings(unique(rows.flatMap((row) => [row.unitLabel, ...row.articleNumbers.map(String)]).filter(Boolean))) }, affectedQuestionCodes: rows.map((row) => row.question.code).sort() } };
   });
 
-  const clusterIndexes = clusterQuestions(work);
+  const anchoredMappings = anchorMappings(input);
+  const approvedConcepts = anchorConcepts(input);
+  const clusterIndexes = clusterQuestions(work, anchoredMappings);
   const rawClusters: ConceptCluster[] = clusterIndexes.map((indexes) => {
     const rows = indexes.map((index) => work[index]);
     const spans = unique(rows.flatMap((row) => row.evidenceSpans).map((span) => span.id)).map((id) => canonicalSpans.find((span) => span.id === id)!).filter(Boolean);
@@ -594,29 +606,34 @@ export function buildSemanticTopicDraft(input: BuildSemanticTopicDraftInput): Se
   const clusterConceptCode = new Map<ConceptCluster, string>();
   rawClusters.forEach((cluster, index) => {
     const rows = cluster.questionIndexes.map((questionIndex) => work[questionIndex]);
+    const anchoredConceptCodes = unique(rows.map((row) => anchoredMappings.get(row.question.code)?.primaryConceptCode).filter((code): code is string => Boolean(code)));
+    const approvedConcept = anchoredConceptCodes.length === 1
+      ? approvedConcepts.find((concept) => concept.code === anchoredConceptCodes[0])
+      : undefined;
     const distinctLabels = unique(rows.map((row) => normalizeText(row.conceptLabel)).filter(Boolean));
     const confidence = proposalConfidence({ questionCount: rows.length, hasSource: cluster.sourceSpans.length > 0, labelCount: distinctLabels.length, minimum: policy.minimumConceptQuestionsForHighConfidence ?? 2 });
-    const unitCode = unitCodeByKey.get(cluster.unitKey) ?? unitProposals[0]?.unit.code ?? stableUnitCode(input.job.codePrefix, 1);
-    const code = codeForConcept(cluster.title, unitCode, index + 1, input);
+    const rawUnitCode = unitCodeByKey.get(cluster.unitKey) ?? unitProposals[0]?.unit.code ?? stableUnitCode(input.job.codePrefix, 1);
+    const unitCode = approvedConcept?.unitCode ?? rawUnitCode;
+    const title = approvedConcept?.title ?? cluster.title;
+    const code = approvedConcept?.code ?? codeForConcept(title, unitCode, index + 1, input);
     clusterConceptCode.set(cluster, code);
     const refs = sourceRefs(cluster.sourceSpans);
     const concept: ProposedConcept = {
       code,
       unitCode,
-      title: cluster.title,
+      title,
       description: "Propuesta semántica provisional derivada de señales V2 y spans de la fuente canónica; el contenido sustantivo debe generarse únicamente desde esas evidencias.",
       position: index + 1,
       confidence,
       sourceRefs: refs,
     };
-    conceptProposals.push({ concept, meta: { confidence, reason: confidence === "high" ? "Multiple V2 items converge on the same semantic label/objective and canonical source scope." : cluster.sourceSpans.length > 0 ? "Canonical source is present but the concept has limited or mixed bank evidence." : "The concept lacks a precise canonical source span and requires review.", evidence: { spanIds: cluster.sourceSpans.map((span) => span.id), sourceRefs: refs, signals: stableSortStrings(unique(rows.flatMap((row) => [row.conceptLabel, row.objective, row.subpart, ...row.articleNumbers.map(String)]).filter(Boolean))) }, affectedQuestionCodes: rows.map((row) => row.question.code).sort() } });
+    conceptProposals.push({ concept, meta: { confidence, reason: approvedConcept ? "Approved V4 anchor preserves the reviewed concept boundary while canonical evidence is re-evaluated." : confidence === "high" ? "Multiple V2 items converge on the same semantic label/objective and canonical source scope." : cluster.sourceSpans.length > 0 ? "Canonical source is present but the concept has limited or mixed bank evidence." : "The concept lacks a precise canonical source span and requires review.", evidence: { spanIds: cluster.sourceSpans.map((span) => span.id), sourceRefs: refs, signals: stableSortStrings(unique(rows.flatMap((row) => [row.conceptLabel, row.objective, row.subpart, ...row.articleNumbers.map(String)]).filter(Boolean))) }, affectedQuestionCodes: rows.map((row) => row.question.code).sort() } });
   });
   const concepts = conceptProposals.map((proposal) => proposal.concept);
 
   const clusterByQuestionIndex = new Map<number, ConceptCluster>();
   for (const cluster of rawClusters) for (const index of cluster.questionIndexes) clusterByQuestionIndex.set(index, cluster);
   const mappingProposals: SemanticMappingProposal[] = [];
-  const anchoredMappings = anchorMappings(input);
   for (let index = 0; index < work.length; index += 1) {
     const row = work[index];
     if (!row.canonical) continue;
@@ -636,17 +653,17 @@ export function buildSemanticTopicDraft(input: BuildSemanticTopicDraftInput): Se
     const hybrid = Boolean(top && second && top.score >= 5 && second.score >= top.score - 1);
     const hasSource = row.evidenceSpans.length > 0;
     const confidence: FactoryProposalConfidence = !hasSource ? "low" : hybrid ? "medium" : (top?.score ?? 0) >= 7 ? "high" : "medium";
-    const primary = top?.concept.code ?? recommended;
-    const mapping: FactoryQuestionAssignment = { questionCode: row.question.code, primaryConceptCode: primary, confidence, rationale: `Semantic Builder: ${hasSource ? "canonical span matched" : "no precise canonical span"}; ${hybrid ? "multiple credible concept candidates" : "single recommended primary"}.` };
+    const anchor = anchoredMappings.get(row.question.code);
+    const primary = anchor?.primaryConceptCode ?? top?.concept.code ?? recommended;
+    const mapping: FactoryQuestionAssignment = { questionCode: row.question.code, primaryConceptCode: primary, confidence, rationale: `Semantic Builder: ${hasSource ? "canonical span matched" : "no precise canonical span"}; ${anchor ? "approved anchor preserved" : hybrid ? "multiple credible concept candidates" : "single recommended primary"}.` };
     const candidateConceptCodes = candidates.filter((candidate) => candidate.score >= Math.max(4, (top?.score ?? 0) - 1)).map((candidate) => candidate.concept.code);
-    mappingProposals.push({ mapping, meta: { confidence, reason: mapping.rationale ?? "Semantic mapping proposal.", evidence: { spanIds: row.evidenceSpans.map((span) => span.id), sourceRefs: sourceRefs(row.evidenceSpans), signals: [row.conceptLabel, row.objective, row.subpart, clean(row.question.perspective)].filter(Boolean) }, affectedQuestionCodes: [row.question.code] }, candidateConceptCodes, hybrid });
-    if (hybrid) {
+    mappingProposals.push({ mapping, meta: { confidence, reason: mapping.rationale ?? "Semantic mapping proposal.", evidence: { spanIds: row.evidenceSpans.map((span) => span.id), sourceRefs: sourceRefs(row.evidenceSpans), signals: [row.conceptLabel, row.objective, row.subpart, clean(row.question.perspective)].filter(Boolean) }, affectedQuestionCodes: [row.question.code] }, candidateConceptCodes, hybrid: anchor ? false : hybrid });
+    if (hybrid && !anchor) {
       semanticExceptions.push(semanticException({ type: "mapping_ambiguity", blocker: false, severity: "warning", confidence: "medium", subject: { kind: "mapping", id: row.question.code }, discriminator: candidateConceptCodes.join("-"), explanation: `${row.question.code} has more than one credible primary concept from V2/source signals: ${candidateConceptCodes.join(", ")}.`, recommendation: `Keep ${primary} provisionally and review only this primary boundary.`, alternatives: candidateConceptCodes.slice(1).map((code) => `Use ${code} as primary.`) }));
     }
     if (confidence === "low") {
       semanticExceptions.push(semanticException({ type: "source_traceability", blocker: true, severity: "error", confidence: "low", subject: { kind: "mapping", id: row.question.code }, discriminator: "low-confidence-primary", explanation: `${row.question.code} cannot be assigned to a primary with sufficient canonical traceability.`, recommendation: "Review the canonical span before accepting any primary mapping." }));
     }
-    const anchor = anchoredMappings.get(row.question.code);
     if (anchor && anchor.primaryConceptCode !== primary) {
       semanticExceptions.push(semanticException({ type: "anchor_conflict", blocker: true, severity: "error", confidence: "low", subject: { kind: "mapping", id: row.question.code }, discriminator: `${anchor.primaryConceptCode}-${primary}`, explanation: `${row.question.code} is anchored to ${anchor.primaryConceptCode} but the semantic proposal recommends ${primary}.`, recommendation: "Preserve the approved anchor unless Governance explicitly changes it.", alternatives: [`Use semantic proposal ${primary}.`] }));
     }
