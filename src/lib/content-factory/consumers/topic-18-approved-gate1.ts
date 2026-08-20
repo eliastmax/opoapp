@@ -1,5 +1,5 @@
 import { buildGate1Report } from "../reports";
-import type { FactoryQuestionAssignment } from "../types";
+import type { FactoryQuestionAssignment, ProposedConcept } from "../types";
 import {
   topic18Gate1Assignments,
   topic18Gate1Concepts,
@@ -7,13 +7,16 @@ import {
   topic18Gate1Units,
 } from "./topic-18-gate1";
 
+const C29_SOURCE_LIMIT_REASON =
+  "Temario_new.pdf, art. 38, contiene una única regla sustantiva de ejecutividad ya medida directamente por SMS-T18-0199; no admite más dimensiones independientes sin repetir conocimiento.";
+
 /**
  * Governance-approved Topic 18 Gate 1.
  *
  * The original Gate 1 consumer remains as the review snapshot. This approved
- * layer applies the single editorial correction authorized by Governance:
- * SMS-T18-0239 belongs primarily to C30 because efficacy delay is the decisive
- * rule; article 38 / C29 remains only the contrast.
+ * layer applies the editorial decisions authorized by Governance:
+ * - SMS-T18-0239 belongs primarily to C30 because efficacy delay is decisive.
+ * - C29 remains separate and is source_limited at one independent primary item.
  */
 export const topic18ApprovedAssignments: FactoryQuestionAssignment[] = topic18Gate1Assignments.map(
   (assignment) =>
@@ -28,10 +31,28 @@ export const topic18ApprovedAssignments: FactoryQuestionAssignment[] = topic18Ga
       : assignment,
 );
 
+export const topic18ApprovedConcepts: ProposedConcept[] = topic18Gate1Concepts.map((concept) =>
+  concept.code === "SMS-T18-C29"
+    ? {
+        ...concept,
+        confidence: "high",
+        sourceCapacity: {
+          status: "source_limited",
+          sourceSupportedCeiling: 1,
+          reason: C29_SOURCE_LIMIT_REASON,
+        },
+        observations: [
+          ...(concept.observations ?? []),
+          "Gate 2.1: source_limited; nominalThreshold=4, sourceSupportedCeiling=1, blockedAdditionalQuestions=3.",
+        ],
+      }
+    : concept,
+);
+
 export const topic18ApprovedGate1Report = buildGate1Report({
   job: topic18Gate1Job,
   units: topic18Gate1Units,
-  concepts: topic18Gate1Concepts,
+  concepts: topic18ApprovedConcepts,
   assignments: topic18ApprovedAssignments,
 });
 
@@ -56,6 +77,14 @@ export const topic18ApprovedGate1 = {
       concepts: ["SMS-T18-C14", "SMS-T18-C15", "SMS-T18-C16"],
     },
     canonicalSource: "Temario_new.pdf",
+    sourceLimited: {
+      conceptCode: "SMS-T18-C29",
+      primaryCount: 1,
+      nominalThreshold: 4,
+      sourceSupportedCeiling: 1,
+      blockedAdditionalQuestions: 3,
+      reason: C29_SOURCE_LIMIT_REASON,
+    },
   },
   correction: {
     questionCode: "SMS-T18-0239",
