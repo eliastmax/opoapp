@@ -15,11 +15,11 @@ const checksMigration = readFileSync(
   "utf8",
 );
 const standardCheckRouterFixMigration = readFileSync(
-  new URL("../../../supabase/migrations/20260820131800_v4_standard_concept_check_router_fix.sql", import.meta.url),
+  new URL("../../../supabase/migrations/20260820133006_v4_standard_concept_check_router_fix.sql", import.meta.url),
   "utf8",
 );
 const standardMasteryRouterFixMigration = readFileSync(
-  new URL("../../../supabase/migrations/20260820132600_v4_standard_mastery_router_fix.sql", import.meta.url),
+  new URL("../../../supabase/migrations/20260820133300_v4_standard_mastery_router_fix.sql", import.meta.url),
   "utf8",
 );
 
