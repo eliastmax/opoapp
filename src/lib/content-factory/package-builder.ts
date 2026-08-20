@@ -98,6 +98,10 @@ export function buildContentFactoryPortableOutput(input: {
   const questionValidation = auditGeneratedQuestionCandidates({
     candidates: generatedQuestions,
     concepts: input.content.concepts,
+    existingQuestions: input.job.existingQuestions,
+    canonicalDocument: input.job.sourcePolicy?.canonicalOnly
+      ? input.job.sourcePolicy.document
+      : undefined,
   });
   const v4Validation = validateV4StudyContentPackage(v4Package);
 
