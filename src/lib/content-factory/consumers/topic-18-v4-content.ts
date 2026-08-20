@@ -1,4 +1,5 @@
 import type { V4StudyContentPackage } from "../../v4-content-package";
+import type { V4SourceCapacity } from "../../v4-source-capacity";
 import {
   topic18Gate2Concepts as topic18Gate2RawConcepts,
   topic18Gate2Flashcards as topic18Gate2PrimaryCards,
@@ -12,11 +13,12 @@ import { topic18Gate1Concepts } from "./topic-18-gate1";
 import { topic18Gate21QuestionCandidates } from "./topic-18-gap-questions-gate21";
 import { topic18SourceLimitedSlots } from "./topic-18-source-limited";
 
-const approvedCapacityByCode = new Map(
-  topic18Gate1Concepts
-    .filter((concept) => concept.sourceCapacity?.status === "source_limited")
-    .map((concept) => [concept.code, concept.sourceCapacity] as const),
-);
+const approvedCapacityByCode = new Map<string, V4SourceCapacity>();
+for (const concept of topic18Gate1Concepts) {
+  if (concept.sourceCapacity?.status === "source_limited") {
+    approvedCapacityByCode.set(concept.code, concept.sourceCapacity);
+  }
+}
 
 /** Generic promotion of approved Factory source_limited metadata into the V4 draft. */
 export const topic18Gate2Concepts = topic18Gate2RawConcepts.map((concept) => {
