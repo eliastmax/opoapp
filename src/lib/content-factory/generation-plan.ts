@@ -11,9 +11,15 @@ export function planDirectedQuestionGeneration(input: {
   codePrefix: string;
   usedQuestionCodes: Iterable<string>;
   preferredDimensionsByConcept?: Record<string, FactoryEvidenceDimension[]>;
+  /** Optional targeted-regeneration scope. Omitted preserves the original all-gap behavior. */
+  conceptCodes?: Iterable<string>;
 }): FactoryQuestionGenerationSlot[] {
+  const conceptScope = input.conceptCodes ? new Set(input.conceptCodes) : null;
   const actionableRows = input.coverage.factoryConceptCoverage.filter(
-    (row) => row.status === "coverage_gap" && row.actionableMissingPrimaryQuestions > 0,
+    (row) =>
+      row.status === "coverage_gap" &&
+      row.actionableMissingPrimaryQuestions > 0 &&
+      (conceptScope === null || conceptScope.has(row.conceptId)),
   );
   const total = actionableRows.reduce(
     (sum, row) => sum + row.actionableMissingPrimaryQuestions,
