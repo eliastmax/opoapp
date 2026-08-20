@@ -6,7 +6,7 @@ Semantic Accelerator removes the remaining manual provider-construction bottlene
 
 Target flow:
 
-`canonical source representation + existing V2 bank -> buildSemanticTopicDraft() -> runContentFactoryTopicFromSemanticDraft() -> governance exceptions -> RUN 2`
+`canonical source representation + existing V2 bank -> buildSemanticTopicDraft() -> runContentFactoryTopicWithSemanticDraft() -> governance exceptions -> RUN 2`
 
 The source of substantive truth remains the configured canonical source. For SMS this continues to be `Temario_new.pdf` exclusively.
 
@@ -105,7 +105,7 @@ This removes repetitive structuring while preserving the rule that final substan
 
 ## FAST PIPELINE integration
 
-`SemanticTopicDraft.structuralDraft` is directly compatible with FAST PIPELINE. `runContentFactoryTopicFromSemanticDraft()` passes the proposed units, concepts and mappings as the provisional provider. The caller no longer writes the provider arrays manually.
+`SemanticTopicDraft.structuralDraft` is directly compatible with FAST PIPELINE. `runContentFactoryTopicWithSemanticDraft()` passes the proposed units, concepts and mappings as the provisional provider and merges semantic exceptions into the normal Fast Pipeline `exceptionQueue`, Governance Packet and readiness blockers. The caller no longer writes the provider arrays manually and Governance does not receive a parallel review channel.
 
 Downstream high-quality study-content/question generation remains an operation of FAST PIPELINE; the Semantic Accelerator provides its structured evidence inputs rather than pretending deterministic clustering can replace editorial generation.
 
@@ -115,7 +115,7 @@ Existing V2 metadata is the strongest source of semantic discrimination. High co
 
 ## Greenfield behavior
 
-Without a bank, the builder derives units from canonical section hierarchy and concept seeds from canonical headings/articles. Unit confidence can be high when source structure is explicit, but concept confidence defaults lower because no question evidence exists. This is intentional.
+Without a bank, the builder derives units from canonical source hierarchy and concept seeds from canonical headings/articles. Unit confidence can be high when source structure is explicit, but concept confidence defaults lower because no question evidence exists. This is intentional.
 
 ## Retrospective goldens
 
