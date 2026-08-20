@@ -9,29 +9,31 @@ import {
   Clock3,
   Loader2,
   Play,
-  Route as RouteIcon,
   Sparkles,
 } from "lucide-react";
-import { ActiveOppositionContext } from "@/components/active-opposition-context";
-import { WeeklyRoadmap } from "@/components/weekly-roadmap";
+import { WeeklyRoadmapSummary } from "@/components/weekly-roadmap";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  remainingSessionMinutes,
+  todayExperienceState,
+  todayPlanReason,
+  todayPlanTitle,
+} from "@/lib/today-experience";
 import { dailySessionPlanFromTodayPlan } from "@/lib/v4-daily-session";
 import { composeV4TodayPlan, type V4TodayContextRow } from "@/lib/v4-today-plan";
 import { BLOCK_COPY, formatDueDate, localDate, type V4DailySession } from "@/lib/v4-experience";
 import { displayName } from "@/lib/user-greeting";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/inicio")({ component: InicioPage });
-const TIME_OPTIONS = [15, 25, 40] as const;
+const DEFAULT_AVAILABLE_MINUTES = 25;
 
 function InicioPage() {
   const navigate = useNavigate();
   const today = localDate();
-  const [availableMinutes, setAvailableMinutes] = useState<number>(25);
   const [starting, setStarting] = useState(false);
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["today-experience", today],
@@ -40,22 +42,45 @@ function InicioPage() {
       if (userResult.error || !userResult.data.user)
         throw userResult.error ?? new Error("Sesión no válida");
       const user = userResult.data.user;
-      const [profile, context, session, unfinished] = await Promise.all([
-        supabase.from("profiles").select("nombre").eq("id", user.id).maybeSingle(),
-        supabase.rpc("prepare_my_v4_today_context"),
-        supabase.rpc("get_my_v4_daily_session", { p_local_date: today }),
+      const profile = await supabase
+        .from("profiles")
+        .select("nombre, active_opposition_id")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (profile.error) throw profile.error;
+
+      const oppositionId = profile.data?.active_opposition_id ?? null;
+      const [preparation, session, unfinished] = await Promise.all([
+        oppositionId
+          ? supabase
+              .from("preparation_profiles")
+              .select("status")
+              .eq("user_id", user.id)
+              .eq("opposition_id", oppositionId)
+              .maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
+        oppositionId
+          ? supabase.rpc("get_my_v4_daily_session", { p_local_date: today })
+          : Promise.resolve({ data: null, error: null }),
         supabase
           .from("tests")
           .select("id, numero_preguntas")
           .eq("user_id", user.id)
           .eq("completado", false)
+          .neq("tipo", "v4_concept_check")
           .order("fecha_inicio", { ascending: false })
           .limit(1)
           .maybeSingle(),
       ]);
-      if (context.error) throw context.error;
+      if (preparation.error) throw preparation.error;
       if (session.error) throw session.error;
       if (unfinished.error) throw unfinished.error;
+
+      const preparationConfigured = preparation.data?.status === "completed";
+      const context = preparationConfigured
+        ? await supabase.rpc("prepare_my_v4_today_context")
+        : { data: [], error: null };
+      if (context.error) throw context.error;
       const answerResult = unfinished.data
         ? await supabase
             .from("test_answers")
@@ -63,30 +88,44 @@ function InicioPage() {
             .eq("test_id", unfinished.data.id)
         : { data: [], error: null };
       if (answerResult.error) throw answerResult.error;
-      const answers = answerResult.data ?? [];
+
       return {
         userName: displayName({
           profileName: profile.data?.nombre,
           metadataName: user.user_metadata?.nombre,
           email: user.email,
         }),
+        preparationConfigured,
         rows: (context.data ?? []) as V4TodayContextRow[],
         session: session.data as V4DailySession | null,
         unfinished: unfinished.data
           ? {
               id: unfinished.data.id,
               total: unfinished.data.numero_preguntas,
-              answered: answers.filter((answer) => answer.respuesta_usuario !== null).length,
+              answered: (answerResult.data ?? []).filter(
+                (answer) => answer.respuesta_usuario !== null,
+              ).length,
             }
           : null,
       };
     },
   });
+
   const plan = useMemo(
-    () => composeV4TodayPlan({ availableMinutes, today, rows: data?.rows ?? [] }),
-    [availableMinutes, data?.rows, today],
+    () =>
+      composeV4TodayPlan({
+        availableMinutes: DEFAULT_AVAILABLE_MINUTES,
+        today,
+        rows: data?.rows ?? [],
+      }),
+    [data?.rows, today],
   );
-  const primaryBlock = plan.blocks[0];
+  const state = todayExperienceState({
+    preparationConfigured: data?.preparationConfigured ?? false,
+    rows: data?.rows ?? [],
+    session: data?.session ?? null,
+    plan,
+  });
 
   async function startToday() {
     if (data?.session) return void navigate({ to: "/sesion" });
@@ -107,19 +146,13 @@ function InicioPage() {
     }
   }
 
-  const completed =
-    data?.session?.blocks.filter((block) => block.status === "completed").length ?? 0;
   return (
-    <div className="space-y-5">
-      <header className="pt-2">
+    <div className="space-y-4">
+      <header className="pt-1">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Hoy</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight">
-          {isLoading ? "Preparando tu sesión…" : `Hola, ${data?.userName ?? ""}`}
+          {isLoading ? "Preparando tu siguiente paso…" : `Hola, ${data?.userName ?? ""}`}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Tu siguiente paso, sin tener que decidirlo.
-        </p>
-        <ActiveOppositionContext />
       </header>
 
       {isLoading ? (
@@ -134,151 +167,179 @@ function InicioPage() {
             Reintentar
           </Button>
         </Card>
-      ) : data?.session ? (
-        <PrimaryCard
-          icon={Play}
-          eyebrow={data.session.status === "active" ? "Sesión en curso" : "Sesión terminada"}
-          title={
-            data.session.status === "active"
-              ? "Continúa donde lo dejaste"
-              : "Revisa el cierre de hoy"
-          }
-          description={`${completed} de ${data.session.blocks.length} bloques completados · ${data.session.plannedMinutes} min`}
-          action={data.session.status === "active" ? "Continuar sesión" : "Ver debrief"}
-          onAction={() => navigate({ to: "/sesion" })}
+      ) : (
+        <TodayPrimary
+          state={state}
+          session={data?.session ?? null}
+          plan={plan}
+          starting={starting}
+          onStart={startToday}
+          onNavigate={(to) => navigate({ to })}
         />
-      ) : data?.unfinished ? (
-        <Card className="overflow-hidden border-primary/20 bg-card p-5 shadow-[0_20px_46px_-30px_oklch(0.3_0.12_250/0.75)]">
-          <div className="flex items-start gap-3">
-            <span className="rounded-xl bg-primary/10 p-2.5 text-primary">
-              <Play className="h-5 w-5" />
+      )}
+
+      {!isLoading && !error && data?.unfinished && <UnfinishedTestCard test={data.unfinished} />}
+      {!isLoading && !error && data?.preparationConfigured && <WeeklyRoadmapSummary />}
+      {!isLoading && !error && data?.preparationConfigured && (
+        <Link to="/estudio" className="block">
+          <Card className="flex items-center gap-3 border-border/70 bg-card/70 p-3.5 transition-colors hover:bg-accent/40">
+            <span className="rounded-xl bg-primary/10 p-2 text-primary">
+              <BookOpen className="h-4 w-4" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
-                Primero, termina lo empezado
-              </p>
-              <h2 className="mt-1 text-lg font-bold">Continúa tu test</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {data.unfinished.answered} de {data.unfinished.total} respondidas
+              <p className="text-sm font-bold">Centro de estudio</p>
+              <p className="text-xs text-muted-foreground">
+                Consulta unidades y puntos de atención
               </p>
             </div>
-          </div>
-          <Button
-            className="mt-4 h-12 w-full"
-            onClick={() =>
-              navigate({
-                to: "/test/$id",
-                params: { id: data.unfinished!.id },
-                search: { block: undefined, session: undefined },
-              })
-            }
-          >
-            Continuar test <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </Card>
-      ) : plan.status === "ready" && primaryBlock ? (
-        <PrimaryCard
-          icon={Sparkles}
-          eyebrow="Toca ahora"
-          title={`${BLOCK_COPY[primaryBlock.kind].action}: ${primaryBlock.studyUnitTitle}`}
-          description={primaryBlock.reason}
-          meta={
-            <>
-              <span>
-                <Clock3 className="h-3.5 w-3.5" /> {plan.plannedMinutes} min
-              </span>
-              <span>
-                <RouteIcon className="h-3.5 w-3.5" /> {plan.blocks.length}{" "}
-                {plan.blocks.length === 1 ? "bloque" : "bloques"}
-              </span>
-            </>
-          }
-          action="Comenzar sesión"
-          loading={starting}
-          onAction={startToday}
-        />
-      ) : (
-        <Card className="p-5">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-success/10 text-success">
-            <CheckCircle2 className="h-5 w-5" />
-          </span>
-          <h2 className="mt-3 text-lg font-bold">No hay nada urgente ahora</h2>
-          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-            {plan.status === "no_content"
-              ? "Todavía no hay contenido V4 disponible para esta oposición. Puedes seguir practicando con tus tests."
-              : plan.nextDueOn
-                ? `El próximo repaso está previsto para el ${formatDueDate(plan.nextDueOn)}.`
-                : "OpoTest volverá a ordenar tu trabajo cuando aparezca nueva evidencia."}
-          </p>
-          <Button asChild variant="outline" className="mt-4 w-full">
-            <Link to="/crear">Practicar por mi cuenta</Link>
-          </Button>
-        </Card>
+            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          </Card>
+        </Link>
       )}
-
-      {!data?.session && !data?.unfinished && plan.status === "ready" && (
-        <section aria-labelledby="time-heading">
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <h2 id="time-heading" className="text-sm font-bold">
-              Tiempo disponible
-            </h2>
-            <span className="text-right text-xs text-muted-foreground">
-              Ajusta antes de empezar
-            </span>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            {TIME_OPTIONS.map((minutes) => (
-              <button
-                key={minutes}
-                type="button"
-                onClick={() => setAvailableMinutes(minutes)}
-                aria-pressed={availableMinutes === minutes}
-                className={cn(
-                  "h-11 rounded-xl border text-sm font-bold transition-colors",
-                  availableMinutes === minutes
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "bg-card text-muted-foreground hover:border-primary/40",
-                )}
-              >
-                {minutes} min
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <Link to="/estudio" className="block">
-        <Card className="flex items-center gap-3 border-primary/15 bg-card/90 p-4 transition-colors hover:bg-accent/40">
-          <span className="rounded-xl bg-primary/10 p-2.5 text-primary">
-            <BookOpen className="h-5 w-5" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold">Centro de estudio</p>
-            <p className="text-xs text-muted-foreground">
-              Unidades, conocimiento y puntos de atención
-            </p>
-          </div>
-          <ArrowRight className="h-4 w-4 text-muted-foreground" />
-        </Card>
-      </Link>
-      <details className="group rounded-2xl border bg-card/80">
-        <summary className="flex cursor-pointer list-none items-center gap-3 p-4">
-          <span className="rounded-xl bg-muted p-2 text-muted-foreground">
-            <Brain className="h-4 w-4" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-bold">Tu semana</span>
-            <span className="block text-xs text-muted-foreground">
-              Consulta la hoja de ruta cuando la necesites
-            </span>
-          </span>
-          <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-90" />
-        </summary>
-        <div className="border-t p-3">
-          <WeeklyRoadmap />
-        </div>
-      </details>
     </div>
+  );
+}
+
+function TodayPrimary({
+  state,
+  session,
+  plan,
+  starting,
+  onStart,
+  onNavigate,
+}: {
+  state: ReturnType<typeof todayExperienceState>;
+  session: V4DailySession | null;
+  plan: ReturnType<typeof composeV4TodayPlan>;
+  starting: boolean;
+  onStart: () => void;
+  onNavigate: (to: "/sesion" | "/preparacion" | "/crear" | "/estudio") => void;
+}) {
+  if (state === "unconfigured")
+    return (
+      <PrimaryCard
+        icon={Sparkles}
+        eyebrow="Vamos a preparar tu oposición"
+        title="Empieza con un plan hecho para ti"
+        description="Tú nos cuentas cómo te preparas. OpoTest organizará qué estudiar cada día."
+        action="Preparar mi plan"
+        onAction={() => onNavigate("/preparacion")}
+      />
+    );
+
+  if (state === "session_active" && session) {
+    const current =
+      session.blocks.find((block) => block.status === "in_progress") ??
+      session.blocks.find((block) => block.status === "planned");
+    return (
+      <PrimaryCard
+        icon={Play}
+        eyebrow="Continúa tu sesión"
+        title={
+          current
+            ? `Ahora toca ${BLOCK_COPY[current.kind].action.toLowerCase()}`
+            : "Sigue donde lo dejaste"
+        }
+        description={
+          current
+            ? `${BLOCK_COPY[current.kind].purpose} Te quedan aproximadamente ${remainingSessionMinutes(session)} min.`
+            : "Tu siguiente paso está preparado."
+        }
+        action="Continuar sesión"
+        onAction={() => onNavigate("/sesion")}
+      />
+    );
+  }
+
+  if (state === "session_complete" && session)
+    return (
+      <PrimaryCard
+        icon={CheckCircle2}
+        eyebrow="Sesión terminada"
+        title="Cierra el trabajo de hoy"
+        description="Revisa qué cambió y qué organizará OpoTest a continuación."
+        action="Ver debrief"
+        onAction={() => onNavigate("/sesion")}
+      />
+    );
+
+  if ((state === "first_session" || state === "habitual") && plan.blocks[0]) {
+    const first = plan.blocks[0];
+    return (
+      <PrimaryCard
+        icon={state === "first_session" ? BookOpen : Sparkles}
+        eyebrow={state === "first_session" ? "Tu primera sesión" : "Tu sesión de hoy"}
+        title={
+          state === "first_session" ? `Empieza por ${first.studyUnitTitle}` : todayPlanTitle(plan)
+        }
+        description={
+          state === "first_session"
+            ? "Vamos a empezar a conocerte mientras estudias. Después adaptaremos tus siguientes sesiones."
+            : todayPlanReason(plan)
+        }
+        meta={
+          <>
+            <span>
+              <Clock3 className="h-3.5 w-3.5" /> ≈ {plan.plannedMinutes} min
+            </span>
+            {state === "first_session" && <span>Tema {first.topicNumber}</span>}
+          </>
+        }
+        method={state === "first_session"}
+        action="Empezar sesión"
+        loading={starting}
+        onAction={onStart}
+      />
+    );
+  }
+
+  return (
+    <Card className="p-5">
+      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/10 text-success">
+        <CheckCircle2 className="h-5 w-5" />
+      </span>
+      <h2 className="mt-3 text-lg font-bold">Tu trabajo está al día</h2>
+      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+        {plan.status === "no_content"
+          ? "Todavía no hay contenido guiado disponible. Puedes seguir practicando con tus tests."
+          : plan.nextDueOn
+            ? `Tu próximo repaso está previsto para el ${formatDueDate(plan.nextDueOn)}.`
+            : "OpoTest preparará el siguiente paso cuando haya nueva evidencia."}
+      </p>
+      <Button
+        className="mt-4 w-full"
+        onClick={() => onNavigate(plan.status === "no_content" ? "/crear" : "/estudio")}
+      >
+        {plan.status === "no_content" ? "Ir a practicar" : "Abrir Centro de estudio"}
+      </Button>
+    </Card>
+  );
+}
+
+function UnfinishedTestCard({ test }: { test: { id: string; total: number; answered: number } }) {
+  return (
+    <Card className="border-border/70 bg-card/70 p-3.5">
+      <div className="flex items-center gap-3">
+        <span className="rounded-xl bg-muted p-2 text-muted-foreground">
+          <Brain className="h-4 w-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold">Tienes un test sin terminar</p>
+          <p className="text-xs text-muted-foreground">
+            {test.answered} de {test.total} respondidas
+          </p>
+        </div>
+        <Button asChild variant="ghost" size="sm" className="shrink-0 text-primary">
+          <Link
+            to="/test/$id"
+            params={{ id: test.id }}
+            search={{ block: undefined, session: undefined }}
+          >
+            Continuar
+          </Link>
+        </Button>
+      </div>
+    </Card>
   );
 }
 
@@ -288,6 +349,7 @@ function PrimaryCard({
   title,
   description,
   meta,
+  method,
   action,
   loading,
   onAction,
@@ -297,6 +359,7 @@ function PrimaryCard({
   title: string;
   description: string;
   meta?: React.ReactNode;
+  method?: boolean;
   action: string;
   loading?: boolean;
   onAction: () => void;
@@ -310,10 +373,19 @@ function PrimaryCard({
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/70">{eyebrow}</p>
-            <h2 className="mt-1 text-xl font-bold">{title}</h2>
+            <h2 className="mt-1 text-xl font-bold leading-tight">{title}</h2>
             <p className="mt-2 text-sm leading-relaxed text-white/85">{description}</p>
           </div>
         </div>
+        {method && (
+          <div className="mt-4 flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.08em] text-white/85">
+            <span>Estudiar</span>
+            <ArrowRight className="h-3 w-3" />
+            <span>Recordar</span>
+            <ArrowRight className="h-3 w-3" />
+            <span>Comprobar</span>
+          </div>
+        )}
         {meta && (
           <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-white/85 [&>span]:inline-flex [&>span]:items-center [&>span]:gap-1.5 [&>span]:rounded-full [&>span]:bg-white/12 [&>span]:px-3 [&>span]:py-1.5 [&>span]:ring-1 [&>span]:ring-white/15">
             {meta}
@@ -339,7 +411,7 @@ function PrimaryCard({
 
 function TodaySkeleton() {
   return (
-    <Card className="space-y-4 p-5">
+    <Card className="space-y-4 p-5" aria-label="Preparando tu sesión de hoy">
       <div className="flex gap-3">
         <Skeleton className="h-11 w-11 rounded-xl" />
         <div className="flex-1 space-y-2">

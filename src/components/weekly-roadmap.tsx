@@ -64,7 +64,8 @@ export function WeeklyRoadmap() {
         <RoadmapHeading />
         <p className="mt-2 text-sm font-semibold">No hemos podido preparar tu ruta todavía</p>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          No hay una propuesta completa que podamos mostrar con seguridad. Puedes volver a comprobarlo.
+          No hay una propuesta completa que podamos mostrar con seguridad. Puedes volver a
+          comprobarlo.
         </p>
       </Card>
     );
@@ -75,6 +76,67 @@ export function WeeklyRoadmap() {
     return <TerminalRoadmap row={state.row} complete={false} />;
   if (state.status === "no_questions_available") return <NoQuestionsRoadmap row={state.row} />;
   return <ActiveRoadmap rows={state.rows} />;
+}
+
+export function WeeklyRoadmapSummary() {
+  const roadmap = useWeeklyRoadmap();
+
+  if (roadmap.isLoading) {
+    return (
+      <Card
+        className="flex items-center gap-3 border-border/70 bg-card/70 p-3.5"
+        aria-label="Cargando resumen semanal"
+      >
+        <Skeleton className="h-9 w-9 rounded-xl" />
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-4 w-44 max-w-full" />
+        </div>
+      </Card>
+    );
+  }
+
+  if (roadmap.isError) {
+    return (
+      <Card className="flex items-center gap-3 border-border/70 bg-card/70 p-3.5">
+        <CircleAlert className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <p className="min-w-0 flex-1 text-xs text-muted-foreground">
+          No se pudo cargar el resumen semanal.
+        </p>
+        <Button type="button" variant="ghost" size="sm" onClick={() => void roadmap.refetch()}>
+          Reintentar
+        </Button>
+      </Card>
+    );
+  }
+
+  const state = weeklyRoadmapViewState(roadmap.data ?? []);
+  const row =
+    state.status === "active" ? state.rows[0] : state.status === "empty" ? null : state.row;
+  const summary = !row
+    ? "Tu ruta aparecerá cuando haya una propuesta disponible"
+    : state.status === "week_complete"
+      ? "Objetivo semanal completado"
+      : `${row.completed_sessions} de ${row.target_sessions} sesiones completadas`;
+
+  return (
+    <Card className="border-border/70 bg-card/70 p-3.5">
+      <div className="flex items-center gap-3">
+        <span className="rounded-xl bg-muted p-2 text-muted-foreground">
+          <CalendarDays className="h-4 w-4" aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+            Esta semana
+          </p>
+          <p className="text-sm font-semibold">{summary}</p>
+        </div>
+        <Button asChild variant="ghost" size="sm" className="shrink-0 text-primary">
+          <Link to="/estudio">Ver ruta</Link>
+        </Button>
+      </div>
+    </Card>
+  );
 }
 
 function RoadmapHeading() {
@@ -154,12 +216,11 @@ function NoQuestionsRoadmap({ row }: { row: WeeklyRoadmapRow }) {
     <Card className="border-border/80 bg-card/90 p-4">
       <RoadmapHeading />
       <div className="mt-3 flex gap-3">
-        <CircleAlert
-          className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground"
-          aria-hidden="true"
-        />
+        <CircleAlert className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
         <div className="min-w-0">
-          <p className="text-sm font-semibold">No hay preguntas disponibles para organizar la semana</p>
+          <p className="text-sm font-semibold">
+            No hay preguntas disponibles para organizar la semana
+          </p>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{row.reason}</p>
         </div>
       </div>
