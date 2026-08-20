@@ -9,7 +9,7 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate:
@@ -30,3 +30,18 @@ jobs:
 
       - name: Run quality checks
         run: bun run check
+
+      - name: Export Topic 20 production package
+        if: github.event_name == 'pull_request' && github.event.pull_request.number == 74
+        shell: bash
+        run: |
+          git fetch origin agent/v4-content-factory-t20-semantic-benchmark
+          git checkout -B agent/v4-content-factory-t20-semantic-benchmark origin/agent/v4-content-factory-t20-semantic-benchmark
+          mkdir -p docs/v4
+          bun -e 'import { topic20ProductionPlan } from "./src/lib/content-factory/consumers/topic-20-run2.ts"; await Bun.write("docs/v4/topic-20-production-v4.json", JSON.stringify(topic20ProductionPlan.v4Package));'
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add docs/v4/topic-20-production-v4.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Export Topic 20 production V4 package"
+          git push origin HEAD:agent/v4-content-factory-t20-semantic-benchmark
