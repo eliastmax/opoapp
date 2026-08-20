@@ -47,11 +47,22 @@ Se agrupan deliberadamente en una decisión central para evitar 19 microgates qu
 
 **No bloqueante.** La Factory genérica todavía no tiene un contrato de primera clase para que la fase INGEST inyecte una excepción agrupada correspondiente a filas puestas en cuarentena antes de coverage. El consumer T19 construye esa única excepción con los tipos/IDs/impact refs oficiales de Factory y la añade al Governance Packet del benchmark.
 
-No se abre un sprint arquitectónico por ello. Es una mejora futura razonable si el patrón de cuarentena se repite.
+**No bloqueante.** `runContentFactoryTopic()` es un orquestador y no incorpora todavía un motor que interprete por sí solo el PDF y el banco para producir el provider semántico. En este benchmark el worker tuvo que construir el mapa/mappings/contenido y los specs canónicos de las cinco preguntas antes de entregarlos al runner. Esto es compatible con la API actual, pero significa que el benchmark no demuestra automatización semántica end-to-end del ingest documental.
 
-## Intervención manual fuera de Factory
+No se abre un sprint arquitectónico por ninguno de estos puntos. Son mejoras futuras si Gobernanza considera que el benchmark exige automatización semántica más profunda.
 
-Una intervención adicional: **agrupar la cuarentena de 19 filas legacy en una sola excepción de source review** después del filtrado canonical-only de ingestión. El resto del flujo se ejecuta mediante Fast Pipeline y sus validadores.
+## Intervenciones manuales fuera de Factory
+
+Se contabilizan **2 clases de intervención manual del worker fuera del orquestador**:
+
+1. construir el provider semántico canónico de T19 (15 unidades, 40 conceptos, 221 mappings, study content y specs de las cinco preguntas) a partir de `Temario_new.pdf` y del banco inspeccionado;
+2. agrupar la cuarentena de 19 filas legacy en una sola excepción `source_review_required` después del filtrado canonical-only de ingestión.
+
+Una vez entregados esos inputs, Fast Pipeline sí ejecuta automáticamente coverage, planificación de gaps, generación concept-bound, hardening/QA, V2/V4, exception/readiness y conserva el límite productivo. No hubo Gate 1/Gate 2/microgate humanos separados durante RUN 1.
+
+## Valoración del benchmark
+
+El ahorro operativo frente al flujo de Tema 18 es **alto**, porque desaparecen las interrupciones humanas intermedias y RUN 1 deja un paquete prácticamente completo con una sola excepción de Gobernanza. No se clasifica como `muy alto` porque la construcción semántica del provider todavía requiere intervención del worker fuera del runner.
 
 ## Límite productivo
 
