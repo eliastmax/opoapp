@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { WeeklyRoadmap } from "@/components/weekly-roadmap";
 import { supabase } from "@/integrations/supabase/client";
 import { MASTERY_LABELS } from "@/lib/v4-experience";
 import type { V4TodayContextRow } from "@/lib/v4-today-plan";
@@ -63,6 +64,9 @@ function StudyCenterPage() {
           Consulta qué has trabajado y dónde conviene prestar atención.
         </p>
       </header>
+      <section id="hoja-de-ruta" aria-label="Hoja de ruta semanal">
+        <WeeklyRoadmap />
+      </section>
       {isLoading ? (
         <div className="flex justify-center py-16">
           <Loader2 className="h-7 w-7 animate-spin text-primary" />
