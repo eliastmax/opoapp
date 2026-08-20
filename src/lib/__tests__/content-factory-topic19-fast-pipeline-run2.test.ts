@@ -1,3 +1,4 @@
+// @ts-expect-error bun:test is provided by the Bun test runtime
 import { describe, expect, test } from "bun:test";
 import {
   topic19FastPipelineRun2,
