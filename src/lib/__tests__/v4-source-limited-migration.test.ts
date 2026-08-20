@@ -3,15 +3,15 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
 const capacityMigration = readFileSync(
-  new URL("../../../supabase/migrations/20260820003000_v4_source_capacity_contract.sql", import.meta.url),
+  new URL("../../../supabase/migrations/20260820004411_v4_source_capacity_contract.sql", import.meta.url),
   "utf8",
 );
 const masteryMigration = readFileSync(
-  new URL("../../../supabase/migrations/20260820003100_v4_source_limited_mastery.sql", import.meta.url),
+  new URL("../../../supabase/migrations/20260820004447_v4_source_limited_mastery.sql", import.meta.url),
   "utf8",
 );
 const checksMigration = readFileSync(
-  new URL("../../../supabase/migrations/20260820003200_v4_source_limited_checks.sql", import.meta.url),
+  new URL("../../../supabase/migrations/20260820004519_v4_source_limited_checks.sql", import.meta.url),
   "utf8",
 );
 
