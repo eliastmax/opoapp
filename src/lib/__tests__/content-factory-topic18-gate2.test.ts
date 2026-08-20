@@ -2,11 +2,12 @@
 import { describe, expect, test } from "bun:test";
 import { evaluateFactoryPipelineState } from "../content-factory";
 import { calculateFactoryCoverage } from "../content-factory/coverage";
-import { topic18ApprovedAssignments } from "../content-factory/consumers/topic-18-approved-gate1";
 import {
-  topic18GapQuestionCandidates,
-  topic18SourceReviewRequiredSlots,
-} from "../content-factory/consumers/topic-18-gap-questions";
+  topic18ApprovedAssignments,
+  topic18ApprovedConcepts,
+} from "../content-factory/consumers/topic-18-approved-gate1";
+import { topic18Gate21QuestionCandidates } from "../content-factory/consumers/topic-18-gap-questions-gate21";
+import { topic18SourceLimitedSlots } from "../content-factory/consumers/topic-18-source-limited";
 import {
   topic18Gate2Concepts,
   topic18Gate2Flashcards,
@@ -43,40 +44,49 @@ function semanticCard(card: (typeof topic18Gate2Flashcards)[number]) {
   };
 }
 
-describe("Content Factory Topic 18 Gate 2 draft", () => {
+describe("Content Factory Topic 18 Gate 2.1 draft", () => {
   test("materializes the approved 16/44 map with 240 existing plus 20 generated mappings", () => {
     expect(topic18Gate2Units).toHaveLength(16);
     expect(topic18Gate2Concepts).toHaveLength(44);
     expect(topic18Gate2Mappings).toHaveLength(260);
     expect(new Set(topic18Gate2Mappings.map((entry) => entry.questionCode)).size).toBe(260);
     expect(topic18ApprovedAssignments).toHaveLength(240);
-    expect(topic18GapQuestionCandidates).toHaveLength(20);
+    expect(topic18Gate21QuestionCandidates).toHaveLength(20);
   });
 
-  test("keeps 0239 on C30 and leaves only C29 undercovered after the generable candidates", () => {
+  test("keeps 0239 on C30 and classifies the residual C29 deficit as source_limited", () => {
     expect(topic18Gate2Mappings.find((entry) => entry.questionCode === "SMS-T18-0239")?.primaryConceptCode).toBe("SMS-T18-C30");
     const coverage = calculateFactoryCoverage({
       questions: topic18Gate2Mappings.map((mapping) => ({ code: mapping.questionCode, active: true })),
-      concepts: topic18Gate2Concepts.map((concept) => ({ ...concept, active: true })),
+      concepts: topic18ApprovedConcepts,
       assignments: topic18Gate2Mappings,
       threshold: 4,
     });
-    expect(coverage.conceptCoverage.filter((entry) => entry.status === "coverage_gap")).toEqual([
-      expect.objectContaining({ conceptId: "SMS-T18-C29", primaryQuestionCount: 1, missingPrimaryQuestions: 3 }),
+    expect(coverage.factoryConceptCoverage.filter((entry) => entry.status === "coverage_gap")).toEqual([]);
+    expect(coverage.factoryConceptCoverage.filter((entry) => entry.status === "source_limited")).toEqual([
+      expect.objectContaining({
+        conceptId: "SMS-T18-C29",
+        primaryQuestionCount: 1,
+        nominalThreshold: 4,
+        sourceSupportedCeiling: 1,
+        blockedAdditionalQuestions: 3,
+      }),
     ]);
     expect(coverage.totalMissingQuestions).toBe(3);
+    expect(coverage.totalActionableMissingQuestions).toBe(0);
+    expect(coverage.totalBlockedBySourceCeiling).toBe(3);
     expect(coverage.mappingQa.unmappedQuestionCodes).toEqual([]);
     expect(coverage.mappingQa.duplicatePrimaryQuestionCodes).toEqual([]);
   });
 
-  test("does not materialize the three C29 source-review slots as questions or mappings", () => {
-    expect(topic18SourceReviewRequiredSlots.map((entry) => entry.questionCode)).toEqual([
+  test("does not materialize the three C29 source-limited slots as questions or mappings", () => {
+    expect(topic18SourceLimitedSlots.map((entry) => entry.questionCode)).toEqual([
       "SMS-T18-0245",
       "SMS-T18-0246",
       "SMS-T18-0247",
     ]);
     const mapped = new Set(topic18Gate2Mappings.map((entry) => entry.questionCode));
-    for (const blocked of topic18SourceReviewRequiredSlots) expect(mapped.has(blocked.questionCode)).toBe(false);
+    for (const blocked of topic18SourceLimitedSlots) expect(mapped.has(blocked.questionCode)).toBe(false);
   });
 
   test("keeps the existing pilot semantics while replacing only source provenance in the portable package", () => {
@@ -117,7 +127,7 @@ describe("Content Factory Topic 18 Gate 2 draft", () => {
     }
   });
 
-  test("is structurally valid but deliberately not fully covered or import-ready at Gate 2 pending", () => {
+  test("keeps the V4 package structurally valid but not import-ready before mastery policy approval", () => {
     const validation = validateV4StudyContentPackage(topic18Gate2Package);
     expect(validation.valid).toBe(true);
     expect(validation.errors).toEqual([]);
