@@ -2,9 +2,11 @@ import type { Database } from "@/integrations/supabase/types";
 
 type GeneratedWeeklyRoadmapRow =
   Database["public"]["Functions"]["get_weekly_roadmap"]["Returns"][number];
-export type WeeklyRoadmapRow = Omit<GeneratedWeeklyRoadmapRow, "scheduled_date" | "topic_name"> & {
-  scheduled_date: string | null;
-  topic_name: string | null;
+type NullableWeeklyRoadmapFields = "scheduled_date" | "topic_name";
+export type WeeklyRoadmapRow = {
+  [Key in keyof GeneratedWeeklyRoadmapRow]: Key extends NullableWeeklyRoadmapFields
+    ? GeneratedWeeklyRoadmapRow[Key] | null
+    : GeneratedWeeklyRoadmapRow[Key];
 };
 
 export type WeeklyRoadmapViewState =
