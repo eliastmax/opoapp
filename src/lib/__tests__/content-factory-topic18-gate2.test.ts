@@ -56,6 +56,11 @@ describe("Content Factory Topic 18 Gate 2.1 draft", () => {
 
   test("keeps 0239 on C30 and classifies the residual C29 deficit as source_limited", () => {
     expect(topic18Gate2Mappings.find((entry) => entry.questionCode === "SMS-T18-0239")?.primaryConceptCode).toBe("SMS-T18-C30");
+    expect(
+      topic18Gate2Mappings
+        .filter((entry) => entry.primaryConceptCode === "SMS-T18-C29")
+        .map((entry) => entry.questionCode),
+    ).toEqual(["SMS-T18-0199"]);
     const coverage = calculateFactoryCoverage({
       questions: topic18Gate2Mappings.map((mapping) => ({ code: mapping.questionCode, active: true })),
       concepts: topic18ApprovedConcepts,
@@ -63,6 +68,7 @@ describe("Content Factory Topic 18 Gate 2.1 draft", () => {
       threshold: 4,
     });
     expect(coverage.factoryConceptCoverage.filter((entry) => entry.status === "coverage_gap")).toEqual([]);
+    expect(coverage.factoryConceptCoverage.filter((entry) => entry.status === "ready")).toHaveLength(43);
     expect(coverage.factoryConceptCoverage.filter((entry) => entry.status === "source_limited")).toEqual([
       expect.objectContaining({
         conceptId: "SMS-T18-C29",
@@ -127,11 +133,23 @@ describe("Content Factory Topic 18 Gate 2.1 draft", () => {
     }
   });
 
-  test("keeps the V4 package structurally valid but not import-ready before mastery policy approval", () => {
+  test("keeps the V4 package structurally valid with no actionable coverage gap", () => {
     const validation = validateV4StudyContentPackage(topic18Gate2Package);
     expect(validation.valid).toBe(true);
     expect(validation.errors).toEqual([]);
-    expect(validation.coverage.underCoveredConceptIds).toEqual(["SMS-T18-C29"]);
+    expect(validation.coverage.underCoveredConceptIds).toEqual([]);
+    expect(validation.coverage.nominalUnderCoveredConceptIds).toEqual(["SMS-T18-C29"]);
+    expect(validation.coverage.unmappedQuestionIds).toEqual([]);
+    expect(validation.coverage.duplicatePrimaryQuestionIds).toEqual([]);
+    expect(validation.coverage.conceptCoverage.filter((entry) => entry.status === "ready")).toHaveLength(43);
+    expect(validation.coverage.conceptCoverage.filter((entry) => entry.status === "source_limited")).toEqual([
+      expect.objectContaining({
+        conceptId: "SMS-T18-C29",
+        primaryQuestionCount: 1,
+        sourceSupportedCeiling: 1,
+        blockedAdditionalQuestions: 3,
+      }),
+    ]);
 
     const pipeline = evaluateFactoryPipelineState({
       conceptMap: { status: "approved" },
