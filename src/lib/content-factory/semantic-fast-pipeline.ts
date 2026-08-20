@@ -38,7 +38,7 @@ function mergeGovernancePacket(
  * RUN 2 and therefore are not reintroduced.
  */
 export function runContentFactoryTopicWithSemanticDraft(
-  input: Omit<FactoryFastPipelineInput, "draft" | "extraExceptions"> & {
+  input: Omit<FactoryFastPipelineInput, "draft"> & {
     semanticDraft: SemanticTopicDraft;
   },
 ): FactoryFastPipelineRun {
