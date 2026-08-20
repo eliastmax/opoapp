@@ -2,13 +2,14 @@ import type { Database } from "@/integrations/supabase/types";
 
 type GeneratedTopicProgressRow =
   Database["public"]["Functions"]["get_topic_progress_summary"]["Returns"][number];
-export type TopicProgressRow = Omit<
-  GeneratedTopicProgressRow,
-  "first_activity_at" | "last_activity_at" | "mastery_percentage"
-> & {
-  first_activity_at: string | null;
-  last_activity_at: string | null;
-  mastery_percentage: number | null;
+type NullableTopicProgressFields =
+  | "first_activity_at"
+  | "last_activity_at"
+  | "mastery_percentage";
+export type TopicProgressRow = {
+  [Key in keyof GeneratedTopicProgressRow]: Key extends NullableTopicProgressFields
+    ? GeneratedTopicProgressRow[Key] | null
+    : GeneratedTopicProgressRow[Key];
 };
 
 export type EvidenceState = "sin_base" | "inicial" | "suficiente" | "robusta";
@@ -118,14 +119,9 @@ export function nextProgressAction(row: TopicProgressRow): string {
     return "Amplía la cobertura con preguntas que todavía no hayas visto.";
   }
 
-  return "Mantén el tema con repasos separados y vigila si reaparecen fallos o dudas.";
+  return "Mantén el tema con práctica separada y revisiones programadas.";
 }
 
 export function sortProgressByTopicNumber(rows: TopicProgressRow[]): TopicProgressRow[] {
-  return [...rows].sort(
-    (left, right) =>
-      left.topic_number - right.topic_number ||
-      left.topic_name.localeCompare(right.topic_name, "es", { numeric: true }) ||
-      left.topic_id.localeCompare(right.topic_id),
-  );
+  return [...rows].sort((a, b) => a.topic_number - b.topic_number);
 }
