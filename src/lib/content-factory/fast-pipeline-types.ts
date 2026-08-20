@@ -228,6 +228,8 @@ export type FactoryFastPipelineInput = {
   approvedAnchors?: V4StudyContentPackage;
   draft?: Partial<FactoryTopicDraft>;
   operations?: FactoryFastPipelineOperations;
+  /** Additional upstream exceptions, e.g. Semantic Draft Builder signals, merged into the normal exception classifier. */
+  extraExceptions?: FactoryException[];
   previousRun?: FactoryFastPipelineRun;
   decisions?: FactoryGovernanceDecisions;
 };
