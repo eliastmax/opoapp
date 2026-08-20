@@ -311,7 +311,10 @@ describe("CONTENT-FACTORY.3 Fast Pipeline", () => {
         exceptions: [{
           exceptionId: ambiguity!.id,
           resolution: "patch",
-          optionalPatch: { primaryConceptCode: "SYN-C02" },
+          optionalPatch: {
+            primaryConceptCode: "SYN-C02",
+            secondaryConceptCodes: ["SYN-C01"],
+          },
         }],
       },
     });
