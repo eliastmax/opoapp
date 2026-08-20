@@ -4,6 +4,9 @@ export type V4TodayContextRow = {
   concept_id: string;
   concept_code: string;
   concept_title: string;
+  source_capacity_status: "source_limited" | null;
+  source_supported_ceiling: number | null;
+  source_capacity_reason: string | null;
   topic_id: string;
   topic_number: number;
   topic_name: string;
@@ -103,13 +106,21 @@ function roadmapBonus(row: V4TodayContextRow) {
   return Math.max(0, 20 - Math.min(row.roadmap_slot, 20));
 }
 
+function sourceCeiling(row: V4TodayContextRow) {
+  if (
+    row.source_capacity_status === "source_limited" &&
+    Number.isInteger(row.source_supported_ceiling) &&
+    (row.source_supported_ceiling ?? 0) >= 1 &&
+    (row.source_supported_ceiling ?? 0) <= 3
+  ) {
+    return row.source_supported_ceiling as number;
+  }
+  return null;
+}
+
 function retentionCheckpoint(row: V4TodayContextRow) {
-  if (row.state === "consolidating") {
-    return row.retention_checks_passed >= 1 ? 7 : 3;
-  }
-  if (row.state === "retained") {
-    return row.retention_checks_passed >= 3 ? 30 : 14;
-  }
+  if (row.state === "consolidating") return row.retention_checks_passed >= 1 ? 7 : 3;
+  if (row.state === "retained") return row.retention_checks_passed >= 3 ? 30 : 14;
   return null;
 }
 
@@ -128,13 +139,9 @@ function sortCandidates(candidates: Candidate[]) {
 function conceptCandidate(row: V4TodayContextRow, kind: V4TodayBlockKind): Candidate | null {
   const accuracy = numeric(row.safe_accuracy);
   const due = row.next_review_on !== null;
+  const ceiling = sourceCeiling(row);
 
-  if (
-    kind === "review" &&
-    !row.needs_attention &&
-    due &&
-    (row.state === "consolidating" || row.state === "retained")
-  ) {
+  if (kind === "review" && !row.needs_attention && due && (row.state === "consolidating" || row.state === "retained")) {
     return {
       kind,
       score: 100,
@@ -142,7 +149,9 @@ function conceptCandidate(row: V4TodayContextRow, kind: V4TodayBlockKind): Candi
       minimumMinutes: 4,
       row,
       conceptId: row.concept_id,
-      targetQuestions: Math.min(2, Math.max(1, row.active_primary_questions)),
+      targetQuestions: ceiling === null
+        ? Math.min(2, Math.max(1, row.active_primary_questions))
+        : Math.min(2, ceiling),
       retentionCheckpointDays: retentionCheckpoint(row),
       reasonCode: "retention_due",
       reason: "Toca comprobar si este conocimiento se mantiene sin apoyo.",
@@ -157,31 +166,41 @@ function conceptCandidate(row: V4TodayContextRow, kind: V4TodayBlockKind): Candi
       minimumMinutes: 5,
       row,
       conceptId: row.concept_id,
-      targetQuestions: Math.min(3, Math.max(1, row.active_primary_questions)),
+      targetQuestions: ceiling === null
+        ? Math.min(3, Math.max(1, row.active_primary_questions))
+        : Math.min(3, ceiling),
       retentionCheckpointDays: null,
       reasonCode: "recent_instability",
       reason: "Hay un fallo o una duda reciente que conviene corregir antes de seguir acumulando evidencia.",
     };
   }
 
+  const standardVerifiable = ceiling === null && row.active_primary_questions >= 4;
+  const sourceLimitedVerifiable = ceiling !== null && row.active_primary_questions >= ceiling;
   if (
     kind === "verify" &&
     !row.needs_attention &&
     (row.state === "seen" || row.state === "verifying") &&
-    row.active_primary_questions >= 4
+    (standardVerifiable || sourceLimitedVerifiable)
   ) {
-    const missing = Math.max(0, 4 - row.distinct_questions);
+    const requiredDistinct = ceiling ?? 4;
+    const missingDistinct = Math.max(0, requiredDistinct - row.distinct_questions);
+    const targetQuestions = ceiling === null
+      ? Math.min(4, Math.max(2, missingDistinct))
+      : Math.min(ceiling, Math.max(1, missingDistinct));
     return {
       kind,
-      score: 70 + roadmapBonus(row) + missing * 2,
+      score: 70 + roadmapBonus(row) + missingDistinct * 2,
       desiredMinutes: 8,
       minimumMinutes: 5,
       row,
       conceptId: row.concept_id,
-      targetQuestions: Math.min(4, Math.max(2, missing)),
+      targetQuestions,
       retentionCheckpointDays: null,
       reasonCode: row.state === "seen" ? "start_verification" : "complete_verification",
-      reason: "Necesitamos preguntas distintas para medirlo con evidencia suficiente, no repetir la misma formulación.",
+      reason: ceiling === null
+        ? "Necesitamos preguntas distintas para medirlo con evidencia suficiente, no repetir la misma formulación."
+        : "La fuente ya aporta todas las preguntas independientes posibles; comprobamos su recuerdo en otra sesión sin fabricar diversidad.",
     };
   }
 
@@ -202,23 +221,20 @@ function advanceCandidates(rows: V4TodayContextRow[]) {
     if (nextSlot < currentSlot) unitRows.set(row.study_unit_id, row);
   }
 
-  return sortCandidates(
-    [...unitRows.values()].map((row) => ({
-      kind: "advance" as const,
-      score: 60 + roadmapBonus(row) - row.unit_position / 1_000,
-      desiredMinutes: Math.max(3, Math.min(row.unit_estimated_minutes, 15)),
-      minimumMinutes: Math.max(3, Math.min(row.unit_estimated_minutes, 15)),
-      row,
-      conceptId: null,
-      targetQuestions: 0,
-      retentionCheckpointDays: null,
-      reasonCode: row.roadmap_slot === null ? "next_study_unit" : "roadmap_study_unit",
-      reason:
-        row.roadmap_slot === null
-          ? "Es la siguiente unidad disponible para ampliar cobertura de estudio."
-          : "Encaja con la hoja de ruta y permite avanzar sin crear deuda artificial.",
-    })),
-  );
+  return sortCandidates([...unitRows.values()].map((row) => ({
+    kind: "advance" as const,
+    score: 60 + roadmapBonus(row) - row.unit_position / 1_000,
+    desiredMinutes: Math.max(3, Math.min(row.unit_estimated_minutes, 15)),
+    minimumMinutes: Math.max(3, Math.min(row.unit_estimated_minutes, 15)),
+    row,
+    conceptId: null,
+    targetQuestions: 0,
+    retentionCheckpointDays: null,
+    reasonCode: row.roadmap_slot === null ? "next_study_unit" : "roadmap_study_unit",
+    reason: row.roadmap_slot === null
+      ? "Es la siguiente unidad disponible para ampliar cobertura de estudio."
+      : "Encaja con la hoja de ruta y permite avanzar sin crear deuda artificial.",
+  })));
 }
 
 function buildBlock(candidate: Candidate, minutes: number): V4TodayPlanBlock {
@@ -253,49 +269,22 @@ export function composeV4TodayPlan(args: {
     : 0;
 
   if (availableMinutes === 0) {
-    return {
-      status: "no_time",
-      availableMinutes,
-      plannedMinutes: 0,
-      unusedMinutes: 0,
-      nextDueOn: null,
-      blocks: [],
-    };
+    return { status: "no_time", availableMinutes, plannedMinutes: 0, unusedMinutes: 0, nextDueOn: null, blocks: [] };
   }
-
   if (args.rows.length === 0) {
-    return {
-      status: "no_content",
-      availableMinutes,
-      plannedMinutes: 0,
-      unusedMinutes: availableMinutes,
-      nextDueOn: null,
-      blocks: [],
-    };
+    return { status: "no_content", availableMinutes, plannedMinutes: 0, unusedMinutes: availableMinutes, nextDueOn: null, blocks: [] };
   }
 
   const today = args.today.slice(0, 10);
   const review = sortCandidates(
-    args.rows
-      .filter((row) => row.next_review_on !== null && row.next_review_on <= today)
+    args.rows.filter((row) => row.next_review_on !== null && row.next_review_on <= today)
       .map((row) => conceptCandidate(row, "review"))
       .filter((candidate): candidate is Candidate => candidate !== null)
-      .map((candidate) => ({
-        ...candidate,
-        score: candidate.score + overdueDays(candidate.row.next_review_on, today) * 2,
-      })),
+      .map((candidate) => ({ ...candidate, score: candidate.score + overdueDays(candidate.row.next_review_on, today) * 2 })),
   );
-  const repair = sortCandidates(
-    args.rows
-      .map((row) => conceptCandidate(row, "repair"))
-      .filter((candidate): candidate is Candidate => candidate !== null),
-  );
+  const repair = sortCandidates(args.rows.map((row) => conceptCandidate(row, "repair")).filter((candidate): candidate is Candidate => candidate !== null));
   const advance = advanceCandidates(args.rows);
-  const verify = sortCandidates(
-    args.rows
-      .map((row) => conceptCandidate(row, "verify"))
-      .filter((candidate): candidate is Candidate => candidate !== null),
-  );
+  const verify = sortCandidates(args.rows.map((row) => conceptCandidate(row, "verify")).filter((candidate): candidate is Candidate => candidate !== null));
 
   const blocks: V4TodayPlanBlock[] = [];
   const usedConcepts = new Set<string>();
@@ -307,11 +296,9 @@ export function composeV4TodayPlan(args: {
     for (const candidate of candidates) {
       if (candidate.conceptId && usedConcepts.has(candidate.conceptId)) continue;
       if (candidate.kind === "advance" && usedUnits.has(candidate.row.study_unit_id)) continue;
-
       const requested = compact ? candidate.minimumMinutes : candidate.desiredMinutes;
       const minutes = remaining >= requested ? requested : remaining >= candidate.minimumMinutes ? candidate.minimumMinutes : 0;
       if (minutes === 0) continue;
-
       blocks.push(buildBlock(candidate, minutes));
       remaining -= minutes;
       usedUnits.add(candidate.row.study_unit_id);
@@ -321,19 +308,13 @@ export function composeV4TodayPlan(args: {
     return false;
   };
 
-  // The order is intentionally legible to the learner: maintain what is due,
-  // repair instability, advance through study content, then verify with distinct
-  // questions. Missing categories are simply skipped.
   addFrom(review);
   addFrom(repair);
   addFrom(advance);
   addFrom(verify);
 
-  const futureDue = args.rows
-    .map((row) => row.next_review_on)
-    .filter((value): value is string => value !== null && value > today)
-    .sort()[0] ?? null;
-
+  const futureDue = args.rows.map((row) => row.next_review_on)
+    .filter((value): value is string => value !== null && value > today).sort()[0] ?? null;
   const plannedMinutes = availableMinutes - remaining;
   return {
     status: blocks.length > 0 ? "ready" : "nothing_due",
