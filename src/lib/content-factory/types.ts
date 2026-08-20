@@ -42,6 +42,7 @@ export type FactoryQuestionMetadata = {
   learningObjective?: string | null;
   perspective?: string | null;
   trapType?: string | null;
+  pedagogicalLevel?: string | null;
   sourceReference?: string | null;
   documentReference?: string | null;
   pageStart?: number | null;
@@ -151,6 +152,7 @@ export function questionMetadataFromParsedRow(row: ParsedRow): FactoryQuestionMe
     learningObjective: row.objetivo_aprendizaje,
     perspective: row.perspectiva,
     trapType: row.tipo_trampa,
+    pedagogicalLevel: row.nivel_pedagogico,
     sourceReference: row.referencia_fuente || null,
     documentReference: row.documento_referencia,
     pageStart: row.pagina_inicio,

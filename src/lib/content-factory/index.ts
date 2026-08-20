@@ -6,6 +6,7 @@ export * from "./exceptions";
 export * from "./fast-pipeline";
 export * from "./fast-pipeline-types";
 export * from "./generation-plan";
+export * from "./mastery-family-resolution";
 export * from "./material-exceptions";
 export * from "./package-builder";
 export * from "./question-quality";
