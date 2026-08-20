@@ -3,8 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   benchmarkSemanticDraftAgainstGolden,
   buildSemanticTopicDraft,
-  runContentFactoryTopicFromSemanticDraft,
-  type BuildSemanticTopicDraftInput,
+  runContentFactoryTopicWithSemanticDraft,
   type SemanticSourceSpan,
 } from "../content-factory";
 import { topic18Gate2Package } from "../content-factory/consumers/topic-18-v4-content";
@@ -116,8 +115,31 @@ function topic19Golden() {
     questionMappings: topic19CanonicalAssignments.map((mapping) => ({
       questionCode: mapping.questionCode,
       primaryConceptCode: mapping.primaryConceptCode,
-      secondaryConceptCodes: mapping.secondaryConceptCodes,
     })),
+  };
+}
+
+function studyContentOperation() {
+  return {
+    buildStudyContent: ({ structuralDraft }: { structuralDraft: { units: Array<{ code: string; title: string; position: number; sourceRefs: V4StudyContentPackage["units"][number]["sourceRefs"] }>; concepts: V4StudyContentPackage["concepts"] } }) => ({
+      units: structuralDraft.units.map((unit) => ({
+        code: unit.code,
+        title: unit.title,
+        position: unit.position,
+        estimatedMinutes: 5,
+        studySummary: "Contenido canónico de prueba.",
+        examKeys: [],
+        confusions: [],
+        traps: [],
+        mnemonics: [],
+        sourceRefs: unit.sourceRefs,
+      })),
+      concepts: structuralDraft.concepts,
+      flashcards: structuralDraft.concepts.flatMap((concept, index) => [
+        { code: `SYN-F${index * 2 + 1}`, conceptCode: concept.code, type: "direct" as const, prompt: "Regla", answer: "Contenido canónico de prueba.", position: 1, sourceRefs: [] },
+        { code: `SYN-F${index * 2 + 2}`, conceptCode: concept.code, type: "contrast" as const, prompt: "Contraste", answer: "Contenido canónico de prueba.", position: 2, sourceRefs: [] },
+      ]),
+    }),
   };
 }
 
@@ -194,24 +216,51 @@ describe("Content Factory Semantic Draft Builder", () => {
       job: semanticJob,
       canonicalSource: [{ id: "s1", document: CANONICAL, heading: "Unidad", sectionPath: ["Unidad", "Regla"], article: "art. 1", text: "La regla común se aplica en los términos indicados.", pageStart: 10, pageEnd: 10 }],
     });
-    const run = runContentFactoryTopicFromSemanticDraft({
+    const run = runContentFactoryTopicWithSemanticDraft({
       job: semanticJob,
       semanticDraft: semantic,
-      operations: {
-        buildStudyContent: ({ structuralDraft }) => ({
-          units: structuralDraft.units.map((unit) => ({ code: unit.code, title: unit.title, position: unit.position, estimatedMinutes: 5, studySummary: "Contenido canónico de prueba.", examKeys: [], confusions: [], traps: [], mnemonics: [], sourceRefs: unit.sourceRefs })),
-          concepts: structuralDraft.concepts,
-          flashcards: structuralDraft.concepts.flatMap((concept, index) => [
-            { code: `SYN-F${index * 2 + 1}`, conceptCode: concept.code, type: "direct" as const, prompt: "Regla", answer: "Contenido canónico de prueba.", position: 1, sourceRefs: concept.sourceRefs },
-            { code: `SYN-F${index * 2 + 2}`, conceptCode: concept.code, type: "contrast" as const, prompt: "Contraste", answer: "Contenido canónico de prueba.", position: 2, sourceRefs: concept.sourceRefs },
-          ]),
-        }),
-      },
+      operations: studyContentOperation(),
     });
     expect(run.draft.units.map((unit) => unit.code)).toEqual(semantic.units.map((unit) => unit.code));
     expect(run.draft.concepts.map((concept) => concept.code)).toEqual(semantic.concepts.map((concept) => concept.code));
     expect(run.draft.assignments).toEqual(semantic.mappings);
     expect(run.finalCoverage?.totalActionableMissingQuestions).toBe(0);
+  });
+
+  test("merges semantic source blockers into the normal Fast Pipeline exception queue", () => {
+    const canonicalQuestions: FactoryQuestionMetadata[] = Array.from({ length: 4 }, (_, index) => ({
+      code: `SYN-${String(index + 1).padStart(4, "0")}`,
+      active: true,
+      apartado: "Unidad",
+      subapartado: "Regla",
+      conceptLabel: "Regla común",
+      learningObjective: "Distinguir la regla común",
+      documentReference: CANONICAL,
+      sourceReference: `${CANONICAL}, art. 1, p. 10`,
+      pageStart: 10,
+      pageEnd: 10,
+    }));
+    const questions: FactoryQuestionMetadata[] = [
+      ...canonicalQuestions,
+      { code: "SYN-0099", active: true, apartado: "Unidad", conceptLabel: "Regla externa", documentReference: "otra-fuente.pdf", sourceReference: "otra-fuente.pdf, p. 1", pageStart: 1, pageEnd: 1 },
+    ];
+    const semanticJob = job({ topic: 99, prefix: "SYN", questions });
+    const semantic = buildSemanticTopicDraft({
+      job: semanticJob,
+      canonicalSource: [{ id: "s1", document: CANONICAL, heading: "Unidad", sectionPath: ["Unidad", "Regla"], article: "art. 1", text: "La regla común se aplica en los términos indicados.", pageStart: 10, pageEnd: 10 }],
+    });
+    const sourceException = semantic.semanticExceptions.find((exception) => exception.subject.id === "SYN-0099");
+    expect(sourceException).toBeDefined();
+
+    const run = runContentFactoryTopicWithSemanticDraft({
+      job: semanticJob,
+      semanticDraft: semantic,
+      operations: studyContentOperation(),
+    });
+    expect(run.exceptionQueue.map((exception) => exception.id)).toContain(sourceException?.id);
+    expect(run.governancePacket.exceptions.map((exception) => exception.id)).toContain(sourceException?.id);
+    expect(run.readiness.importReady).toBe(false);
+    expect(run.readiness.blockers).toContain(sourceException?.id);
   });
 });
 
@@ -235,7 +284,10 @@ describe("Semantic Accelerator retrospective goldens", () => {
     expect(benchmark.unitTitleMatches).toBe(16);
     expect(benchmark.conceptTitleMatches).toBe(44);
     expect(benchmark.semanticTitleMappingMatches).toBe(260);
-    expect(topic18Gate2Package.concepts.find((concept) => concept.code === "SMS-T18-C29")?.sourceCapacity).toEqual(expect.objectContaining({ status: "source_limited", sourceSupportedCeiling: 1 }));
+    const c29 = topic18Gate2Package.concepts.find((concept) => concept.code === "SMS-T18-C29");
+    expect(c29 && "sourceCapacity" in c29 ? c29.sourceCapacity : undefined).toEqual(
+      expect.objectContaining({ status: "source_limited", sourceSupportedCeiling: 1 }),
+    );
     expect(semantic.concepts).toHaveLength(44);
   });
 
