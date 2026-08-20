@@ -1,6 +1,9 @@
+import { canonicalPageTextToSemanticSourceSpans } from "../canonical-source-ingest";
 import { buildSemanticTopicDraft, type SemanticSourceSpan } from "../semantic-draft";
 import { runContentFactoryTopicWithSemanticDraft } from "../semantic-fast-pipeline";
+import { prepareSemanticFactoryWorkPackets } from "../work-packets";
 import type { ContentFactoryJob, FactoryQuestionMetadata } from "../types";
+import { topic20CanonicalPageText, TOPIC20_CANONICAL_SOURCE_SHA256 } from "./topic-20-canonical-page-text";
 import { topic20SemanticInputPart1 } from "./topic-20-semantic-input-part1";
 import { topic20SemanticInputPart2 } from "./topic-20-semantic-input-part2";
 import { topic20SemanticInputPart3 } from "./topic-20-semantic-input-part3";
@@ -54,35 +57,18 @@ export const topic20ExistingQuestions: FactoryQuestionMetadata[] = semanticRows.
   pageEnd,
 }));
 
-/**
- * Technical source-ingest adapter for the benchmark only.
- *
- * It does not create semantic units/concepts/mappings. It reduces the canonical
- * traceability already stored on the real V2 rows to one article-level source
- * span per printed article heading, preserving only document, article heading,
- * broad section and page envelope. No legal text or concept boundary is added.
- * This is intentionally counted as manual/technical input preparation in the
- * benchmark ledger because Content Factory 4 does not ingest PDF bytes itself.
- */
-export function buildTopic20CanonicalSourceSpans(): SemanticSourceSpan[] {
-  const grouped = new Map<string, {
-    apartado: string;
-    subapartado: string;
-    pageStart: number;
-    pageEnd: number;
-  }>();
-
+/** Historical RUN 1A technical adapter. Kept only to preserve the benchmark baseline. */
+export function buildTopic20CanonicalSourceSpansRun1A(): SemanticSourceSpan[] {
+  const grouped = new Map<string, { apartado: string; subapartado: string; pageStart: number; pageEnd: number }>();
   for (const row of semanticRows) {
     const [, apartado, subapartado, , , , , , , pageStart, pageEnd] = row;
     const current = grouped.get(subapartado);
-    if (!current) {
-      grouped.set(subapartado, { apartado, subapartado, pageStart, pageEnd });
-      continue;
+    if (!current) grouped.set(subapartado, { apartado, subapartado, pageStart, pageEnd });
+    else {
+      current.pageStart = Math.min(current.pageStart, pageStart);
+      current.pageEnd = Math.max(current.pageEnd, pageEnd);
     }
-    current.pageStart = Math.min(current.pageStart, pageStart);
-    current.pageEnd = Math.max(current.pageEnd, pageEnd);
   }
-
   return [...grouped.values()]
     .sort((left, right) => left.pageStart - right.pageStart || left.subapartado.localeCompare(right.subapartado, "es"))
     .map((group, index) => {
@@ -100,7 +86,7 @@ export function buildTopic20CanonicalSourceSpans(): SemanticSourceSpan[] {
     });
 }
 
-export const topic20CanonicalSource = buildTopic20CanonicalSourceSpans();
+export const topic20CanonicalSource = buildTopic20CanonicalSourceSpansRun1A();
 
 export const topic20ContentFactoryJob: ContentFactoryJob = {
   version: "1.0",
@@ -110,39 +96,26 @@ export const topic20ContentFactoryJob: ContentFactoryJob = {
   mode: "existing_bank",
   codePrefix: "SMS-T20",
   coverageThreshold: 4,
-  sourceRevision: "Temario_new.pdf · Tema 20 canonical benchmark · pp. 44-76",
-  source: [{
-    label: "Temario_new.pdf",
-    reference: "Tema 20 · Ley 40/2015 (I)",
-    pageStart: 44,
-    pageEnd: 76,
-  }],
-  sourcePolicy: {
-    canonicalOnly: true,
-    document: "Temario_new.pdf",
-    externalVerificationAllowed: false,
-  },
+  sourceRevision: `Temario_new.pdf · sha256 ${TOPIC20_CANONICAL_SOURCE_SHA256} · PDF pp. 41-77`,
+  source: [{ label: "Temario_new.pdf", reference: "Tema 20 · Ley 40/2015 (I)", pageStart: 41, pageEnd: 77 }],
+  sourcePolicy: { canonicalOnly: true, document: "Temario_new.pdf", externalVerificationAllowed: false },
   existingQuestions: topic20ExistingQuestions,
 };
 
+// Historical RUN 1A baseline. Do not use these artifacts as RUN 1B input.
 export const topic20SemanticDraftRun1 = buildSemanticTopicDraft({
   job: topic20ContentFactoryJob,
   canonicalSource: topic20CanonicalSource,
   existingQuestions: topic20ExistingQuestions,
 });
-
 export const topic20FastPipelineRun1 = runContentFactoryTopicWithSemanticDraft({
   job: topic20ContentFactoryJob,
   semanticDraft: topic20SemanticDraftRun1,
 });
 
-const countSemanticExceptions = (type: string) =>
-  topic20SemanticDraftRun1.semanticExceptions.filter((exception) => exception.type === type).length;
-
+const countSemanticExceptions = (type: string) => topic20SemanticDraftRun1.semanticExceptions.filter((exception) => exception.type === type).length;
 const coverageRows = topic20FastPipelineRun1.finalCoverage?.factoryConceptCoverage ?? [];
-const coverageCount = (status: "ready" | "coverage_gap" | "source_review_required" | "source_limited") =>
-  coverageRows.filter((row) => row.status === status).length;
-
+const coverageCount = (status: "ready" | "coverage_gap" | "source_review_required" | "source_limited") => coverageRows.filter((row) => row.status === status).length;
 export const topic20SemanticBenchmarkMetrics = {
   inputQuestions: topic20ExistingQuestions.length,
   canonicalSourceSpans: topic20CanonicalSource.length,
@@ -174,23 +147,64 @@ export const topic20SemanticBenchmarkMetrics = {
   readinessState: topic20FastPipelineRun1.readiness.state,
 } as const;
 
+// Definitive RUN 1B source ingest: CanonicalPageText[] -> SemanticSourceSpan[]. No authored spans.
+export const topic20CanonicalSourceRun1B = canonicalPageTextToSemanticSourceSpans(topic20CanonicalPageText, {
+  document: "Temario_new.pdf",
+  codePrefix: "SMS-T20",
+  referencePrefix: "Temario_new.pdf · T20 canonical",
+});
+export const topic20SemanticDraftRun1B = buildSemanticTopicDraft({
+  job: topic20ContentFactoryJob,
+  canonicalSource: topic20CanonicalSourceRun1B,
+  existingQuestions: topic20ExistingQuestions,
+});
+export const topic20PreparedWorkPacketsRun1B = prepareSemanticFactoryWorkPackets({
+  job: topic20ContentFactoryJob,
+  semanticDraft: topic20SemanticDraftRun1B,
+  canonicalSource: topic20CanonicalSourceRun1B,
+});
+export const topic20FastPipelineRun1BSourceOnly = runContentFactoryTopicWithSemanticDraft({
+  job: topic20ContentFactoryJob,
+  semanticDraft: topic20SemanticDraftRun1B,
+  canonicalSource: topic20CanonicalSourceRun1B,
+});
+
+const countRun1BConfidence = (kind: "concept" | "mapping", confidence: "high" | "medium" | "low") =>
+  kind === "concept"
+    ? topic20SemanticDraftRun1B.conceptProposals.filter((proposal) => proposal.meta.confidence === confidence).length
+    : topic20SemanticDraftRun1B.mappingProposals.filter((proposal) => proposal.meta.confidence === confidence).length;
+const run1BCoverageRows = topic20FastPipelineRun1BSourceOnly.finalCoverage?.factoryConceptCoverage ?? [];
+export const topic20Run1BSourceMetrics = {
+  inputPages: topic20CanonicalPageText.length,
+  extractedTextCharacters: topic20CanonicalPageText.reduce((sum, page) => sum + page.text.length, 0),
+  automaticSpans: topic20CanonicalSourceRun1B.length,
+  units: topic20SemanticDraftRun1B.units.length,
+  conceptsHigh: countRun1BConfidence("concept", "high"),
+  conceptsMedium: countRun1BConfidence("concept", "medium"),
+  conceptsLow: countRun1BConfidence("concept", "low"),
+  mappingsHigh: countRun1BConfidence("mapping", "high"),
+  mappingsMedium: countRun1BConfidence("mapping", "medium"),
+  mappingsLow: countRun1BConfidence("mapping", "low"),
+  semanticConceptBoundariesMaterial: topic20FastPipelineRun1BSourceOnly.exceptionQueue.filter((exception) => exception.type === "concept_boundary").length,
+  semanticMappingAmbiguitiesMaterial: topic20FastPipelineRun1BSourceOnly.exceptionQueue.filter((exception) => exception.type === "mapping_ambiguity").length,
+  sourceIssues: topic20SemanticDraftRun1B.metrics.sourceIssues,
+  sourceLimitedCandidates: topic20FastPipelineRun1BSourceOnly.exceptionQueue.filter((exception) => exception.type === "source_limited_candidate").length,
+  confidenceOnlyBlockers: topic20FastPipelineRun1BSourceOnly.exceptionQueue.filter((exception) => exception.id.endsWith(":confidence")).length,
+  missingStudyContent: topic20FastPipelineRun1BSourceOnly.exceptionQueue.filter((exception) => exception.id.endsWith(":missing-study-content")).length,
+  missingQuestionGenerator: topic20FastPipelineRun1BSourceOnly.exceptionQueue.filter((exception) => exception.id.endsWith(":missing-question-generator")).length,
+  workPacketsStudy: topic20PreparedWorkPacketsRun1B.studyContent.length,
+  workPacketsFlashcards: topic20PreparedWorkPacketsRun1B.flashcards.length,
+  workPacketsQuestions: topic20PreparedWorkPacketsRun1B.questions.length,
+  executableStudyContent: topic20PreparedWorkPacketsRun1B.executableStudyContent,
+  executableQuestions: topic20PreparedWorkPacketsRun1B.executableQuestions,
+  actionableGapConcepts: run1BCoverageRows.filter((row) => row.status === "coverage_gap").length,
+  actionableMissingQuestions: topic20FastPipelineRun1BSourceOnly.finalCoverage?.totalActionableMissingQuestions ?? null,
+  totalExceptions: topic20FastPipelineRun1BSourceOnly.exceptionQueue.length,
+  blockers: topic20FastPipelineRun1BSourceOnly.exceptionQueue.filter((exception) => exception.blocker).length,
+  reviewRecommended: topic20FastPipelineRun1BSourceOnly.exceptionQueue.filter((exception) => !exception.blocker).length,
+} as const;
+
 export const topic20ManualInterventionLedger = [
-  {
-    id: "T20-MANUAL-01",
-    category: "A" as const,
-    action: "Read-only extraction and 25-field V2 contract audit from Supabase; version only the FactoryQuestionMetadata fields consumed by Semantic Accelerator.",
-    semanticDecision: false,
-  },
-  {
-    id: "T20-MANUAL-02",
-    category: "A" as const,
-    action: "Technical article/page source-span preparation because Semantic Accelerator does not ingest PDF bytes directly; no unit, concept or mapping boundary was authored.",
-    semanticDecision: false,
-  },
-  {
-    id: "T20-MANUAL-03",
-    category: "C" as const,
-    action: "Attempted downstream study-content/question materialization, but the available structured input did not contain the canonical PDF body text and Content Factory exposes no PDF-text ingest/generator operation. No external or auxiliary source was substituted; content and six generation slots remain unmaterialized.",
-    semanticDecision: false,
-  },
+  { id: "T20-MANUAL-01", category: "A" as const, action: "Read-only V2 extraction/audit from Supabase; Semantic Accelerator receives only its consumed metadata contract.", semanticDecision: false },
+  { id: "T20-RUN1B-INPUT", category: "A" as const, action: "CanonicalPageText[] supplied from Temario_new.pdf SHA-256 96768192445fa7da87e09d265b0b578737d38ffca2559f22225ea49ac4cebe2a; page->pageNumber field normalization only.", semanticDecision: false },
 ] as const;
