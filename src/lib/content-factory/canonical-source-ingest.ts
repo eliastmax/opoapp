@@ -170,8 +170,6 @@ export function canonicalPageTextToSemanticSourceSpans(
         heading: sectionPath[sectionPath.length - 1],
         text: preamble.join("\n"),
       });
-    } else if (current && current.pageEnd < page.pageNumber) {
-      current.pageEnd = page.pageNumber;
     }
   }
 
