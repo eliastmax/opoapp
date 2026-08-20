@@ -139,6 +139,10 @@ export const topic20FastPipelineRun1 = runContentFactoryTopicWithSemanticDraft({
 const countSemanticExceptions = (type: string) =>
   topic20SemanticDraftRun1.semanticExceptions.filter((exception) => exception.type === type).length;
 
+const coverageRows = topic20FastPipelineRun1.finalCoverage?.factoryConceptCoverage ?? [];
+const coverageCount = (status: "ready" | "coverage_gap" | "source_review_required" | "source_limited") =>
+  coverageRows.filter((row) => row.status === status).length;
+
 export const topic20SemanticBenchmarkMetrics = {
   inputQuestions: topic20ExistingQuestions.length,
   canonicalSourceSpans: topic20CanonicalSource.length,
@@ -154,10 +158,13 @@ export const topic20SemanticBenchmarkMetrics = {
   sourceIssues: topic20SemanticDraftRun1.metrics.sourceIssues,
   anchorConflicts: countSemanticExceptions("anchor_conflict"),
   semanticBlockers: topic20SemanticDraftRun1.metrics.blockers,
-  coverageStandardReady: topic20FastPipelineRun1.finalCoverage?.summary.standardReady ?? null,
-  coverageSourceLimited: topic20FastPipelineRun1.finalCoverage?.summary.sourceLimited ?? null,
-  coverageActionableGaps: topic20FastPipelineRun1.finalCoverage?.summary.actionableGaps ?? null,
-  coverageUnmapped: topic20FastPipelineRun1.finalCoverage?.summary.unmapped ?? null,
+  coverageStandardReady: coverageCount("ready"),
+  coverageSourceLimited: coverageCount("source_limited"),
+  coverageSourceReviewRequired: coverageCount("source_review_required"),
+  coverageActionableGapConcepts: coverageCount("coverage_gap"),
+  coverageActionableMissingQuestions: topic20FastPipelineRun1.finalCoverage?.totalActionableMissingQuestions ?? null,
+  coverageUnmapped: topic20FastPipelineRun1.finalCoverage?.mappingQa.unmappedQuestionCodes.length ?? null,
+  coverageMultiplePrimary: topic20FastPipelineRun1.finalCoverage?.mappingQa.duplicatePrimaryQuestionCodes.length ?? null,
   generationSlots: topic20FastPipelineRun1.generationSlots.length,
   generatedQuestions: topic20FastPipelineRun1.draft.generatedQuestions.length,
   questionQaIssues: topic20FastPipelineRun1.questionQa?.issues.length ?? null,
