@@ -14,8 +14,12 @@ const checksMigration = readFileSync(
   new URL("../../../supabase/migrations/20260820004519_v4_source_limited_checks.sql", import.meta.url),
   "utf8",
 );
-const standardRouterFixMigration = readFileSync(
+const standardCheckRouterFixMigration = readFileSync(
   new URL("../../../supabase/migrations/20260820131800_v4_standard_concept_check_router_fix.sql", import.meta.url),
+  "utf8",
+);
+const standardMasteryRouterFixMigration = readFileSync(
+  new URL("../../../supabase/migrations/20260820132600_v4_standard_mastery_router_fix.sql", import.meta.url),
   "utf8",
 );
 
@@ -68,16 +72,21 @@ describe("V4 source-limited database contract", () => {
   });
 
   test("routes standard concepts with null capacity to the preserved standard selector", () => {
-    expect(standardRouterFixMigration).toContain(
+    expect(standardCheckRouterFixMigration).toContain(
       "COALESCE(concept.source_capacity_status = 'source_limited', FALSE)",
     );
-    expect(standardRouterFixMigration).toContain(
-      "create_v4_source_limited_concept_check",
+    expect(standardCheckRouterFixMigration).toContain("create_v4_source_limited_concept_check");
+    expect(standardCheckRouterFixMigration).toContain("create_v4_concept_check_standard");
+    expect(standardCheckRouterFixMigration).not.toContain("ALTER TABLE");
+  });
+
+  test("routes standard mastery refresh with null capacity to the preserved standard engine", () => {
+    expect(standardMasteryRouterFixMigration).toContain(
+      "COALESCE(concept.source_capacity_status = 'source_limited', FALSE)",
     );
-    expect(standardRouterFixMigration).toContain(
-      "create_v4_concept_check_standard",
-    );
-    expect(standardRouterFixMigration).not.toContain("ALTER TABLE");
+    expect(standardMasteryRouterFixMigration).toContain("refresh_source_limited_concept_mastery");
+    expect(standardMasteryRouterFixMigration).toContain("refresh_my_v4_concept_mastery_standard");
+    expect(standardMasteryRouterFixMigration).not.toContain("ALTER TABLE");
   });
 
   test("Today receives catalog capacity instead of guessing from question count", () => {
