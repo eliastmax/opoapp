@@ -4,9 +4,9 @@ export type V4TodayContextRow = {
   concept_id: string;
   concept_code: string;
   concept_title: string;
-  source_capacity_status: "source_limited" | null;
-  source_supported_ceiling: number | null;
-  source_capacity_reason: string | null;
+  source_capacity_status?: "source_limited" | null;
+  source_supported_ceiling?: number | null;
+  source_capacity_reason?: string | null;
   topic_id: string;
   topic_number: number;
   topic_name: string;
