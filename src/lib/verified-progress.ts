@@ -2,13 +2,14 @@ import type { Database } from "@/integrations/supabase/types";
 
 type GeneratedVerifiedProgressRow =
   Database["public"]["Functions"]["get_verified_progress_summary"]["Returns"][number];
-export type VerifiedProgressRow = Omit<
-  GeneratedVerifiedProgressRow,
-  "accuracy_change" | "baseline_accuracy" | "current_accuracy"
-> & {
-  accuracy_change: number | null;
-  baseline_accuracy: number | null;
-  current_accuracy: number | null;
+type NullableVerifiedProgressFields =
+  | "accuracy_change"
+  | "baseline_accuracy"
+  | "current_accuracy";
+export type VerifiedProgressRow = {
+  [Key in keyof GeneratedVerifiedProgressRow]: Key extends NullableVerifiedProgressFields
+    ? GeneratedVerifiedProgressRow[Key] | null
+    : GeneratedVerifiedProgressRow[Key];
 };
 
 export type ComparisonState =
