@@ -295,10 +295,14 @@ function questionsCompatible(left: QuestionWork, right: QuestionWork) {
   const sameLabel = labelLeft.length > 0 && labelLeft === labelRight;
   const sameObjective = objectiveLeft.length > 0 && objectiveLeft === objectiveRight;
   const sameSubpart = subLeft.length > 0 && subLeft === subRight;
-  const sameSource = sharedSpan(left, right) || intersects(left.articleNumbers, right.articleNumbers);
+  const sameArticle = intersects(left.articleNumbers, right.articleNumbers);
+  const sameSource = sharedSpan(left, right) || sameArticle;
   if (sameLabel || sameObjective) return true;
 
-  // Structural proximity is contextual evidence, not concept identity by itself.
+  // A canonical legal article plus the same subpart is a bounded structural-semantic
+  // signal. A shared parser span alone is deliberately insufficient.
+  if (sameArticle && sameSubpart) return true;
+
   const labelSimilarity = labelLeft && labelRight ? jaccard(labelLeft, labelRight) : 0;
   const objectiveSimilarity = objectiveLeft && objectiveRight ? jaccard(objectiveLeft, objectiveRight) : 0;
   if (labelSimilarity >= 0.72 && (sameSource || sameSubpart)) return true;
@@ -308,6 +312,7 @@ function questionsCompatible(left: QuestionWork, right: QuestionWork) {
 
 function clustersCompatible(left: number[], right: number[], rows: QuestionWork[]) {
   // Complete-link guard: every cross-cluster pair must remain semantically compatible.
+  // A bridge member can no longer connect two groups that are incompatible with each other.
   return left.every((leftIndex) =>
     right.every((rightIndex) => questionsCompatible(rows[leftIndex], rows[rightIndex])),
   );
@@ -329,7 +334,8 @@ function clusterQuestions(rows: QuestionWork[]) {
     .sort((left, right) => left.row.question.code.localeCompare(right.row.question.code, "es"))
     .map(({ index }) => [index]);
 
-  // Deterministic complete-link agglomeration: a bridge cannot join incompatible groups.
+  // Deterministic complete-link agglomeration. We always merge the first compatible
+  // pair in stable question-code order, then restart because cluster compatibility changed.
   let merged = true;
   while (merged) {
     merged = false;

@@ -14,8 +14,12 @@ const questions: FactoryQuestionMetadata[] = rows.map(([code, apartado, subapart
 const job: ContentFactoryJob = { version: "1.0", oppositionCode: "auxiliar-administrativo-sms", topicNumber: 20, mode: "existing_bank", codePrefix: "SMS-T20", coverageThreshold: 4, source: [{ label: "Temario_new.pdf", reference: "T20" }], sourcePolicy: { canonicalOnly: true, document: "Temario_new.pdf", externalVerificationAllowed: false }, existingQuestions: questions };
 const spans = canonicalPageTextToSemanticSourceSpans(topic20CanonicalPageText, { document: "Temario_new.pdf", codePrefix: "SMS-T20", referencePrefix: "T20" });
 
-test("Factory.6 keeps approved T20 semantic count stable", () => {
+test("Factory.6 keeps T20 semantic structure and mapping confidence stable", () => {
   const draft = buildSemanticTopicDraft({ job, canonicalSource: spans, existingQuestions: questions });
-  console.log("FACTORY6_T20_CLUSTERS", JSON.stringify(draft.conceptProposals.map((p) => ({ code: p.concept.code, title: p.concept.title, q: p.meta.affectedQuestionCodes, signals: p.meta.evidence.signals }))));
-  expect(draft.concepts.length).toBe(30);
+  expect(draft.concepts).toHaveLength(30);
+  expect(draft.concepts.map((concept) => concept.code)).toEqual(Array.from({ length: 30 }, (_, index) => `SMS-T20-C${String(index + 1).padStart(2, "0")}`));
+  expect(draft.mappings).toHaveLength(220);
+  expect(draft.mappingProposals.filter((proposal) => proposal.meta.confidence === "high")).toHaveLength(32);
+  expect(draft.mappingProposals.filter((proposal) => proposal.meta.confidence === "medium")).toHaveLength(188);
+  expect(draft.mappingProposals.filter((proposal) => proposal.meta.confidence === "low")).toHaveLength(0);
 });
