@@ -12,6 +12,7 @@ import {
   topic19Concepts,
   topic19Units,
 } from "../content-factory/consumers/topic-19-fast-pipeline";
+import type { FactoryFastPipelineOperations } from "../content-factory/fast-pipeline-types";
 import type { ContentFactoryJob, FactoryQuestionMetadata } from "../content-factory/types";
 import type { V4StudyContentPackage } from "../v4-content-package";
 import { topic13EstatutoMarcoMaterializedPackage } from "../v4-pilots/topic-13-estatuto-marco-materialized";
@@ -31,16 +32,24 @@ function job(input: {
     mode: input.mode ?? "existing_bank",
     codePrefix: input.prefix,
     source: [{ label: CANONICAL, reference: `${CANONICAL}, Tema ${input.topic}.` }],
-    sourcePolicy: { canonicalOnly: true, document: CANONICAL, externalVerificationAllowed: false },
+    sourcePolicy: {
+      canonicalOnly: true,
+      document: CANONICAL,
+      externalVerificationAllowed: false,
+    },
     existingQuestions: input.questions ?? [],
   };
 }
 
 function canonicalRef(unit: V4StudyContentPackage["units"][number]) {
-  return unit.sourceRefs.find((ref) => `${ref.label} ${ref.reference}`.includes(CANONICAL)) ?? unit.sourceRefs[0];
+  return unit.sourceRefs.find((ref) =>
+    `${ref.label} ${ref.reference}`.includes(CANONICAL),
+  ) ?? unit.sourceRefs[0];
 }
 
-function sourceSpansFromGolden(pkg: Pick<V4StudyContentPackage, "units">): SemanticSourceSpan[] {
+function sourceSpansFromGolden(
+  pkg: Pick<V4StudyContentPackage, "units">,
+): SemanticSourceSpan[] {
   return pkg.units.map((unit) => {
     const ref = canonicalRef(unit as V4StudyContentPackage["units"][number]);
     return {
@@ -56,7 +65,9 @@ function sourceSpansFromGolden(pkg: Pick<V4StudyContentPackage, "units">): Seman
   });
 }
 
-function questionsFromGolden(pkg: Pick<V4StudyContentPackage, "units" | "concepts" | "questionMappings">): FactoryQuestionMetadata[] {
+function questionsFromGolden(
+  pkg: Pick<V4StudyContentPackage, "units" | "concepts" | "questionMappings">,
+): FactoryQuestionMetadata[] {
   const concepts = new Map(pkg.concepts.map((concept) => [concept.code, concept]));
   const units = new Map(pkg.units.map((unit) => [unit.code, unit]));
   return pkg.questionMappings.map((mapping) => {
@@ -78,13 +89,22 @@ function questionsFromGolden(pkg: Pick<V4StudyContentPackage, "units" | "concept
   });
 }
 
-function replay(pkg: Pick<V4StudyContentPackage, "oppositionCode" | "topicNumber" | "units" | "concepts" | "questionMappings">, prefix: string) {
+function replay(
+  pkg: Pick<
+    V4StudyContentPackage,
+    "oppositionCode" | "topicNumber" | "units" | "concepts" | "questionMappings"
+  >,
+  prefix: string,
+) {
   const questions = questionsFromGolden(pkg);
   const semantic = buildSemanticTopicDraft({
     job: job({ topic: pkg.topicNumber, prefix, questions }),
     canonicalSource: sourceSpansFromGolden(pkg),
   });
-  return { semantic, benchmark: benchmarkSemanticDraftAgainstGolden(semantic, pkg) };
+  return {
+    semantic,
+    benchmark: benchmarkSemanticDraftAgainstGolden(semantic, pkg),
+  };
 }
 
 function topic19Golden() {
@@ -100,13 +120,15 @@ function topic19Golden() {
     mnemonics: [],
     sourceRefs: unit.sourceRefs,
   }));
-  const concepts: V4StudyContentPackage["concepts"] = topic19Concepts.map((concept) => ({
-    code: concept.code,
-    unitCode: concept.unitCode,
-    title: concept.title,
-    description: concept.description,
-    position: concept.position,
-  }));
+  const concepts: V4StudyContentPackage["concepts"] = topic19Concepts.map(
+    (concept) => ({
+      code: concept.code,
+      unitCode: concept.unitCode,
+      title: concept.title,
+      description: concept.description,
+      position: concept.position,
+    }),
+  );
   return {
     oppositionCode: "auxiliar-administrativo-sms",
     topicNumber: 19,
@@ -119,9 +141,9 @@ function topic19Golden() {
   };
 }
 
-function studyContentOperation() {
+function studyContentOperation(): FactoryFastPipelineOperations {
   return {
-    buildStudyContent: ({ structuralDraft }: { structuralDraft: { units: Array<{ code: string; title: string; position: number; sourceRefs: V4StudyContentPackage["units"][number]["sourceRefs"] }>; concepts: V4StudyContentPackage["concepts"] } }) => ({
+    buildStudyContent: ({ structuralDraft }) => ({
       units: structuralDraft.units.map((unit) => ({
         code: unit.code,
         title: unit.title,
@@ -136,26 +158,143 @@ function studyContentOperation() {
       })),
       concepts: structuralDraft.concepts,
       flashcards: structuralDraft.concepts.flatMap((concept, index) => [
-        { code: `SYN-F${index * 2 + 1}`, conceptCode: concept.code, type: "direct" as const, prompt: "Regla", answer: "Contenido canónico de prueba.", position: 1, sourceRefs: [] },
-        { code: `SYN-F${index * 2 + 2}`, conceptCode: concept.code, type: "contrast" as const, prompt: "Contraste", answer: "Contenido canónico de prueba.", position: 2, sourceRefs: [] },
+        {
+          code: `SYN-F${index * 2 + 1}`,
+          conceptCode: concept.code,
+          type: "direct" as const,
+          prompt: "Regla",
+          answer: "Contenido canónico de prueba.",
+          position: 1,
+          sourceRefs: concept.sourceRefs,
+        },
+        {
+          code: `SYN-F${index * 2 + 2}`,
+          conceptCode: concept.code,
+          type: "contrast" as const,
+          prompt: "Contraste",
+          answer: "Contenido canónico de prueba.",
+          position: 2,
+          sourceRefs: concept.sourceRefs,
+        },
       ]),
     }),
   };
 }
 
+function canonicalSyntheticQuestions(count = 4): FactoryQuestionMetadata[] {
+  return Array.from({ length: count }, (_, index) => ({
+    code: `SYN-${String(index + 1).padStart(4, "0")}`,
+    active: true,
+    apartado: "Unidad",
+    subapartado: "Regla",
+    conceptLabel: "Regla común",
+    learningObjective: "Distinguir la regla común",
+    documentReference: CANONICAL,
+    sourceReference: `${CANONICAL}, art. 1, p. 10`,
+    pageStart: 10,
+    pageEnd: 10,
+  }));
+}
+
+const syntheticSource: SemanticSourceSpan[] = [
+  {
+    id: "s1",
+    document: CANONICAL,
+    heading: "Unidad",
+    sectionPath: ["Unidad", "Regla"],
+    article: "art. 1",
+    text: "La regla común se aplica en los términos indicados.",
+    pageStart: 10,
+    pageEnd: 10,
+  },
+];
+
 describe("Content Factory Semantic Draft Builder", () => {
   test("clusters V2 + canonical spans into reusable units, concepts and primary mappings", () => {
     const questions: FactoryQuestionMetadata[] = [
-      { code: "SYN-0001", active: true, apartado: "Inicio", subapartado: "Requisitos", conceptLabel: "Requisitos de inicio", learningObjective: "Identificar los requisitos de inicio", perspective: "requisitos", trapType: "concepto_proximo", documentReference: CANONICAL, sourceReference: `${CANONICAL}, art. 1, p. 10`, pageStart: 10, pageEnd: 10 },
-      { code: "SYN-0002", active: true, apartado: "Inicio", subapartado: "Requisitos", conceptLabel: "Requisitos de inicio", learningObjective: "Identificar los requisitos de inicio", perspective: "mini_caso", trapType: "requisito", documentReference: CANONICAL, sourceReference: `${CANONICAL}, art. 1, p. 10`, pageStart: 10, pageEnd: 10 },
-      { code: "SYN-0003", active: true, apartado: "Inicio", subapartado: "Efectos", conceptLabel: "Efectos del inicio", learningObjective: "Distinguir los efectos del inicio", perspective: "efecto", documentReference: CANONICAL, sourceReference: `${CANONICAL}, art. 2, p. 11`, pageStart: 11, pageEnd: 11 },
-      { code: "SYN-0004", active: true, apartado: "Inicio", subapartado: "Efectos", conceptLabel: "Efectos del inicio", learningObjective: "Distinguir los efectos del inicio", perspective: "regla", documentReference: CANONICAL, sourceReference: `${CANONICAL}, art. 2, p. 11`, pageStart: 11, pageEnd: 11 },
+      {
+        code: "SYN-0001",
+        active: true,
+        apartado: "Inicio",
+        subapartado: "Requisitos",
+        conceptLabel: "Requisitos de inicio",
+        learningObjective: "Identificar los requisitos de inicio",
+        perspective: "requisitos",
+        trapType: "concepto_proximo",
+        documentReference: CANONICAL,
+        sourceReference: `${CANONICAL}, art. 1, p. 10`,
+        pageStart: 10,
+        pageEnd: 10,
+      },
+      {
+        code: "SYN-0002",
+        active: true,
+        apartado: "Inicio",
+        subapartado: "Requisitos",
+        conceptLabel: "Requisitos de inicio",
+        learningObjective: "Identificar los requisitos de inicio",
+        perspective: "mini_caso",
+        trapType: "requisito",
+        documentReference: CANONICAL,
+        sourceReference: `${CANONICAL}, art. 1, p. 10`,
+        pageStart: 10,
+        pageEnd: 10,
+      },
+      {
+        code: "SYN-0003",
+        active: true,
+        apartado: "Inicio",
+        subapartado: "Efectos",
+        conceptLabel: "Efectos del inicio",
+        learningObjective: "Distinguir los efectos del inicio",
+        perspective: "efecto",
+        documentReference: CANONICAL,
+        sourceReference: `${CANONICAL}, art. 2, p. 11`,
+        pageStart: 11,
+        pageEnd: 11,
+      },
+      {
+        code: "SYN-0004",
+        active: true,
+        apartado: "Inicio",
+        subapartado: "Efectos",
+        conceptLabel: "Efectos del inicio",
+        learningObjective: "Distinguir los efectos del inicio",
+        perspective: "regla",
+        documentReference: CANONICAL,
+        sourceReference: `${CANONICAL}, art. 2, p. 11`,
+        pageStart: 11,
+        pageEnd: 11,
+      },
     ];
     const source: SemanticSourceSpan[] = [
-      { id: "s1", document: CANONICAL, reference: `${CANONICAL}, art. 1, p. 10`, heading: "Inicio", sectionPath: ["Inicio", "Requisitos"], article: "art. 1", text: "La solicitud debe contener los requisitos indicados. El plazo se computa desde su presentación.", pageStart: 10, pageEnd: 10 },
-      { id: "s2", document: CANONICAL, reference: `${CANONICAL}, art. 2, p. 11`, heading: "Inicio", sectionPath: ["Inicio", "Efectos"], article: "art. 2", text: "La iniciación produce los efectos previstos en este apartado, salvo la excepción expresamente indicada.", pageStart: 11, pageEnd: 11 },
+      {
+        id: "s1",
+        document: CANONICAL,
+        reference: `${CANONICAL}, art. 1, p. 10`,
+        heading: "Inicio",
+        sectionPath: ["Inicio", "Requisitos"],
+        article: "art. 1",
+        text: "La solicitud debe contener los requisitos indicados. El plazo se computa desde su presentación.",
+        pageStart: 10,
+        pageEnd: 10,
+      },
+      {
+        id: "s2",
+        document: CANONICAL,
+        reference: `${CANONICAL}, art. 2, p. 11`,
+        heading: "Inicio",
+        sectionPath: ["Inicio", "Efectos"],
+        article: "art. 2",
+        text: "La iniciación produce los efectos previstos en este apartado, salvo la excepción expresamente indicada.",
+        pageStart: 11,
+        pageEnd: 11,
+      },
     ];
-    const semantic = buildSemanticTopicDraft({ job: job({ topic: 99, prefix: "SYN", questions }), canonicalSource: source });
+    const semantic = buildSemanticTopicDraft({
+      job: job({ topic: 99, prefix: "SYN", questions }),
+      canonicalSource: source,
+    });
 
     expect(semantic.units).toHaveLength(1);
     expect(semantic.concepts).toHaveLength(2);
@@ -165,21 +304,49 @@ describe("Content Factory Semantic Draft Builder", () => {
     expect(semantic.metrics.automaticMappings).toBe(4);
     expect(semantic.metrics.blockers).toBe(0);
     expect(semantic.studyScaffolds).toHaveLength(2);
-    expect(semantic.studyScaffolds.flatMap((scaffold) => scaffold.generationDimensions)).toContain("deadline");
-    expect(semantic.studyScaffolds.flatMap((scaffold) => scaffold.generationDimensions)).toContain("exception");
+    expect(
+      semantic.studyScaffolds.flatMap((scaffold) => scaffold.generationDimensions),
+    ).toContain("deadline");
+    expect(
+      semantic.studyScaffolds.flatMap((scaffold) => scaffold.generationDimensions),
+    ).toContain("exception");
   });
 
   test("quarantines explicit non-canonical V2 provenance instead of mapping it optimistically", () => {
     const questions: FactoryQuestionMetadata[] = [
-      { code: "SYN-0001", active: true, apartado: "A", conceptLabel: "Regla A", documentReference: "otra-fuente.pdf", sourceReference: "otra-fuente.pdf, p. 1", pageStart: 1, pageEnd: 1 },
+      {
+        code: "SYN-0001",
+        active: true,
+        apartado: "A",
+        conceptLabel: "Regla A",
+        documentReference: "otra-fuente.pdf",
+        sourceReference: "otra-fuente.pdf, p. 1",
+        pageStart: 1,
+        pageEnd: 1,
+      },
     ];
     const semantic = buildSemanticTopicDraft({
       job: job({ topic: 99, prefix: "SYN", questions }),
-      canonicalSource: [{ id: "s1", document: CANONICAL, heading: "A", sectionPath: ["A"], text: "Contenido canónico.", pageStart: 1, pageEnd: 1 }],
+      canonicalSource: [
+        {
+          id: "s1",
+          document: CANONICAL,
+          heading: "A",
+          sectionPath: ["A"],
+          text: "Contenido canónico.",
+          pageStart: 1,
+          pageEnd: 1,
+        },
+      ],
     });
     expect(semantic.mappings).toEqual([]);
     expect(semantic.semanticExceptions).toEqual([
-      expect.objectContaining({ type: "source_review_required", blocker: true, confidence: "low", subject: { kind: "question", id: "SYN-0001" } }),
+      expect.objectContaining({
+        type: "source_review_required",
+        blocker: true,
+        confidence: "low",
+        subject: { kind: "question", id: "SYN-0001" },
+      }),
     ]);
   });
 
@@ -187,69 +354,83 @@ describe("Content Factory Semantic Draft Builder", () => {
     const semantic = buildSemanticTopicDraft({
       job: job({ topic: 77, prefix: "GREEN", mode: "greenfield" }),
       canonicalSource: [
-        { id: "g1", document: CANONICAL, heading: "Bloque A", sectionPath: ["Bloque A"], article: "art. 1", text: "Regla uno.", pageStart: 1, pageEnd: 1 },
-        { id: "g2", document: CANONICAL, heading: "Bloque A", sectionPath: ["Bloque A"], article: "art. 2", text: "Regla dos.", pageStart: 2, pageEnd: 2 },
+        {
+          id: "g1",
+          document: CANONICAL,
+          heading: "Bloque A",
+          sectionPath: ["Bloque A"],
+          article: "art. 1",
+          text: "Regla uno.",
+          pageStart: 1,
+          pageEnd: 1,
+        },
+        {
+          id: "g2",
+          document: CANONICAL,
+          heading: "Bloque A",
+          sectionPath: ["Bloque A"],
+          article: "art. 2",
+          text: "Regla dos.",
+          pageStart: 2,
+          pageEnd: 2,
+        },
       ],
     });
     expect(semantic.units).toHaveLength(1);
     expect(semantic.concepts).toHaveLength(2);
     expect(semantic.mappings).toEqual([]);
-    expect(semantic.conceptProposals.every((proposal) => proposal.meta.confidence === "medium")).toBe(true);
+    expect(
+      semantic.conceptProposals.every(
+        (proposal) => proposal.meta.confidence === "medium",
+      ),
+    ).toBe(true);
     expect(semantic.metrics.automaticMappings).toBe(0);
   });
 
   test("feeds the structural provider directly into Fast Pipeline without caller-side map rewriting", () => {
-    const questions: FactoryQuestionMetadata[] = Array.from({ length: 4 }, (_, index) => ({
-      code: `SYN-${String(index + 1).padStart(4, "0")}`,
-      active: true,
-      apartado: "Unidad",
-      subapartado: "Regla",
-      conceptLabel: "Regla común",
-      learningObjective: "Distinguir la regla común",
-      documentReference: CANONICAL,
-      sourceReference: `${CANONICAL}, art. 1, p. 10`,
-      pageStart: 10,
-      pageEnd: 10,
-    }));
+    const questions = canonicalSyntheticQuestions();
     const semanticJob = job({ topic: 99, prefix: "SYN", questions });
     const semantic = buildSemanticTopicDraft({
       job: semanticJob,
-      canonicalSource: [{ id: "s1", document: CANONICAL, heading: "Unidad", sectionPath: ["Unidad", "Regla"], article: "art. 1", text: "La regla común se aplica en los términos indicados.", pageStart: 10, pageEnd: 10 }],
+      canonicalSource: syntheticSource,
     });
     const run = runContentFactoryTopicWithSemanticDraft({
       job: semanticJob,
       semanticDraft: semantic,
       operations: studyContentOperation(),
     });
-    expect(run.draft.units.map((unit) => unit.code)).toEqual(semantic.units.map((unit) => unit.code));
-    expect(run.draft.concepts.map((concept) => concept.code)).toEqual(semantic.concepts.map((concept) => concept.code));
+    expect(run.draft.units.map((unit) => unit.code)).toEqual(
+      semantic.units.map((unit) => unit.code),
+    );
+    expect(run.draft.concepts.map((concept) => concept.code)).toEqual(
+      semantic.concepts.map((concept) => concept.code),
+    );
     expect(run.draft.assignments).toEqual(semantic.mappings);
     expect(run.finalCoverage?.totalActionableMissingQuestions).toBe(0);
   });
 
   test("merges semantic source blockers into the normal Fast Pipeline exception queue", () => {
-    const canonicalQuestions: FactoryQuestionMetadata[] = Array.from({ length: 4 }, (_, index) => ({
-      code: `SYN-${String(index + 1).padStart(4, "0")}`,
-      active: true,
-      apartado: "Unidad",
-      subapartado: "Regla",
-      conceptLabel: "Regla común",
-      learningObjective: "Distinguir la regla común",
-      documentReference: CANONICAL,
-      sourceReference: `${CANONICAL}, art. 1, p. 10`,
-      pageStart: 10,
-      pageEnd: 10,
-    }));
     const questions: FactoryQuestionMetadata[] = [
-      ...canonicalQuestions,
-      { code: "SYN-0099", active: true, apartado: "Unidad", conceptLabel: "Regla externa", documentReference: "otra-fuente.pdf", sourceReference: "otra-fuente.pdf, p. 1", pageStart: 1, pageEnd: 1 },
+      ...canonicalSyntheticQuestions(),
+      {
+        code: "SYN-0099",
+        active: true,
+        apartado: "Unidad",
+        conceptLabel: "Regla externa",
+        documentReference: "otra-fuente.pdf",
+        sourceReference: "otra-fuente.pdf, p. 1",
+        pageStart: 1,
+        pageEnd: 1,
+      },
     ];
     const semanticJob = job({ topic: 99, prefix: "SYN", questions });
     const semantic = buildSemanticTopicDraft({
       job: semanticJob,
-      canonicalSource: [{ id: "s1", document: CANONICAL, heading: "Unidad", sectionPath: ["Unidad", "Regla"], article: "art. 1", text: "La regla común se aplica en los términos indicados.", pageStart: 10, pageEnd: 10 }],
+      canonicalSource: syntheticSource,
     });
-    const sourceException = semantic.semanticExceptions.find((exception) => exception.subject.id === "SYN-0099");
+    const sourceException = semantic.semanticExceptions.find(
+      (exception) => exception.subject.id === "SYN-0099",
+    );
     expect(sourceException).toBeDefined();
 
     const run = runContentFactoryTopicWithSemanticDraft({
@@ -257,8 +438,12 @@ describe("Content Factory Semantic Draft Builder", () => {
       semanticDraft: semantic,
       operations: studyContentOperation(),
     });
-    expect(run.exceptionQueue.map((exception) => exception.id)).toContain(sourceException?.id);
-    expect(run.governancePacket.exceptions.map((exception) => exception.id)).toContain(sourceException?.id);
+    expect(run.exceptionQueue.map((exception) => exception.id)).toContain(
+      sourceException?.id,
+    );
+    expect(run.governancePacket.exceptions.map((exception) => exception.id)).toContain(
+      sourceException?.id,
+    );
     expect(run.readiness.importReady).toBe(false);
     expect(run.readiness.blockers).toContain(sourceException?.id);
   });
@@ -266,7 +451,10 @@ describe("Content Factory Semantic Draft Builder", () => {
 
 describe("Semantic Accelerator retrospective goldens", () => {
   test("reconstructs Topic 13 semantic structure without changing the golden fixture", () => {
-    const { semantic, benchmark } = replay(topic13EstatutoMarcoMaterializedPackage, "SMS-T13");
+    const { semantic, benchmark } = replay(
+      topic13EstatutoMarcoMaterializedPackage,
+      "SMS-T13",
+    );
     expect(benchmark.goldenUnits).toBe(18);
     expect(benchmark.goldenConcepts).toBe(34);
     expect(benchmark.goldenMappings).toBe(144);
@@ -284,9 +472,14 @@ describe("Semantic Accelerator retrospective goldens", () => {
     expect(benchmark.unitTitleMatches).toBe(16);
     expect(benchmark.conceptTitleMatches).toBe(44);
     expect(benchmark.semanticTitleMappingMatches).toBe(260);
-    const c29 = topic18Gate2Package.concepts.find((concept) => concept.code === "SMS-T18-C29");
+    const c29 = topic18Gate2Package.concepts.find(
+      (concept) => concept.code === "SMS-T18-C29",
+    );
     expect(c29 && "sourceCapacity" in c29 ? c29.sourceCapacity : undefined).toEqual(
-      expect.objectContaining({ status: "source_limited", sourceSupportedCeiling: 1 }),
+      expect.objectContaining({
+        status: "source_limited",
+        sourceSupportedCeiling: 1,
+      }),
     );
     expect(semantic.concepts).toHaveLength(44);
   });
