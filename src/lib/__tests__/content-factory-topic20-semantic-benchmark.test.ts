@@ -17,6 +17,7 @@ describe("Content Factory Topic 20 Semantic Accelerator real benchmark RUN 1", (
     expect(topic20ExistingQuestions.every((question) => question.pageStart != null && question.pageEnd != null)).toBe(true);
     expect(topic20CanonicalSource).toHaveLength(30);
     expect(topic20SemanticDraftRun1.mappings).toHaveLength(220);
+    expect(topic20ManualInterventionLedger).toHaveLength(3);
     expect(topic20ManualInterventionLedger.every((entry) => entry.semanticDecision === false)).toBe(true);
   });
 
@@ -59,26 +60,40 @@ describe("Content Factory Topic 20 Semantic Accelerator real benchmark RUN 1", (
     }
   });
 
-  test("emits the benchmark metrics and complete exception queue for the audit log", () => {
+  test("emits compact complete governance membership for the audit log", () => {
+    const mediumMappingGroups = Object.fromEntries(
+      topic20SemanticDraftRun1.concepts.map((concept) => [
+        concept.code,
+        topic20SemanticDraftRun1.mappingProposals
+          .filter((proposal) => proposal.meta.confidence === "medium" && proposal.mapping.primaryConceptCode === concept.code)
+          .map((proposal) => proposal.mapping.questionCode),
+      ]).filter(([, codes]) => (codes as string[]).length > 0),
+    );
+    const mediumConceptCodes = topic20SemanticDraftRun1.conceptProposals
+      .filter((proposal) => proposal.meta.confidence === "medium")
+      .map((proposal) => proposal.concept.code);
+    const mixedBoundaryCodes = topic20SemanticDraftRun1.semanticExceptions
+      .filter((exception) => exception.type === "concept_boundary")
+      .map((exception) => exception.subject.id);
+    const technicalBlockerIds = topic20FastPipelineRun1.exceptionQueue
+      .filter((exception) => exception.subject.kind === "topic")
+      .map((exception) => exception.id);
+    const coverageBlockers = topic20FastPipelineRun1.exceptionQueue
+      .filter((exception) => exception.type === "coverage_anomaly" && exception.subject.kind === "concept")
+      .map((exception) => ({ id: exception.id, concept: exception.subject.id, explanation: exception.explanation }));
+
     console.info("TOPIC20_SEMANTIC_BENCHMARK", JSON.stringify(topic20SemanticBenchmarkMetrics));
-    console.info("TOPIC20_SEMANTIC_EXCEPTIONS", JSON.stringify(topic20SemanticDraftRun1.semanticExceptions.map((exception) => ({
-      id: exception.id,
-      type: exception.type,
-      blocker: exception.blocker,
-      confidence: exception.confidence,
-      subject: exception.subject,
-      explanation: exception.explanation,
-      recommendation: exception.recommendation,
-    }))));
-    console.info("TOPIC20_GOVERNANCE_EXCEPTION_QUEUE", JSON.stringify(topic20FastPipelineRun1.exceptionQueue.map((exception) => ({
-      id: exception.id,
-      type: exception.type,
-      blocker: exception.blocker,
-      confidence: exception.confidence,
-      subject: exception.subject,
-      explanation: exception.explanation,
-      recommendation: exception.recommendation,
-    }))));
+    console.info("TOPIC20_MEDIUM_CONCEPTS", JSON.stringify(mediumConceptCodes));
+    console.info("TOPIC20_MIXED_BOUNDARIES", JSON.stringify(mixedBoundaryCodes));
+    console.info("TOPIC20_MEDIUM_MAPPING_GROUPS", JSON.stringify(mediumMappingGroups));
+    console.info("TOPIC20_COVERAGE_BLOCKERS", JSON.stringify(coverageBlockers));
+    console.info("TOPIC20_TECHNICAL_BLOCKERS", JSON.stringify(technicalBlockerIds));
+    console.info("TOPIC20_MANUAL_INTERVENTIONS", JSON.stringify(topic20ManualInterventionLedger));
     expect(topic20SemanticBenchmarkMetrics.inputQuestions).toBe(220);
+    expect(Object.values(mediumMappingGroups).flat()).toHaveLength(188);
+    expect(mediumConceptCodes).toHaveLength(29);
+    expect(mixedBoundaryCodes).toHaveLength(29);
+    expect(technicalBlockerIds).toHaveLength(2);
+    expect(coverageBlockers).toHaveLength(3);
   });
 });
