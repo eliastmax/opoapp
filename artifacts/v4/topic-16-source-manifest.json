@@ -1,0 +1,82 @@
+{
+  "topic": "T16",
+  "sourceDocument": "Temario_new.pdf",
+  "canonicalInput": "Temario_new_T16_CANONICAL_PAGES.json",
+  "sourcePdfSha256": "96768192445fa7da87e09d265b0b578737d38ffca2559f22225ea49ac4cebe2a",
+  "scope": "p.350 desde TEMA 16; pp.351-374 completas; p.375 antes de TEMA 17",
+  "factory": "Factory.8",
+  "manualProvider": 0,
+  "manualMap": 0,
+  "manualSpans": 0,
+  "sourceProvenance": {
+    "historicalAlias": "Temario_new(1).pdf",
+    "canonicalDocument": "Temario_new.pdf",
+    "historicalAliasRows": 104,
+    "newCanonicalRows": 33,
+    "externalSubstantiveSources": 0,
+    "decision": "Temario_new(1).pdf is treated as a historical filename alias of the canonical Temario_new.pdf corpus, not as a second source."
+  },
+  "initialQuestions": 104,
+  "finalQuestions": 137,
+  "newQuestions": 33,
+  "newQuestionRange": "SMS-T16-0105..0137",
+  "units": 6,
+  "masteryConcepts": 30,
+  "primaryMappings": 137,
+  "studyBlocks": 30,
+  "flashcards": 60,
+  "standardReady": 21,
+  "sourceLimited": 9,
+  "sourceLimitedCeilings": {"2": 1, "3": 8},
+  "sourceCoverageClosure": {
+    "finalUncoveredCanonicalMaterial": 0,
+    "ignoredNonMaterial": [
+      "portada, metadatos editoriales y referencia BOE de p.350",
+      "índice editorial y referencias de paginación de p.351",
+      "fragmento previo al artículo 134 en p.352 perteneciente al arrastre incompleto del artículo 133"
+    ],
+    "materialClosure": "Arts.134-161 del slice canónico quedan representados en mastery y con pregunta primaria; el artículo 136.2.m), los arts.138-140, 151-153 ter y 161 se cerraron mediante generación dirigida."
+  },
+  "actionableGaps": 0,
+  "unmapped": 0,
+  "multiplePrimary": 0,
+  "sourceReviewRequired": 0,
+  "qa": {
+    "answerBalance": {"A": 34, "B": 34, "C": 35, "D": 34},
+    "generatedGrossLengthClues": 0,
+    "duplicateStemGroups": 0,
+    "duplicateOptionRows": 0,
+    "generatedNearDuplicatePairsAt082": 0,
+    "generatedBadSourceOrPageRows": 0
+  },
+  "smokes": {
+    "today": "30/30 GREEN",
+    "standardConceptCoverage": "C01 4 primaries GREEN",
+    "ceiling2": "C28 2/2 GREEN",
+    "ceiling3": "C02 3/3 GREEN",
+    "freshVerifyGate": "expected precondition rejection on unseen mastery GREEN",
+    "study": "GREEN",
+    "masteryProgress": "30 concepts; min 2 primaries; min 2 flashcards GREEN",
+    "v2Aprendizaje": "5/5 GREEN",
+    "v2Consolidacion": "5/5 GREEN",
+    "v2Tribunal": "5/5 GREEN",
+    "v3Recommendation": "5/5 GREEN",
+    "v3WeeklyRoadmap": "GREEN",
+    "smokeResidue": 0
+  },
+  "contaminationOutsideT16": 0,
+  "outsideT16Snapshot": {
+    "questionsTotal": 4410,
+    "questionsActive": 4391,
+    "questionsInactive": 19,
+    "units": 77,
+    "concepts": 343,
+    "primaryMappings": 1768,
+    "flashcards": 691
+  },
+  "regressions": "T13/T15/T18/T19/T20/T21/T22/T23/T24, Factory.8 approved replay and accordion are delegated to final Quality workflow.",
+  "productionImportId": "71f5bae4-859f-48d5-ae04-5f116f00d277",
+  "productionImportRecordMappings": 137,
+  "importReady": true,
+  "status": "final-candidate-awaiting-quality"
+}
