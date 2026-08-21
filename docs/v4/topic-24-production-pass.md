@@ -1,41 +1,41 @@
-# T24 Fast Production — STOP at canonical source audit
+# T24 Fast Production — final production candidate
 
-## Scope
+## Source contract
 
 - Base main: `ef94af27b417c17266b7e00817b9abeb777d4969`
 - Branch: `agent/v4-t24-fast-production`
-- PR: #84 (draft)
 - Factory: 8, unchanged
-- Canonical input: `Temario_new_T24_CANONICAL_PAGES.json`
-- Sole source: `Temario_new.pdf`
-- Canonical scope: p.33 from `TEMA 24`, pp.34–40 full, p.41 excluded
-- External sources: 0
-- Manual provider/map/spans: 0/0/0
+- Primary source: `Temario_new.pdf`, p.33 from `TEMA 24` + pp.34–40.
+- Authorized supplementary source: `temario_antiguo.pdf`, pp.697–781, only for Word, Excel and e-mail content not developed in `Temario_new.pdf`.
+- No web/BOE/academies/external substantive sources.
 
-## Preflight result
+The initial sole-source STOP was resolved by the T24 governance source manifest. `Temario_new.pdf` keeps precedence wherever it contains substantive material; the older temario is supplementary only for the missing Word/Excel/e-mail blocks.
 
-Production contains 122 active T24 questions. All 122 have the V2 metadata fields populated.
+## Final production state
 
-Only 38 questions currently identify `Temario_new.pdf` pages 33–40. The remaining 84 identify `temario_antiguo.pdf` pages 697–781, outside the sole-source contract.
+- Questions: 122 → 156 active (`SMS-T24-0205`…`SMS-T24-0238` added).
+- Source support: 63 `Temario_new.pdf` / 93 `temario_antiguo.pdf` / 0 unsupported.
+- Uncovered material: 0.
+- Units: 5.
+- Mastery concepts: 37.
+- Primary mappings: 156.
+- Study blocks: 37.
+- Flashcards: 74.
+- Standard-ready / source-limited: 26 / 11.
+- Actionable gaps / unmapped / multiple-primary / source_review_required: 0 / 0 / 0 / 0.
+- Final answer balance: A/B/C/D = 39/39/39/39.
+- Editorial QA: GREEN; 9 existing questions hardened; 0 length clues, duplicate stems/options or near-duplicates >=0.82.
 
-This is substantive rather than a stale-reference-only issue. Those 84 questions ask detailed knowledge about Word, Excel, and e-mail, including Word document/templates/styles/tables/page configuration/mail merge; Excel workbook/worksheet/formulas/references/tables/data validation/sorting; and e-mail addresses/POP/IMAP/SMTP/webmail.
+## Functional validation
 
-The supplied canonical T24 corpus mentions Word, Excel and e-mail only in the topic heading on p.33. Pages 33–40 otherwise develop binary/storage units, hardware/software, memory/peripherals, storage systems, file servers and operating systems. The detailed propositions needed to determine the 84 answers do not occur in the canonical corpus.
+- V4 smoke: GREEN.
+- Source-limited ceiling 2 and 3: GREEN; ceiling 1 N/A.
+- V2 Aprendizaje / Consolidación / Tribunal: 5/5 each.
+- V3 recommendation / weekly roadmap: GREEN.
+- Cross-topic contamination: 0. Outside T24 PRE=POST: 4326 total questions / 4307 active / 19 inactive; 67 units; 276 concepts; 1400 primary mappings; 557 flashcards.
+- T13–T23 production integrity: GREEN.
+- Factory.8 and accordion remain covered by the final repository Quality gate.
 
-Therefore the 84 rows are `source_review_required` and cannot be resolved from the declared source. This meets the governance STOP condition `source_review no resoluble` / `respuesta correcta indeterminable` under the sole-source contract.
+## Merge gate
 
-## Execution state
-
-- Active questions at STOP: 122
-- V2 complete: 122/122
-- Canonical-metadata-supported: 38
-- Source review required: 84
-- Source review resolvable from canonical corpus: 0
-- Production writes: 0
-- Mastery resolution: not executed after blocker
-- Source Coverage Closure final: not executed after blocker
-- Generation/import/smokes/Quality: not executed
-- PR merged: no
-- T24 production changed: no
-
-No Factory.9/tuning was opened and no work outside T24 was performed.
+Production import is complete. This branch may be merged only after final tests, `tsc --noEmit`, build and GitHub Quality succeed on the final documentation HEAD. No Factory.9 was opened.
