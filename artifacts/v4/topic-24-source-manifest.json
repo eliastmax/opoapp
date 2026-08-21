@@ -1,0 +1,22 @@
+{
+  "topic": "T24",
+  "sourceDocument": "Temario_new.pdf",
+  "canonicalInput": "Temario_new_T24_CANONICAL_PAGES.json",
+  "canonicalInputSha256": "ceb52a6cf7d687295f992ff7cdff1e1acadde8ef8cf02e028a4787c561655281",
+  "sourcePdfSha256": "96768192445fa7da87e09d265b0b578737d38ffca2559f22225ea49ac4cebe2a",
+  "scope": {
+    "page33": "from explicit TEMA 24 heading onward",
+    "pages34To40": "full",
+    "page41": "excluded; begins TEMA 20"
+  },
+  "canonicalPages": [33,34,35,36,37,38,39,40],
+  "pageCount": 8,
+  "extractor": "pdftotext -layout",
+  "ocr": false,
+  "network": false,
+  "manualProvider": 0,
+  "manualMap": 0,
+  "manualSpans": 0,
+  "factory": "Factory.8",
+  "status": "preflight_pending"
+}
