@@ -1,0 +1,62 @@
+{
+  "topic": "T24",
+  "factory": "Factory.8",
+  "status": "production_import_complete_quality_gate_pending",
+  "sources": [
+    {
+      "document": "Temario_new.pdf",
+      "role": "primary",
+      "scope": "p.33 from TEMA 24 through p.40",
+      "precedence": "authoritative_where_substantive_content_exists"
+    },
+    {
+      "document": "temario_antiguo.pdf",
+      "role": "authorized_supplementary",
+      "scope": "pp.697-781; Word, Excel and e-mail blocks absent from Temario_new.pdf",
+      "precedence": "supplementary_only"
+    }
+  ],
+  "externalSubstantiveSources": 0,
+  "manualProvider": 0,
+  "manualMap": 0,
+  "manualSpans": 0,
+  "production": {
+    "questionsInitial": 122,
+    "questionsFinal": 156,
+    "newQuestions": 34,
+    "newQuestionRange": "SMS-T24-0205..SMS-T24-0238",
+    "supportedByTemarioNew": 63,
+    "supportedByTemarioAntiguo": 93,
+    "unsupported": 0,
+    "units": 5,
+    "concepts": 37,
+    "primaryMappings": 156,
+    "studyBlocks": 37,
+    "flashcards": 74,
+    "standardReady": 26,
+    "sourceLimited": 11,
+    "actionableGaps": 0,
+    "unmapped": 0,
+    "multiplePrimary": 0,
+    "sourceReviewRequired": 0,
+    "uncoveredCanonicalMaterial": 0,
+    "answerBalance": {"A":39,"B":39,"C":39,"D":39}
+  },
+  "qa": {
+    "status": "GREEN",
+    "existingQuestionsHardened": 9,
+    "lengthClues": 0,
+    "duplicateStems": 0,
+    "duplicateOptions": 0,
+    "nearDuplicatesAtOrAbove082": 0
+  },
+  "smokes": {
+    "v4": "GREEN",
+    "v2": "GREEN",
+    "v3": "GREEN",
+    "ceiling1": "N/A",
+    "ceiling2": "GREEN",
+    "ceiling3": "GREEN",
+    "contamination": 0
+  }
+}
