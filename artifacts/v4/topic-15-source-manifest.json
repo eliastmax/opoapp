@@ -1,0 +1,12 @@
+{
+  "topic": "T15",
+  "sourceDocument": "Temario_new.pdf",
+  "canonicalInput": "Temario_new_T15_CANONICAL_PAGES.json",
+  "sourcePdfSha256": "96768192445fa7da87e09d265b0b578737d38ffca2559f22225ea49ac4cebe2a",
+  "scope": "p.324 desde TEMA 15; pp.325-349 completas; p.350 antes de TEMA 16",
+  "manualProvider": 0,
+  "manualMap": 0,
+  "manualSpans": 0,
+  "factory": "Factory.8",
+  "status": "running"
+}
