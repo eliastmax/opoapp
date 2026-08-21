@@ -1,0 +1,59 @@
+{
+  "topic": "T17",
+  "factory": "Factory.8",
+  "sourceHierarchy": {
+    "primary": {"document": "Temario_new.pdf", "pages": "375-379", "sha256": "96768192445fa7da87e09d265b0b578737d38ffca2559f22225ea49ac4cebe2a", "precedence": "authoritative_where_substantive_content_exists"},
+    "supplementary": {"document": "temario_antiguo.pdf", "pages": "25-37", "questionBankPages": "27-37", "precedence": "authorized_only_for_material_missing_from_primary"}
+  },
+  "manualProvider": 0,
+  "manualMap": 0,
+  "manualSpans": 0,
+  "initialQuestions": 249,
+  "finalQuestions": 253,
+  "newQuestions": 4,
+  "newQuestionRange": "SMS-T17-0250..0253",
+  "sourceCoverageClosure": {
+    "createdSourceOnlyFamilies": ["SMS-T17-C01"],
+    "finalUncoveredMaterial": 0,
+    "ignoredNonMaterial": ["editorial index and pagination", "publication/reference metadata beyond topic identification", "out-of-scope law structure and provisions excluded by T17_SOURCE_MANIFEST.json"]
+  },
+  "units": 6,
+  "masteryConcepts": 29,
+  "primaryMappings": 253,
+  "flashcards": 58,
+  "standardReady": 25,
+  "sourceLimited": 4,
+  "sourceLimitedCeilings": {"2": 1, "3": 3},
+  "sourceLimitedConcepts": {
+    "SMS-T17-C01": 2,
+    "SMS-T17-C24": 3,
+    "SMS-T17-C27": 3,
+    "SMS-T17-C28": 3
+  },
+  "actionableGaps": 0,
+  "unmapped": 0,
+  "multiplePrimary": 0,
+  "sourceReviewRequired": 0,
+  "qa": {
+    "answerBalance": {"A": 63, "B": 64, "C": 63, "D": 63},
+    "duplicateStemGroups": 0,
+    "duplicateOptionRows": 0,
+    "badSourceRows": 0
+  },
+  "smokes": {
+    "v4Today": "29/29 GREEN",
+    "v4Evidence": "29/29 GREEN",
+    "studyOpen": "GREEN",
+    "capacity": "25 standard + 1 SL2 + 3 SL3 GREEN",
+    "v2Aprendizaje": "5/5 GREEN",
+    "v2Consolidacion": "5/5 GREEN",
+    "v2Tribunal": "5/5 GREEN",
+    "v3Recommendation": "5/5 GREEN",
+    "v3WeeklyRoadmap": "GREEN",
+    "smokeResidue": 0
+  },
+  "contaminationOutsideT17": 0,
+  "productionImport": {"units": 6, "concepts": 29, "questionMappings": 253, "flashcards": 58},
+  "importReady": true,
+  "status": "final-candidate-awaiting-quality"
+}
