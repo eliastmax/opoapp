@@ -2,32 +2,150 @@
   "topic": "T23",
   "mode": "fast-production",
   "baseMain": "a14fb5efdd13630e0f47d9c79a3c5ce22b6334b2",
+  "factory8Main": "282ae980cda9e6e0c1f91f75697fb6969404deb4",
   "canonical": {
     "document": "Temario_new.pdf",
     "documentSha256": "96768192445fa7da87e09d265b0b578737d38ffca2559f22225ea49ac4cebe2a",
     "uploadedJsonSha256": "a3abea63b6d9999dabc6d059e38079e07848a86103bcd30c1c1a9f3dda29f7c9",
-    "pages": 11,
     "range": "p.23 desde TEMA 23; pp.24-32 completas; p.33 antes de TEMA 24",
+    "pages": 11,
+    "automaticSpans": 1,
+    "manualSpans": 0,
+    "manualProvider": 0,
+    "manualMap": 0,
     "network": false,
     "ocr": false
   },
-  "audit": {
-    "activeQuestions": 120,
-    "storedFieldCompleteness": "120/120",
-    "answerBalance": {"A":30,"B":30,"C":30,"D":30},
-    "exactDuplicateStemGroups": 0,
-    "duplicateOptionRows": 0,
-    "automaticSpans": 1,
-    "questionSections": ["I. Concepto, funciones y características", "II. Clasificación"],
-    "highestQuestionSourcePage": 31
+  "familyResolution": {
+    "questionBackedUnits": 2,
+    "questionBackedPackets": 2,
+    "questionBackedSemanticOperations": 2,
+    "questionBackedFamilies": 15,
+    "validatorIssues": 0,
+    "overmergeGuards": 0,
+    "undermergeGuards": 0
   },
-  "status": "blocked_before_resolution",
-  "materialBlocker": {
-    "type": "generic_factory_source_only_gap",
-    "canonicalGap": "III. ESTRUCTURA GENERAL DEL DOCUMENTO ADMINISTRATIVO, including encabezamiento content on pp.31-33, has canonical text but no active source-backed question seed.",
-    "factoryConstraint": "buildConceptFamilyResolutionPackets derives units only from active existing question apartado/subapartado; validateMasteryFamilyResolution requires every family to contain at least one questionCode.",
-    "whyMaterial": "Factory.7 cannot create a source-only unit/mastery family for uncovered canonical content, while the mandated order is resolver before generation. Seeding a question before resolution would violate the stabilized pipeline and conceptCode-at-birth contract.",
-    "productionWrites": 0,
-    "factory8Opened": false
-  }
+  "sourceCoverageClosure": {
+    "packets": 1,
+    "semanticOperations": 1,
+    "uncoveredMaterialBefore": [
+      "III. ESTRUCTURA GENERAL DEL DOCUMENTO ADMINISTRATIVO",
+      "III.1. ENCABEZAMIENTO"
+    ],
+    "decisions": [
+      {
+        "action": "ATTACH_TO_EXISTING_FAMILY",
+        "scope": "material I y II ya representado por las 15 families question-backed",
+        "rationale": "El contenido canónico de I y II corresponde a núcleos mastery ya representados; se amplía su traza fuente sin duplicar families."
+      },
+      {
+        "action": "CREATE_SOURCE_FAMILY",
+        "conceptCode": "SMS-T23-C16",
+        "unitCode": "SMS-T23-U03",
+        "title": "Estructura general y normalización",
+        "rationale": "Antiformalismo, homogeneidad, normalización y estructura tripartita requieren conocimiento nuevo no representado en I/II."
+      },
+      {
+        "action": "CREATE_SOURCE_FAMILY",
+        "conceptCode": "SMS-T23-C17",
+        "unitCode": "SMS-T23-U03",
+        "title": "Encabezamiento: concepto, exigencia y contenido mínimo",
+        "rationale": "El concepto, ámbito de exigencia y contenido mínimo del encabezamiento forman un núcleo enseñable nuevo."
+      },
+      {
+        "action": "CREATE_SOURCE_FAMILY",
+        "conceptCode": "SMS-T23-C18",
+        "unitCode": "SMS-T23-U03",
+        "title": "Cabecera impresa e identidad corporativa",
+        "rationale": "La cabecera impresa y su criterio de identidad corporativa constituyen una faceta material diferenciable dentro del encabezamiento."
+      },
+      {
+        "action": "IGNORE_NONMATERIAL",
+        "scope": "p.33: teléfonos, direcciones web y resto del ejemplo gráfico de cabecera",
+        "rationale": "Es un ejemplo puramente gráfico/de formato y no añade regla, requisito, clasificación o conocimiento evaluable."
+      }
+    ],
+    "sourceOnlyFamiliesPreGeneration": 3,
+    "sourceOnlyFamiliesZeroQuestionsPreGeneration": 3,
+    "uncoveredMaterialAfter": 0,
+    "sourceOnlyFamiliesZeroQuestionsImportReady": 0
+  },
+  "families": [
+    {"code":"SMS-T23-C01","unit":"SMS-T23-U01","questions":["SMS-T23-0001","SMS-T23-0002","SMS-T23-0003","SMS-T23-0004"]},
+    {"code":"SMS-T23-C02","unit":"SMS-T23-U01","questions":["SMS-T23-0005","SMS-T23-0006","SMS-T23-0007","SMS-T23-0008","SMS-T23-0009","SMS-T23-0010","SMS-T23-0116"]},
+    {"code":"SMS-T23-C03","unit":"SMS-T23-U01","questions":["SMS-T23-0011","SMS-T23-0012","SMS-T23-0013","SMS-T23-0014","SMS-T23-0015","SMS-T23-0016","SMS-T23-0119"]},
+    {"code":"SMS-T23-C04","unit":"SMS-T23-U01","questions":["SMS-T23-0017","SMS-T23-0018","SMS-T23-0081","SMS-T23-0082"]},
+    {"code":"SMS-T23-C05","unit":"SMS-T23-U01","questions":["SMS-T23-0019","SMS-T23-0020","SMS-T23-0077","SMS-T23-0083"]},
+    {"code":"SMS-T23-C06","unit":"SMS-T23-U01","questions":["SMS-T23-0021","SMS-T23-0022","SMS-T23-0023","SMS-T23-0024","SMS-T23-0078","SMS-T23-0079","SMS-T23-0084","SMS-T23-0085"]},
+    {"code":"SMS-T23-C07","unit":"SMS-T23-U01","questions":["SMS-T23-0025","SMS-T23-0026","SMS-T23-0027","SMS-T23-0028","SMS-T23-0029","SMS-T23-0080","SMS-T23-0086","SMS-T23-0087","SMS-T23-0088","SMS-T23-0117","SMS-T23-0118"]},
+    {"code":"SMS-T23-C08","unit":"SMS-T23-U02","questions":["SMS-T23-0030","SMS-T23-0031","SMS-T23-0032","SMS-T23-0033","SMS-T23-0076","SMS-T23-0113"]},
+    {"code":"SMS-T23-C09","unit":"SMS-T23-U02","questions":["SMS-T23-0034","SMS-T23-0035","SMS-T23-0036","SMS-T23-0074","SMS-T23-0075","SMS-T23-0114","SMS-T23-0115"]},
+    {"code":"SMS-T23-C10","unit":"SMS-T23-U02","questions":["SMS-T23-0037","SMS-T23-0056","SMS-T23-0057","SMS-T23-0058","SMS-T23-0059","SMS-T23-0060","SMS-T23-0061","SMS-T23-0062","SMS-T23-0063","SMS-T23-0064","SMS-T23-0065","SMS-T23-0066","SMS-T23-0067","SMS-T23-0068","SMS-T23-0069","SMS-T23-0070","SMS-T23-0071","SMS-T23-0072","SMS-T23-0073","SMS-T23-0101","SMS-T23-0102","SMS-T23-0103","SMS-T23-0104","SMS-T23-0105","SMS-T23-0106","SMS-T23-0107","SMS-T23-0108","SMS-T23-0109","SMS-T23-0110","SMS-T23-0111","SMS-T23-0112"]},
+    {"code":"SMS-T23-C11","unit":"SMS-T23-U02","questions":["SMS-T23-0038","SMS-T23-0093","SMS-T23-0094","SMS-T23-0099","SMS-T23-0100","SMS-T23-0120"]},
+    {"code":"SMS-T23-C12","unit":"SMS-T23-U02","questions":["SMS-T23-0039","SMS-T23-0040","SMS-T23-0041","SMS-T23-0042","SMS-T23-0092","SMS-T23-0098"]},
+    {"code":"SMS-T23-C13","unit":"SMS-T23-U02","questions":["SMS-T23-0043","SMS-T23-0044","SMS-T23-0045","SMS-T23-0046","SMS-T23-0047","SMS-T23-0048","SMS-T23-0049","SMS-T23-0089","SMS-T23-0095"]},
+    {"code":"SMS-T23-C14","unit":"SMS-T23-U02","questions":["SMS-T23-0050","SMS-T23-0051","SMS-T23-0052","SMS-T23-0090","SMS-T23-0097"]},
+    {"code":"SMS-T23-C15","unit":"SMS-T23-U02","questions":["SMS-T23-0053","SMS-T23-0054","SMS-T23-0055","SMS-T23-0091","SMS-T23-0096"]},
+    {"code":"SMS-T23-C16","unit":"SMS-T23-U03","origin":"source_only","questions":["SMS-T23-0121","SMS-T23-0122","SMS-T23-0123","SMS-T23-0124"]},
+    {"code":"SMS-T23-C17","unit":"SMS-T23-U03","origin":"source_only","questions":["SMS-T23-0125","SMS-T23-0126","SMS-T23-0127"],"sourceCapacity":{"status":"source_limited","sourceSupportedCeiling":3,"reason":"Tres dimensiones independientes: concepto/función, ámbito de exigencia y contenido mínimo; una cuarta pregunta sería paráfrasis o cambio superficial de supuesto."}},
+    {"code":"SMS-T23-C18","unit":"SMS-T23-U03","origin":"source_only","questions":["SMS-T23-0128","SMS-T23-0129"],"sourceCapacity":{"status":"source_limited","sourceSupportedCeiling":2,"reason":"Dos dimensiones independientes: función/elementos de cabecera impresa y criterio de identidad corporativa; el ejemplo gráfico posterior no añade una regla evaluable."}}
+  ],
+  "generation": {
+    "count": 9,
+    "codes": ["SMS-T23-0121","SMS-T23-0122","SMS-T23-0123","SMS-T23-0124","SMS-T23-0125","SMS-T23-0126","SMS-T23-0127","SMS-T23-0128","SMS-T23-0129"],
+    "conceptCodesAtBirth": {"SMS-T23-0121":"SMS-T23-C16","SMS-T23-0122":"SMS-T23-C16","SMS-T23-0123":"SMS-T23-C16","SMS-T23-0124":"SMS-T23-C16","SMS-T23-0125":"SMS-T23-C17","SMS-T23-0126":"SMS-T23-C17","SMS-T23-0127":"SMS-T23-C17","SMS-T23-0128":"SMS-T23-C18","SMS-T23-0129":"SMS-T23-C18"},
+    "answerBalance": {"A":3,"B":2,"C":2,"D":2},
+    "maxJaccardVsExisting": 0.417,
+    "maxInternalJaccard": 0.385,
+    "nearDuplicatesAt082": 0
+  },
+  "qa": {
+    "existingHardened": 19,
+    "grossLengthCluesFinal": 0,
+    "duplicateOptionsFinal": 0,
+    "exactDuplicateStemsFinal": 0,
+    "nearDuplicatesAt082Final": 0,
+    "maxFinalJaccard": 0.750,
+    "sourceReviewRequired": 0,
+    "answerBalanceFinal": {"A":33,"B":32,"C":32,"D":32}
+  },
+  "production": {
+    "questionsInitial": 120,
+    "questionsFinal": 129,
+    "units": 3,
+    "concepts": 18,
+    "primaryMappings": 129,
+    "studyBlocks": 18,
+    "flashcards": 36,
+    "standardReady": 16,
+    "sourceLimited": 2,
+    "actionableGaps": 0,
+    "unmapped": 0,
+    "multiplePrimary": 0,
+    "sourceReviewRequired": 0
+  },
+  "smokes": {
+    "v4TodayConcepts": 18,
+    "v4StandardCheck": "2 requested -> 2 selected",
+    "sourceLimitedCeiling2": "C18: 2 -> 2",
+    "sourceLimitedCeiling3": "C17: 3 -> 3",
+    "sourceLimitedCeiling1": "N/A: no final ceiling=1 concept",
+    "dailySession": "GREEN verify target=2",
+    "studyMasteryProgress": "GREEN; smoke state cleaned",
+    "v2": "Aprendizaje 5/5; Consolidación 5/5; Tribunal 5/5",
+    "v3": "recommendation context GREEN; weekly roadmap GREEN",
+    "residualSmokeWrites": 0
+  },
+  "contamination": {
+    "pre": {"questionsTotal":4319,"questionsActive":4300,"questionsInactive":19,"units":64,"concepts":258,"primaryMappings":1271,"flashcards":521},
+    "post": {"questionsTotal":4319,"questionsActive":4300,"questionsInactive":19,"units":64,"concepts":258,"primaryMappings":1271,"flashcards":521},
+    "delta": 0
+  },
+  "regressions": {
+    "T13":"GREEN","T18":"GREEN","T19":"GREEN","T20":"GREEN","T21":"GREEN","T22":"GREEN",
+    "factory7ApprovedReplay":"covered by final Quality suite",
+    "accordionVisual":"covered by final Quality suite"
+  },
+  "importReadyBeforeQuality": true,
+  "anomaliesMaterial": 0
 }
