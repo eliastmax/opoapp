@@ -1,0 +1,95 @@
+{
+  "topic": "T08",
+  "status": "final-candidate-awaiting-quality",
+  "factory": "Factory.8 · Source Coverage Closure",
+  "startingMain": "73c26559db17a3691f278cc45affac7547377df2",
+  "sourceContract": {
+    "primary": {
+      "document": "Temario_new.pdf",
+      "canonicalInput": "Temario_new_T08_CANONICAL_PAGES.json",
+      "sha256": "96768192445fa7da87e09d265b0b578737d38ffca2559f22225ea49ac4cebe2a",
+      "pages": "400-410"
+    },
+    "externalSubstantiveSources": 0,
+    "manualProvider": 0,
+    "manualMap": 0,
+    "manualSpans": 0
+  },
+  "questionBank": {
+    "initialActive": 150,
+    "generated": 0,
+    "finalActive": 150,
+    "finalSource": "Temario_new.pdf"
+  },
+  "sourceCoverageClosure": {
+    "finalUncoveredCanonicalMaterial": 0,
+    "actionableGaps": 0,
+    "sourceReviewRequired": 0,
+    "ignoredNonMaterialOrOutOfScope": [
+      "publication metadata and index material",
+      "article 7.4 carry-over before the T08 planning section",
+      "article 13.2 incomplete trailing editorial fragment beyond the covered article 13.1 functions",
+      "articles 20-24 as contextual SMS material outside the official T08 focus on direction, participation and management organs",
+      "article 26 as primary-care-team material outside the official T08 title",
+      "Mapa Sanitario 2015 image placeholders without evaluable canonical text"
+    ]
+  },
+  "mastery": {
+    "units": 6,
+    "concepts": 16,
+    "primaryMappings": 150,
+    "flashcards": 32,
+    "unmapped": 0,
+    "multiplePrimary": 0
+  },
+  "capacity": {
+    "standardReady": 16,
+    "sourceLimited": 0,
+    "minimumPrimaryQuestionsPerConcept": 4,
+    "challengeResult": "Two overly narrow draft concepts were merged into their natural mastery families instead of persisting artificial source_limited ceilings."
+  },
+  "qa": {
+    "answerBalance": {"A": 37, "B": 35, "C": 39, "D": 39},
+    "duplicateStemGroups": 0,
+    "duplicateOptionRows": 0,
+    "badSourceRows": 0,
+    "missingRequiredRows": 0,
+    "editorialWarningsAutoFixed": 1
+  },
+  "productionImport": {
+    "id": "27d6b707-0ed2-4ff6-83d8-1c2ba3563e71",
+    "contractVersion": "4.0",
+    "units": 6,
+    "concepts": 16,
+    "questionMappings": 150,
+    "flashcards": 32,
+    "importReady": true
+  },
+  "smokes": {
+    "v4TodayT08": 16,
+    "studyOpen": true,
+    "v4Evidence": 16,
+    "cardsMin": 2,
+    "questionsMin": 4,
+    "v2Aprendizaje": 5,
+    "v2Consolidacion": 5,
+    "v2Tribunal": 5,
+    "v3Recommended": 5,
+    "weeklyRoadmapRows": 1,
+    "smokeResidue": 0
+  },
+  "contamination": {
+    "outsideT08": 0,
+    "outsideSnapshot": {
+      "questionsTotal": 4243,
+      "questionsActive": 4224,
+      "questionsInactive": 19,
+      "units": 103,
+      "concepts": 450,
+      "primaryMappings": 2458,
+      "flashcards": 905
+    }
+  },
+  "regressionFloor": ["T07", "T13", "T14", "T15", "T16", "T17", "T18", "T19", "T20", "T21", "T22", "T23", "T24", "Factory.8 approved replay", "accordion visual"],
+  "factory9Opened": false
+}
