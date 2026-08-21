@@ -29,6 +29,7 @@
   "qa": {"answerBalance":{"A":53,"B":53,"C":53,"D":53},"grossLengthClues":0,"duplicateStemGroups":0,"duplicateOptionRows":0,"nearDuplicatePairsAt082":0,"maxNearSimilarity":0.5},
   "smokes": {"today":"30/30 GREEN","standardConceptCheck":"2/2 GREEN","ceiling2":"2/2 GREEN","ceiling3":"3/3 GREEN","ceiling1":"N/A","study":"GREEN","masteryProgress":"GREEN","dailySession":"GREEN","v2":"5/5 each GREEN","v3":"GREEN","smokeResidue":0},
   "contaminationOutsideT15": 0,
+  "outsideT15Snapshot": {"questionsTotal":4302,"questionsActive":4283,"questionsInactive":19,"units":72,"concepts":313,"primaryMappings":1556,"flashcards":631},
   "regressions": "T13/T18/T19/T20/T21/T22/T23/T24 GREEN; Factory.8 and accordion covered by final Quality",
   "productionImportRecordMappings": 212,
   "importReady": true,
