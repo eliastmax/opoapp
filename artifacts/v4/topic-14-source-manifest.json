@@ -1,0 +1,111 @@
+{
+  "topic": "T14",
+  "status": "final-candidate-awaiting-quality",
+  "factory": "Factory.8 · Source Coverage Closure",
+  "startingMain": "f9ff966e4472e658b357cbd3ced39fd623bd8df6",
+  "sourceContract": {
+    "primary": {
+      "document": "Temario_new.pdf",
+      "canonicalInput": "Temario_new_T14_CANONICAL_PAGES.json",
+      "sha256": "96768192445fa7da87e09d265b0b578737d38ffca2559f22225ea49ac4cebe2a",
+      "pages": "276-324",
+      "precedence": "authoritative wherever substantive T14 content exists"
+    },
+    "supplementary": {
+      "document": "BOE-A-2015-11719-consolidado.pdf",
+      "version": "texto consolidado; última modificación 30 de julio de 2025",
+      "authorizedArticles": [48, 49, 50, 85, 86, 87, 88, 89, 90, 91],
+      "authorizedPages": "26-47",
+      "precedence": "supplement only for EBEP material in official T14 scope missing from Temario_new.pdf"
+    },
+    "externalSubstantiveSources": 0,
+    "manualProvider": 0,
+    "manualMap": 0,
+    "manualSpans": 0
+  },
+  "questionBank": {
+    "initialActive": 93,
+    "initialBySource": {"Temario_new.pdf": 69, "BOE-A-2015-11719-consolidado.pdf": 24},
+    "generated": 19,
+    "generatedRange": "SMS-T14-0094..0112",
+    "finalActive": 112,
+    "finalBySource": {"Temario_new.pdf": 84, "BOE-A-2015-11719-consolidado.pdf": 28}
+  },
+  "sourceCoverageClosure": {
+    "finalUncoveredCanonicalMaterial": 0,
+    "actionableGaps": 0,
+    "sourceReviewRequired": 0,
+    "supplementScopeLeakage": 0,
+    "ignoredNonMaterialOrOutOfScope": [
+      "document indices, headers and publication metadata",
+      "Ley 5/2001 selection, pay, social security, incompatibilities and disciplinary material outside the official T14 title",
+      "Ley 55/2003 planning, working-time and disciplinary material outside the official T14 title",
+      "EBEP articles outside 48-50 and 85-91, including articles 51 and 92 as autonomous mastery concepts"
+    ]
+  },
+  "mastery": {
+    "units": 7,
+    "concepts": 24,
+    "primaryMappings": 112,
+    "studyBlocks": 24,
+    "flashcards": 48,
+    "unmapped": 0,
+    "multiplePrimary": 0
+  },
+  "capacity": {
+    "standardReady": 23,
+    "sourceLimited": 1,
+    "ceilings": {"2": 1},
+    "sourceLimitedConcepts": [
+      {
+        "code": "SMS-T14-C22",
+        "title": "EBEP art. 50: vacaciones en situaciones especiales",
+        "ceiling": 2,
+        "reason": "Article 50.1 overlaps materially with the 22-day vacation rule already reproduced in Temario_new.pdf, which has precedence. The authorized supplement adds only two non-redundant T14 dimensions: deferred enjoyment and exceptional compensation."
+      }
+    ]
+  },
+  "qa": {
+    "answerBalance": {"A": 28, "B": 28, "C": 28, "D": 28},
+    "duplicateStemGroups": 0,
+    "duplicateOptionRows": 0,
+    "badSourceRows": 0,
+    "editorialWarningsAutoFixed": 1
+  },
+  "productionImport": {
+    "id": "4fd56a4b-0eb3-492d-94f4-4ab01150b545",
+    "contractVersion": "4.0",
+    "units": 7,
+    "concepts": 24,
+    "questionMappings": 112,
+    "flashcards": 48,
+    "importReady": true
+  },
+  "smokes": {
+    "v4TodayT14": 24,
+    "studyOpen": true,
+    "v4Evidence": 24,
+    "cardsMin": 2,
+    "questionsMin": 2,
+    "v2Aprendizaje": 5,
+    "v2Consolidacion": 5,
+    "v2Tribunal": 5,
+    "v3Recommended": 5,
+    "weeklyRoadmapRows": 1,
+    "smokeResidue": 0
+  },
+  "contamination": {
+    "outsideT14": 0,
+    "outsideSnapshot": {
+      "questionsTotal": 4458,
+      "questionsActive": 4439,
+      "questionsInactive": 19,
+      "units": 89,
+      "concepts": 402,
+      "primaryMappings": 2158,
+      "flashcards": 809
+    }
+  },
+  "regressionFloor": ["T13", "T15", "T16", "T17", "T18", "T19", "T20", "T21", "T22", "T23", "T24", "Factory.8 approved replay", "accordion visual"],
+  "factory9Opened": false
+}
