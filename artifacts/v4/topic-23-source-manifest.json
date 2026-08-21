@@ -1,0 +1,15 @@
+{
+  "topic": "T23",
+  "mode": "fast-production",
+  "baseMain": "a14fb5efdd13630e0f47d9c79a3c5ce22b6334b2",
+  "canonical": {
+    "document": "Temario_new.pdf",
+    "documentSha256": "96768192445fa7da87e09d265b0b578737d38ffca2559f22225ea49ac4cebe2a",
+    "uploadedJsonSha256": "a3abea63b6d9999dabc6d059e38079e07848a86103bcd30c1c1a9f3dda29f7c9",
+    "pages": 11,
+    "range": "p.23 desde TEMA 23; pp.24-32 completas; p.33 antes de TEMA 24",
+    "network": false,
+    "ocr": false
+  },
+  "status": "running"
+}
