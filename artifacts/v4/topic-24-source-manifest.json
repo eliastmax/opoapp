@@ -1,38 +1,62 @@
 {
   "topic": "T24",
-  "sourceDocument": "Temario_new.pdf",
-  "canonicalInput": "Temario_new_T24_CANONICAL_PAGES.json",
-  "canonicalInputSha256": "ceb52a6cf7d687295f992ff7cdff1e1acadde8ef8cf02e028a4787c561655281",
-  "sourcePdfSha256": "96768192445fa7da87e09d265b0b578737d38ffca2559f22225ea49ac4cebe2a",
-  "scope": {
-    "page33": "from explicit TEMA 24 heading onward",
-    "pages34To40": "full",
-    "page41": "excluded; begins TEMA 20"
-  },
-  "canonicalPages": [33,34,35,36,37,38,39,40],
-  "pageCount": 8,
-  "extractor": "pdftotext -layout",
-  "ocr": false,
-  "network": false,
+  "factory": "Factory.8",
+  "status": "production_import_complete_quality_gate_pending",
+  "sources": [
+    {
+      "document": "Temario_new.pdf",
+      "role": "primary",
+      "scope": "p.33 from TEMA 24 through p.40",
+      "precedence": "authoritative_where_substantive_content_exists"
+    },
+    {
+      "document": "temario_antiguo.pdf",
+      "role": "authorized_supplementary",
+      "scope": "pp.697-781; Word, Excel and e-mail blocks absent from Temario_new.pdf",
+      "precedence": "supplementary_only"
+    }
+  ],
+  "externalSubstantiveSources": 0,
   "manualProvider": 0,
   "manualMap": 0,
   "manualSpans": 0,
-  "factory": "Factory.8",
-  "preflight": {
-    "activeQuestions": 122,
-    "v2Complete": 122,
-    "canonicalMetadataSupported": 38,
-    "sourceReviewRequired": 84,
-    "sourceReviewResolvableFromCanonicalCorpus": 0,
-    "unsupportedMaterialExamples": [
-      "Word: documento en blanco, estilos, tablas, configuración de página, combinar correspondencia",
-      "Excel: libros/hojas, fórmulas, referencias, tablas, validación y ordenación",
-      "Correo: dirección, POP, IMAP, SMTP y webmail"
-    ],
-    "reason": "The canonical corpus p.33-40 only names Word/Excel/email in the T24 heading and does not contain the substantive rules needed to determine the 84 questions whose current references point to temario_antiguo.pdf pp.697-781. Under the declared single-source contract, their correct answers cannot be canonically verified."
+  "production": {
+    "questionsInitial": 122,
+    "questionsFinal": 156,
+    "newQuestions": 34,
+    "newQuestionRange": "SMS-T24-0205..SMS-T24-0238",
+    "supportedByTemarioNew": 63,
+    "supportedByTemarioAntiguo": 93,
+    "unsupported": 0,
+    "units": 5,
+    "concepts": 37,
+    "primaryMappings": 156,
+    "studyBlocks": 37,
+    "flashcards": 74,
+    "standardReady": 26,
+    "sourceLimited": 11,
+    "actionableGaps": 0,
+    "unmapped": 0,
+    "multiplePrimary": 0,
+    "sourceReviewRequired": 0,
+    "uncoveredCanonicalMaterial": 0,
+    "answerBalance": {"A":39,"B":39,"C":39,"D":39}
   },
-  "status": "STOP_SOURCE_REVIEW_UNRESOLVABLE",
-  "productionWrites": 0,
-  "qualityRun": null,
-  "merged": false
+  "qa": {
+    "status": "GREEN",
+    "existingQuestionsHardened": 9,
+    "lengthClues": 0,
+    "duplicateStems": 0,
+    "duplicateOptions": 0,
+    "nearDuplicatesAtOrAbove082": 0
+  },
+  "smokes": {
+    "v4": "GREEN",
+    "v2": "GREEN",
+    "v3": "GREEN",
+    "ceiling1": "N/A",
+    "ceiling2": "GREEN",
+    "ceiling3": "GREEN",
+    "contamination": 0
+  }
 }
