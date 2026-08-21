@@ -18,5 +18,21 @@
   "manualMap": 0,
   "manualSpans": 0,
   "factory": "Factory.8",
-  "status": "preflight_pending"
+  "preflight": {
+    "activeQuestions": 122,
+    "v2Complete": 122,
+    "canonicalMetadataSupported": 38,
+    "sourceReviewRequired": 84,
+    "sourceReviewResolvableFromCanonicalCorpus": 0,
+    "unsupportedMaterialExamples": [
+      "Word: documento en blanco, estilos, tablas, configuración de página, combinar correspondencia",
+      "Excel: libros/hojas, fórmulas, referencias, tablas, validación y ordenación",
+      "Correo: dirección, POP, IMAP, SMTP y webmail"
+    ],
+    "reason": "The canonical corpus p.33-40 only names Word/Excel/email in the T24 heading and does not contain the substantive rules needed to determine the 84 questions whose current references point to temario_antiguo.pdf pp.697-781. Under the declared single-source contract, their correct answers cannot be canonically verified."
+  },
+  "status": "STOP_SOURCE_REVIEW_UNRESOLVABLE",
+  "productionWrites": 0,
+  "qualityRun": null,
+  "merged": false
 }
