@@ -37,6 +37,6 @@
 ## Quality
 - Code/data execution HEAD `9855273ce98e4603a61d72abb913088ba7658689`.
 - Quality #298 sobre ese HEAD: SUCCESS.
-- El commit posterior `3dea60e7120e9e89c3ee7a20552aca7584724e65` modifica únicamente esta documentación de cierre; no cambia código, tests ni datos de producción.
+- Los commits posteriores modifican únicamente esta documentación de cierre; no cambian código, tests ni datos de producción.
 
 Estado: importReady=true; T22 listo para merge normal.
