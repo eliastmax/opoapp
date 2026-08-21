@@ -11,5 +11,23 @@
     "network": false,
     "ocr": false
   },
-  "status": "running"
+  "audit": {
+    "activeQuestions": 120,
+    "storedFieldCompleteness": "120/120",
+    "answerBalance": {"A":30,"B":30,"C":30,"D":30},
+    "exactDuplicateStemGroups": 0,
+    "duplicateOptionRows": 0,
+    "automaticSpans": 1,
+    "questionSections": ["I. Concepto, funciones y características", "II. Clasificación"],
+    "highestQuestionSourcePage": 31
+  },
+  "status": "blocked_before_resolution",
+  "materialBlocker": {
+    "type": "generic_factory_source_only_gap",
+    "canonicalGap": "III. ESTRUCTURA GENERAL DEL DOCUMENTO ADMINISTRATIVO, including encabezamiento content on pp.31-33, has canonical text but no active source-backed question seed.",
+    "factoryConstraint": "buildConceptFamilyResolutionPackets derives units only from active existing question apartado/subapartado; validateMasteryFamilyResolution requires every family to contain at least one questionCode.",
+    "whyMaterial": "Factory.7 cannot create a source-only unit/mastery family for uncovered canonical content, while the mandated order is resolver before generation. Seeding a question before resolution would violate the stabilized pipeline and conceptCode-at-birth contract.",
+    "productionWrites": 0,
+    "factory8Opened": false
+  }
 }
