@@ -32,12 +32,13 @@ Base main: `780ddae053ca7efc90d061b574f6460cbc5a8588`.
 - Before generation: ready 15; real gaps 17 families / 23 questions.
 - After generation: ready 20; source_limited 47; actionable gaps 0.
 - Source-limited ceilings: SMS-T22-C02=2, SMS-T22-C03=3, SMS-T22-C04=1, SMS-T22-C05=2, SMS-T22-C06=2, SMS-T22-C07=1, SMS-T22-C12=3, SMS-T22-C14=1, SMS-T22-C15=3, SMS-T22-C16=3, SMS-T22-C17=2, SMS-T22-C20=3, SMS-T22-C21=3, SMS-T22-C22=3, SMS-T22-C23=2, SMS-T22-C24=3, SMS-T22-C25=1, SMS-T22-C26=1, SMS-T22-C27=1, SMS-T22-C28=2, SMS-T22-C30=3, SMS-T22-C31=3, SMS-T22-C33=3, SMS-T22-C34=2, SMS-T22-C35=2, SMS-T22-C36=3, SMS-T22-C37=2, SMS-T22-C38=3, SMS-T22-C39=2, SMS-T22-C42=3, SMS-T22-C43=3, SMS-T22-C44=2, SMS-T22-C45=3, SMS-T22-C46=1, SMS-T22-C47=3, SMS-T22-C52=3, SMS-T22-C53=2, SMS-T22-C55=2, SMS-T22-C56=2, SMS-T22-C57=1, SMS-T22-C59=3, SMS-T22-C61=2, SMS-T22-C62=3, SMS-T22-C63=2, SMS-T22-C64=3, SMS-T22-C66=2, SMS-T22-C67=2.
-- Every source_limited family has concrete dimensions, covered question codes and a redundancy rationale in the downstream package.
-- Generated questions: SMS-T22-0181…SMS-T22-0203 (23), exact V2 25-field CSV + conceptCode sidecar.
+- Every source_limited family has concrete dimensions, covered question codes and a redundancy rationale in the provisional downstream package.
+- Generated questions: SMS-T22-0181…SMS-T22-0203 (23), exact V2 25-field rows plus conceptCode sidecar from birth.
 - Provisional final answers = 51/51/51/50; pedagogy = 68/68/67.
 - Study blocks 67; flashcards 134.
-- `docs/v4/topic-22-production-rerun-generated-v2.csv` contains the 23 V2 rows.
-- `docs/v4/topic-22-production-rerun-downstream.json.gz` contains the validated family map, source-capacity registry, 67 study blocks, 134 flashcards and conceptCode sidecar.
+- V2 rows are preserved in `docs/v4/topic-22-production-rerun-generated-v2-part1.csv`, `...-part2.csv`, and `...-part3.csv`.
+- `docs/v4/topic-22-production-rerun-concept-map.json` is the generated-question → conceptCode sidecar.
+- The full provisional downstream package (validated family resolution, source-capacity registry, 67 study blocks, 134 flashcards and generated rows) was materialized during the run; it was not imported to production.
 
 ## Editorial / adversarial QA
 - Existing material warnings = 12:
