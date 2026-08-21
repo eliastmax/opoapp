@@ -1,0 +1,98 @@
+{
+  "topic": "T07",
+  "status": "final-candidate-awaiting-quality",
+  "factory": "Factory.8 · Source Coverage Closure",
+  "startingMain": "4e61bb72af101cb8d51e785dd7a6d674720e9994",
+  "sourceContract": {
+    "primary": {
+      "document": "Temario_new.pdf",
+      "canonicalInput": "Temario_new_T07_CANONICAL_PAGES.json",
+      "sha256": "96768192445fa7da87e09d265b0b578737d38ffca2559f22225ea49ac4cebe2a",
+      "pages": "384-399",
+      "boundary": "p384 from explicit TEMA 7; pp385-399 complete; p400 TEMA 8 excluded"
+    },
+    "externalSubstantiveSources": 0,
+    "manualProvider": 0,
+    "manualMap": 0,
+    "manualSpans": 0
+  },
+  "questionBank": {
+    "initialActive": 180,
+    "initialBySource": {"Temario_new.pdf": 180},
+    "generated": 8,
+    "generatedRange": "SMS-T07-0181..0188",
+    "generatedForClosure": ["art. 64.e", "art. 66.1", "art. 66.3", "art. 67.2", "art. 67.3", "art. 67.4", "art. 69.1", "art. 69.2"],
+    "finalActive": 188,
+    "finalBySource": {"Temario_new.pdf": 188},
+    "learningStages": {"aprendizaje": 63, "consolidacion": 63, "tribunal": 62}
+  },
+  "sourceCoverageClosure": {
+    "finalUncoveredCanonicalMaterial": 0,
+    "actionableGaps": 0,
+    "sourceReviewRequired": 0,
+    "ignoredNonMaterialOrOutOfScope": [
+      "topic cover, publication metadata and index material on pp384-385",
+      "editorial carryover fragment preceding Article 43 on p386",
+      "Articles 43, 47 and 61 because the canonical source marks them Derogado"
+    ]
+  },
+  "mastery": {
+    "units": 7,
+    "concepts": 24,
+    "primaryMappings": 188,
+    "studyBlocks": 24,
+    "flashcards": 48,
+    "unmapped": 0,
+    "multiplePrimary": 0
+  },
+  "capacity": {
+    "standardReady": 24,
+    "sourceLimited": 0,
+    "ceilings": {},
+    "minimumPrimaryQuestionsPerConcept": 5,
+    "challengeResult": "all source_limited candidates defeated by concept consolidation and eight source-supported closure questions"
+  },
+  "qa": {
+    "answerBalance": {"A": 47, "B": 47, "C": 47, "D": 47},
+    "duplicateStemGroups": 0,
+    "duplicateOptionRows": 0,
+    "badSourceRows": 0,
+    "editorialWarningsAutoFixed": 0
+  },
+  "productionImport": {
+    "id": "116da35d-84b7-41db-aca5-39a2edc2d658",
+    "contractVersion": "4.0",
+    "units": 7,
+    "concepts": 24,
+    "questionMappings": 188,
+    "flashcards": 48,
+    "importReady": true
+  },
+  "smokes": {
+    "v4TodayT07": 24,
+    "studyOpen": true,
+    "v4Evidence": 24,
+    "cardsMin": 2,
+    "questionsMin": 5,
+    "v2Aprendizaje": 5,
+    "v2Consolidacion": 5,
+    "v2Tribunal": 5,
+    "v3Recommended": 5,
+    "weeklyRoadmapRows": 1,
+    "smokeResidue": 0
+  },
+  "contamination": {
+    "outsideT07": 0,
+    "outsideSnapshot": {
+      "questionsTotal": 4390,
+      "questionsActive": 4371,
+      "questionsInactive": 19,
+      "units": 96,
+      "concepts": 426,
+      "primaryMappings": 2270,
+      "flashcards": 857
+    }
+  },
+  "regressionFloor": ["T13", "T14", "T15", "T16", "T17", "T18", "T19", "T20", "T21", "T22", "T23", "T24", "Factory.8 approved replay", "accordion visual"],
+  "factory9Opened": false
+}
