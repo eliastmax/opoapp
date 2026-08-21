@@ -1,0 +1,30 @@
+{
+  "topic": "T22",
+  "factory": "Factory.7",
+  "kind": "generated-question-concept-sidecar",
+  "questions": [
+    {"codigo":"SMS-T22-0181","conceptCode":"SMS-T22-C01"},
+    {"codigo":"SMS-T22-0182","conceptCode":"SMS-T22-C01"},
+    {"codigo":"SMS-T22-0183","conceptCode":"SMS-T22-C02"},
+    {"codigo":"SMS-T22-0184","conceptCode":"SMS-T22-C11"},
+    {"codigo":"SMS-T22-0185","conceptCode":"SMS-T22-C15"},
+    {"codigo":"SMS-T22-0186","conceptCode":"SMS-T22-C15"},
+    {"codigo":"SMS-T22-0187","conceptCode":"SMS-T22-C19"},
+    {"codigo":"SMS-T22-0188","conceptCode":"SMS-T22-C21"},
+    {"codigo":"SMS-T22-0189","conceptCode":"SMS-T22-C23"},
+    {"codigo":"SMS-T22-0190","conceptCode":"SMS-T22-C24"},
+    {"codigo":"SMS-T22-0191","conceptCode":"SMS-T22-C24"},
+    {"codigo":"SMS-T22-0192","conceptCode":"SMS-T22-C28"},
+    {"codigo":"SMS-T22-0193","conceptCode":"SMS-T22-C31"},
+    {"codigo":"SMS-T22-0194","conceptCode":"SMS-T22-C31"},
+    {"codigo":"SMS-T22-0195","conceptCode":"SMS-T22-C35"},
+    {"codigo":"SMS-T22-0196","conceptCode":"SMS-T22-C52"},
+    {"codigo":"SMS-T22-0197","conceptCode":"SMS-T22-C53"},
+    {"codigo":"SMS-T22-0198","conceptCode":"SMS-T22-C54"},
+    {"codigo":"SMS-T22-0199","conceptCode":"SMS-T22-C54"},
+    {"codigo":"SMS-T22-0200","conceptCode":"SMS-T22-C54"},
+    {"codigo":"SMS-T22-0201","conceptCode":"SMS-T22-C56"},
+    {"codigo":"SMS-T22-0202","conceptCode":"SMS-T22-C65"},
+    {"codigo":"SMS-T22-0203","conceptCode":"SMS-T22-C67"}
+  ]
+}
