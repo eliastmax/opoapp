@@ -1,10 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import {
   AlertCircle,
   ArrowRight,
   BookOpen,
   CheckCircle2,
+  ChevronDown,
+  ChevronRight,
   Clock3,
   Loader2,
   ShieldAlert,
@@ -14,12 +17,14 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { WeeklyRoadmap } from "@/components/weekly-roadmap";
 import { supabase } from "@/integrations/supabase/client";
+import { toggleExclusiveUnit, toggleSection } from "@/lib/study-unit-accordion";
 import { MASTERY_LABELS } from "@/lib/v4-experience";
 import type { V4TodayContextRow } from "@/lib/v4-today-plan";
 
 export const Route = createFileRoute("/_authenticated/estudio")({ component: StudyCenterPage });
 
 function StudyCenterPage() {
+  const [expandedUnitId, setExpandedUnitId] = useState<string | null>(null);
   const {
     data = [],
     isLoading,
@@ -122,16 +127,15 @@ function StudyCenterPage() {
           {[...grouped.entries()]
             .sort(([a], [b]) => a.localeCompare(b, "es", { numeric: true }))
             .map(([topic, topicUnits]) => (
-              <section key={topic}>
-                <h2 className="mb-2 text-sm font-bold">Tema {topic}</h2>
-                <div className="space-y-2">
-                  {topicUnits
-                    .sort((a, b) => a.row.unit_position - b.row.unit_position)
-                    .map((unit) => (
-                      <UnitCard key={unit.row.study_unit_id} unit={unit} />
-                    ))}
-                </div>
-              </section>
+              <TopicUnitsAccordion
+                key={topic}
+                topic={topic}
+                units={topicUnits.sort((a, b) => a.row.unit_position - b.row.unit_position)}
+                expandedUnitId={expandedUnitId}
+                onToggleUnit={(unitId) =>
+                  setExpandedUnitId((current) => toggleExclusiveUnit(current, unitId))
+                }
+              />
             ))}
         </>
       )}
@@ -139,7 +143,61 @@ function StudyCenterPage() {
   );
 }
 
-function UnitCard({ unit }: { unit: { row: V4TodayContextRow; concepts: V4TodayContextRow[] } }) {
+type StudyUnitGroup = { row: V4TodayContextRow; concepts: V4TodayContextRow[] };
+
+function TopicUnitsAccordion({
+  topic,
+  units,
+  expandedUnitId,
+  onToggleUnit,
+}: {
+  topic: string;
+  units: StudyUnitGroup[];
+  expandedUnitId: string | null;
+  onToggleUnit: (unitId: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section className="overflow-hidden rounded-2xl border bg-card/80">
+      <button
+        type="button"
+        className="flex w-full items-center gap-3 px-4 py-3.5 text-left"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => toggleSection(current))}
+      >
+        <div className="min-w-0 flex-1">
+          <h2 className="text-sm font-bold leading-snug">Tema {topic}</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">Unidades del tema · {units.length}</p>
+        </div>
+        <ChevronDown
+          className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && (
+        <div className="border-t">
+          {units.map((unit) => (
+            <UnitRow
+              key={unit.row.study_unit_id}
+              unit={unit}
+              expanded={expandedUnitId === unit.row.study_unit_id}
+              onToggle={() => onToggleUnit(unit.row.study_unit_id)}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function UnitRow({
+  unit,
+  expanded,
+  onToggle,
+}: {
+  unit: StudyUnitGroup;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
   const worked = unit.concepts.filter((concept) => concept.state !== "unseen").length;
   const attention = unit.concepts.some((concept) => concept.needs_attention);
   const highest = unit.concepts.reduce(
@@ -147,47 +205,64 @@ function UnitCard({ unit }: { unit: { row: V4TodayContextRow; concepts: V4TodayC
     unit.concepts[0],
   );
   return (
-    <Card className="overflow-hidden p-0">
-      <div className="p-4">
-        <div className="flex items-start gap-3">
-          <span
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${unit.row.unit_completed ? "bg-success/10 text-success" : "bg-primary/10 text-primary"}`}
-          >
-            {unit.row.unit_completed ? (
-              <CheckCircle2 className="h-5 w-5" />
-            ) : (
-              <BookOpen className="h-5 w-5" />
+    <div className="border-b last:border-b-0">
+      <button
+        type="button"
+        className="flex w-full items-start gap-3 px-4 py-3 text-left"
+        aria-expanded={expanded}
+        onClick={onToggle}
+      >
+        <span
+          className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${unit.row.unit_completed ? "bg-success/10 text-success" : "bg-primary/10 text-primary"}`}
+        >
+          {unit.row.unit_completed ? (
+            <CheckCircle2 className="h-4 w-4" />
+          ) : (
+            <BookOpen className="h-4 w-4" />
+          )}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start gap-2">
+            <h3 className="min-w-0 flex-1 text-sm font-bold leading-snug">
+              {unit.row.study_unit_title}
+            </h3>
+            {attention && (
+              <span className="shrink-0 rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-bold text-warning-foreground">
+                Atención
+              </span>
             )}
-          </span>
+          </div>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            {worked}/{unit.concepts.length} conocimientos · {MASTERY_LABELS[highest.state]}
+          </p>
+        </div>
+        <ChevronRight
+          className={`mt-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform ${expanded ? "rotate-90" : ""}`}
+        />
+      </button>
+      {expanded && (
+        <div className="bg-muted/25 px-4 pb-4 pt-1">
           <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-2">
-              <h3 className="text-sm font-bold leading-snug">{unit.row.study_unit_title}</h3>
-              {attention && (
-                <span className="shrink-0 rounded-full bg-warning/15 px-2 py-1 text-[10px] font-bold text-warning-foreground">
-                  Atención
-                </span>
-              )}
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {worked}/{unit.concepts.length} conocimientos trabajados ·{" "}
               {MASTERY_LABELS[highest.state]}
             </p>
             <Progress value={(worked / unit.concepts.length) * 100} className="mt-3 h-1.5" />
           </div>
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <span className="inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+              <Clock3 className="h-3.5 w-3.5" /> {unit.row.unit_estimated_minutes} min
+            </span>
+            <Button asChild size="sm" className="h-9 min-w-0">
+              <Link to="/estudiar/$unitId" params={{ unitId: unit.row.study_unit_id }}>
+                {unit.row.unit_completed ? "Repasar unidad" : "Estudiar unidad"}
+                <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </div>
         </div>
-      </div>
-      <div className="flex items-center justify-between border-t bg-muted/25 px-4 py-3">
-        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-          <Clock3 className="h-3.5 w-3.5" /> {unit.row.unit_estimated_minutes} min
-        </span>
-        <Button asChild variant="ghost" size="sm" className="h-8 text-xs text-primary">
-          <Link to="/estudiar/$unitId" params={{ unitId: unit.row.study_unit_id }}>
-            {unit.row.unit_completed ? "Repasar unidad" : "Estudiar unidad"}
-            <ArrowRight className="ml-1 h-3.5 w-3.5" />
-          </Link>
-        </Button>
-      </div>
-    </Card>
+      )}
+    </div>
   );
 }
 function stateRank(state: V4TodayContextRow["state"]) {
