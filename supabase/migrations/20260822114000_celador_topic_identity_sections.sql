@@ -36,11 +36,7 @@ BEGIN
     RAISE EXCEPTION 'Unexpected Celador Specific Tema 6 cohort before section migration';
   END IF;
 
-  IF public.current_active_opposition_id() IS DISTINCT FROM v_opposition_id THEN
-    PERFORM set_config('request.jwt.claim.sub', v_owner_id::text, true);
-  ELSE
-    PERFORM set_config('request.jwt.claim.sub', v_owner_id::text, true);
-  END IF;
+  PERFORM set_config('request.jwt.claim.sub', v_owner_id::text, true);
 
   IF public.current_active_opposition_id() IS DISTINCT FROM v_opposition_id THEN
     RAISE EXCEPTION 'Celador SMS must be the curator active opposition during migration';
