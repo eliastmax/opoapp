@@ -127,6 +127,22 @@ export function ProductTourProvider({ user, children }: { user: User; children: 
 
 type Cutout = { top: number; left: number; right: number; bottom: number };
 
+function prefersReducedMotion() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function EmphasizedDescription({ text, emphasis }: { text: string; emphasis: string }) {
+  const index = text.indexOf(emphasis);
+  if (index < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, index)}
+      <span className="font-semibold text-card-foreground">{emphasis}</span>
+      {text.slice(index + emphasis.length)}
+    </>
+  );
+}
+
 function SpotlightTour({
   step,
   pathname,
@@ -146,12 +162,37 @@ function SpotlightTour({
 }) {
   const item = PRODUCT_TOUR_STEPS[step];
   const popoverRef = useRef<HTMLDivElement>(null);
+  const stepTransitionTimer = useRef<number | null>(null);
   const [cutout, setCutout] = useState<Cutout | null>(null);
+  const [resolvedStep, setResolvedStep] = useState<number | null>(null);
+  const [popoverVisible, setPopoverVisible] = useState(false);
   const [popoverHeight, setPopoverHeight] = useState(190);
 
+  const moveToStep = useCallback(
+    (nextStep: number) => {
+      if (stepTransitionTimer.current) window.clearTimeout(stepTransitionTimer.current);
+      setPopoverVisible(false);
+      const delay = prefersReducedMotion() ? 0 : 120;
+      stepTransitionTimer.current = window.setTimeout(() => {
+        setResolvedStep(null);
+        onStep(nextStep);
+      }, delay);
+    },
+    [onStep],
+  );
+
+  useEffect(
+    () => () => {
+      if (stepTransitionTimer.current) window.clearTimeout(stepTransitionTimer.current);
+    },
+    [],
+  );
+
   useEffect(() => {
-    setCutout(null);
+    setPopoverVisible(false);
+    setResolvedStep(null);
     if (pathname !== item.route) {
+      setCutout(null);
       onNavigate(item.route);
     }
   }, [item.route, item.target, onNavigate, pathname]);
@@ -163,16 +204,21 @@ function SpotlightTour({
     let cleanup: (() => void) | undefined;
     let targetObserver: MutationObserver | undefined;
     let targetTimeout = 0;
+    let revealTimeout = 0;
     const attachTarget = (target: HTMLElement) => {
       if (cancelled) return;
       targetObserver?.disconnect();
       window.clearTimeout(targetTimeout);
       target.scrollIntoView({
         block: item.target.startsWith("nav-") ? "nearest" : "center",
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        behavior: prefersReducedMotion() ? "auto" : "smooth",
       });
       const update = () => setCutout(spotlightRect(target.getBoundingClientRect()));
       frame = window.requestAnimationFrame(update);
+      const revealDelay = prefersReducedMotion() ? 0 : 160;
+      revealTimeout = window.setTimeout(() => {
+        if (!cancelled) setResolvedStep(step);
+      }, revealDelay);
       window.addEventListener("resize", update);
       window.addEventListener("orientationchange", update);
       window.addEventListener("scroll", update, true);
@@ -205,14 +251,19 @@ function SpotlightTour({
       cancelled = true;
       window.cancelAnimationFrame(frame);
       window.clearTimeout(targetTimeout);
+      window.clearTimeout(revealTimeout);
       targetObserver?.disconnect();
       cleanup?.();
     };
-  }, [item.route, item.target, pathname]);
+  }, [item.route, item.target, pathname, step]);
 
   useLayoutEffect(() => {
-    if (popoverRef.current) setPopoverHeight(popoverRef.current.getBoundingClientRect().height);
-  }, [cutout, step]);
+    if (resolvedStep !== step || !popoverRef.current) return;
+    setPopoverHeight(popoverRef.current.getBoundingClientRect().height);
+    const frame = window.requestAnimationFrame(() => setPopoverVisible(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, [resolvedStep, step]);
+
   useEffect(() => {
     const shell = document.querySelector<HTMLElement>("[data-app-shell]");
     shell?.setAttribute("inert", "");
@@ -234,22 +285,26 @@ function SpotlightTour({
       document.removeEventListener("keydown", onKey);
     };
   }, [onSkip]);
+
   useEffect(() => {
-    popoverRef.current?.querySelector<HTMLElement>("[data-tour-primary]")?.focus();
-  }, [cutout, step]);
+    if (popoverVisible && resolvedStep === step) {
+      popoverRef.current?.querySelector<HTMLElement>("[data-tour-primary]")?.focus();
+    }
+  }, [popoverVisible, resolvedStep, step]);
 
   if (!cutout)
     return (
       <div
-        className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60"
+        className="fixed inset-0 z-[70] flex items-center justify-center bg-black/68 backdrop-blur-[1px] motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150"
         role="status"
       >
-        <span className="rounded-full bg-card p-3 text-primary shadow-lg">
+        <span className="rounded-full bg-card/95 p-3 text-primary shadow-lg">
           <Loader2 className="h-5 w-5 animate-spin motion-reduce:animate-none" />
           <span className="sr-only">Preparando el siguiente paso del tutorial</span>
         </span>
       </div>
     );
+
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
   const width = Math.min(330, viewportWidth - 24);
@@ -261,7 +316,17 @@ function SpotlightTour({
     12,
     Math.min(cutout.left + (cutout.right - cutout.left - width) / 2, viewportWidth - width - 12),
   );
-  const scrim = "fixed z-[60] bg-black/68 backdrop-blur-[1px]";
+  const targetCenter = cutout.left + (cutout.right - cutout.left) / 2;
+  const arrowLeft = Math.max(24, Math.min(targetCenter - left, width - 24));
+  const scrim =
+    "fixed z-[60] bg-black/68 backdrop-blur-[1px] transition-[top,left,width,height] duration-200 ease-out motion-reduce:transition-none";
+  const popoverReady = resolvedStep === step;
+  const popoverMotion = popoverVisible
+    ? "translate-y-0 scale-100 opacity-100"
+    : placeBelow
+      ? "translate-y-2 scale-[0.98] opacity-0"
+      : "-translate-y-2 scale-[0.98] opacity-0";
+
   return (
     <div
       aria-live="polite"
@@ -278,7 +343,7 @@ function SpotlightTour({
         style={{ top: cutout.top, left: cutout.right, height: cutout.bottom - cutout.top }}
       />
       <div
-        className="pointer-events-none fixed z-[61] rounded-[1.15rem] border-2 border-white/90 shadow-[0_0_0_3px_oklch(0.65_0.14_240/0.35),0_0_28px_oklch(0.75_0.12_230/0.3)] motion-safe:animate-in motion-safe:fade-in"
+        className="pointer-events-none fixed z-[61] rounded-[1.15rem] border-2 border-white/90 shadow-[0_0_0_3px_oklch(0.65_0.14_240/0.35),0_0_28px_oklch(0.75_0.12_230/0.3)] transition-[top,left,width,height,opacity] duration-200 ease-out motion-reduce:transition-none"
         style={{
           top: cutout.top,
           left: cutout.left,
@@ -287,57 +352,69 @@ function SpotlightTour({
         }}
         aria-hidden="true"
       />
-      <div
-        ref={popoverRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="tour-title"
-        aria-describedby="tour-description"
-        className="fixed z-[70] rounded-2xl border border-border/80 bg-card p-4 text-card-foreground shadow-[0_20px_55px_-18px_rgb(0_0_0/0.55)] motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95"
-        style={{ top, left, width }}
-      >
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
-            {step + 1} de {PRODUCT_TOUR_STEPS.length}
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-9 px-2.5 text-muted-foreground"
-            onClick={onSkip}
-          >
-            {replaying ? "Cerrar" : "Omitir"}
-          </Button>
-        </div>
-        <h2 id="tour-title" className="mt-1 text-lg font-bold leading-tight">
-          {item.title}
-        </h2>
-        <p id="tour-description" className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-          {item.description}
-        </p>
-        <div className="mt-4 flex items-center justify-end gap-2">
-          {step > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-10"
-              onClick={() => onStep(step - 1)}
-              aria-label="Paso anterior"
+      {popoverReady && (
+        <div
+          ref={popoverRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="tour-title"
+          aria-describedby="tour-description"
+          className={`fixed z-[70] rounded-2xl border border-border/80 bg-card p-4 text-card-foreground shadow-[0_20px_55px_-18px_rgb(0_0_0/0.55)] transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none ${popoverMotion} ${popoverVisible ? "pointer-events-auto" : "pointer-events-none"}`}
+          style={{ top, left, width }}
+        >
+          <span
+            aria-hidden="true"
+            className={`pointer-events-none absolute h-3 w-3 rotate-45 border border-border/80 bg-card ${placeBelow ? "-top-1.5" : "-bottom-1.5"}`}
+            style={{ left: arrowLeft - 6 }}
+          />
+          <div className="relative z-10">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-medium text-muted-foreground">
+                {step + 1} de {PRODUCT_TOUR_STEPS.length}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 px-2.5 text-muted-foreground"
+                onClick={onSkip}
+              >
+                {replaying ? "Cerrar" : "Omitir"}
+              </Button>
+            </div>
+            <h2 id="tour-title" className="mt-1 text-[18px] font-semibold leading-tight">
+              {item.title}
+            </h2>
+            <p
+              id="tour-description"
+              className="mt-2 text-[15px] leading-[1.45] text-muted-foreground"
             >
-              <ArrowLeft className="h-4 w-4" /> Anterior
-            </Button>
-          )}
-          <Button
-            data-tour-primary
-            size="sm"
-            className="h-10"
-            onClick={() => (item.final ? onFinish() : onStep(step + 1))}
-          >
-            {item.final ? "Empezar mi sesión" : "Siguiente"}
-            {!item.final && <ArrowRight className="h-4 w-4" />}
-          </Button>
+              <EmphasizedDescription text={item.description} emphasis={item.emphasis} />
+            </p>
+            <div className="mt-4 flex items-center justify-end gap-2">
+              {step > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-10"
+                  onClick={() => moveToStep(step - 1)}
+                  aria-label="Paso anterior"
+                >
+                  <ArrowLeft className="h-4 w-4" /> Anterior
+                </Button>
+              )}
+              <Button
+                data-tour-primary
+                size="sm"
+                className="h-10"
+                onClick={() => (item.final ? onFinish() : moveToStep(step + 1))}
+              >
+                {item.final ? "Empezar mi sesión" : "Siguiente"}
+                {!item.final && <ArrowRight className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
