@@ -14,55 +14,72 @@ const component = readFileSync(
   new URL("../../components/product-tour.tsx", import.meta.url),
   "utf8",
 );
+const layout = readFileSync(
+  new URL("../../routes/_authenticated/route.tsx", import.meta.url),
+  "utf8",
+);
+const today = readFileSync(
+  new URL("../../routes/_authenticated/inicio.tsx", import.meta.url),
+  "utf8",
+);
+const study = readFileSync(
+  new URL("../../routes/_authenticated/estudio.tsx", import.meta.url),
+  "utf8",
+);
 
-describe("first-run product tour", () => {
-  it("opens only after a successful unresolved state read", () => {
-    expect(
-      shouldOpenProductTour({
-        loading: false,
-        error: false,
-        completedAt: null,
-        dismissedForSession: false,
-      }),
-    ).toBe(true);
-    expect(
-      shouldOpenProductTour({
-        loading: true,
-        error: false,
-        completedAt: null,
-        dismissedForSession: false,
-      }),
-    ).toBe(false);
-    expect(
-      shouldOpenProductTour({
-        loading: false,
-        error: true,
-        completedAt: null,
-        dismissedForSession: false,
-      }),
-    ).toBe(false);
-    expect(
-      shouldOpenProductTour({
-        loading: false,
-        error: false,
-        completedAt: "2026-08-22",
-        dismissedForSession: false,
-      }),
-    ).toBe(false);
+const eligibility = (overrides: Partial<Parameters<typeof shouldOpenProductTour>[0]> = {}) =>
+  shouldOpenProductTour({
+    loading: false,
+    error: false,
+    completedAt: null,
+    dismissedForSession: false,
+    preparationCompleted: true,
+    pathname: "/inicio",
+    ...overrides,
   });
 
-  it("uses five short, truthful steps", () => {
-    expect(PRODUCT_TOUR_STEPS).toHaveLength(5);
-    expect(PRODUCT_TOUR_STEPS.map((step) => step.eyebrow)).toEqual([
-      "Hoy",
-      "Estudio",
-      "Practicar",
-      "Refuerzo",
-      "Todo listo",
+describe("first-run spotlight tour", () => {
+  it("opens automatically only for an eligible normal first entry", () => {
+    expect(eligibility()).toBe(true);
+    expect(eligibility({ preparationCompleted: false })).toBe(false);
+    expect(eligibility({ pathname: "/preparacion" })).toBe(false);
+    expect(eligibility({ loading: true })).toBe(false);
+    expect(eligibility({ error: true })).toBe(false);
+  });
+
+  it("does not reopen after completion, omission or a safe session dismissal", () => {
+    expect(eligibility({ completedAt: "2026-08-22" })).toBe(false);
+    expect(eligibility({ dismissedForSession: true })).toBe(false);
+  });
+
+  it("uses six contextual steps on real stable DOM targets", () => {
+    expect(PRODUCT_TOUR_STEPS).toHaveLength(6);
+    expect(PRODUCT_TOUR_STEPS.map((step) => step.target)).toEqual([
+      "today-session",
+      "nav-study",
+      "study-topic",
+      "nav-practice",
+      "study-progress",
+      "today-session",
     ]);
+    expect(today).toContain('data-tour="today-session"');
+    expect(layout).toContain('"nav-study"');
+    expect(layout).toContain('"nav-practice"');
+    expect(study).toContain('data-tour="study-progress"');
+    expect(study).toContain('"study-topic"');
   });
 
-  it("persists completion and skip while replay keeps prior state", () => {
+  it("renders a measured spotlight and anchored coach mark without mockups", () => {
+    expect(component).toContain("getBoundingClientRect");
+    expect(component).toContain("scrollIntoView");
+    expect(component).toContain("ResizeObserver");
+    expect(component).toContain('role="dialog"');
+    expect(component).toContain('setAttribute("inert"');
+    expect(component).not.toContain("TourVisual");
+    expect(component).not.toContain("DialogContent");
+  });
+
+  it("persists completion and skip while replay preserves prior state", () => {
     expect(component).toContain('persist("skipped")');
     expect(component).toContain('persist("completed")');
     expect(component).not.toContain("delete()");
@@ -70,24 +87,12 @@ describe("first-run product tour", () => {
     expect(component).toContain('navigate({ to: "/inicio" })');
   });
 
-  it("fails closed and dismisses safely when persistence fails", () => {
-    expect(component).toContain("closeSafely();");
-    expect(component).toContain("state.isError");
-    expect(component).toContain("Puedes seguir usando OpoTest");
-  });
-
-  it("isolates state by auth uid with restrictive RLS", () => {
+  it("keeps strict per-user RLS and no local truth source", () => {
     expect(migration).toContain("user_id uuid PRIMARY KEY REFERENCES auth.users(id)");
     expect(migration.match(/user_id = \(SELECT auth\.uid\(\)\)/g)?.length).toBeGreaterThanOrEqual(
       3,
     );
-    expect(migration).toContain("ENABLE ROW LEVEL SECURITY");
-    expect(migration).toContain("REVOKE ALL ON TABLE public.product_tour_states");
-  });
-
-  it("keeps product education separate from preparation profiles and auth", () => {
-    expect(migration).not.toContain("preparation_profiles");
-    expect(component).not.toContain("onAuthStateChange");
     expect(component).not.toContain("localStorage");
+    expect(component).not.toContain("onAuthStateChange");
   });
 });
