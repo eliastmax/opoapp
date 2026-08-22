@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { ActiveOppositionContext } from "@/components/active-opposition-context";
+import { useOppositionAdmin } from "@/hooks/use-opposition-admin";
+import { toUserFacingError } from "@/lib/user-facing-error";
 
 export const Route = createFileRoute("/_authenticated/ajustes")({
   component: AjustesPage,
@@ -27,6 +29,7 @@ function AjustesPage() {
   const qc = useQueryClient();
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const { data: isAdmin } = useOppositionAdmin();
   const { data: profile } = useQuery({
     queryKey: ["profile"],
     queryFn: async () => {
@@ -44,7 +47,7 @@ function AjustesPage() {
     await qc.cancelQueries();
     qc.clear();
     await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
+    navigate({ to: "/auth", search: { recovery: false }, replace: true });
   }
 
   async function resetStatistics() {
@@ -52,7 +55,7 @@ function AjustesPage() {
     setResetting(true);
     const { data, error } = await supabase.rpc("reset_learning_progress");
     if (error) {
-      toast.error(error.message);
+      toast.error(toUserFacingError(error).message);
       setResetting(false);
       return;
     }
@@ -88,7 +91,7 @@ function AjustesPage() {
           </div>
         </Card>
       </Link>
-      <Link to="/preguntas">
+      {isAdmin && <Link to="/preguntas">
         <Card className="p-4 flex items-center gap-3 hover:bg-accent/50 transition-colors">
           <Database className="w-5 h-5 text-primary" />
           <div className="flex-1">
@@ -96,13 +99,13 @@ function AjustesPage() {
             <div className="text-xs text-muted-foreground">Editar y desactivar</div>
           </div>
         </Card>
-      </Link>
+      </Link>}
       <Card className="space-y-3 border-destructive/15 bg-destructive/5 p-4">
         <div>
           <div className="font-medium">Datos de estudio</div>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            Borra tests, estadísticas, fallos y dudas para empezar de cero. Tus preguntas se
-            conservan.
+            Borra tus tests, estadísticas, fallos y dudas para empezar de cero. El catálogo
+            compartido de la oposición no cambia.
           </p>
         </div>
         <Button
@@ -124,7 +127,7 @@ function AjustesPage() {
             <AlertDialogTitle>¿Reiniciar todas tus estadísticas?</AlertDialogTitle>
             <AlertDialogDescription>
               Se eliminarán definitivamente tus tests, progreso, fallos y dudas. La cuenta, las
-              materias y todas las preguntas importadas se conservarán.
+              inscripción y el catálogo compartido de la oposición se conservarán.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
