@@ -123,7 +123,7 @@ describe("pre-auth premium intro", () => {
   });
 
   it("uses root as the intro entry but sends protected deep links straight to login", () => {
-    expect(index).toContain('redirect({ to: "/auth" })');
+    expect(index).toContain('redirect({ to: "/auth", search: { mode: "intro" } })');
     expect(authenticatedLayout).toContain('redirect({ to: "/auth", search: { mode: "login" } })');
     expect(authenticatedLayout).toContain("ProductTourProvider");
   });
