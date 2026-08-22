@@ -4,21 +4,23 @@ export const PRODUCT_TOUR_STEPS = [
     target: "today-session",
     title: "Empieza aquí",
     description:
-      "Esta es tu mejor siguiente acción. OpoTest te indica qué estudiar, practicar o repasar hoy.",
+      "Esta tarjeta es tu punto de partida cada día. Reúne lo que más te conviene hacer ahora —estudiar, practicar o repasar— para que no tengas que decidirlo tú. Si dudas por dónde seguir, vuelve siempre a Hoy.",
     final: false,
   },
   {
     route: "/inicio" as const,
     target: "nav-study",
     title: "Todo tu temario está aquí",
-    description: "Desde Estudio puedes entrar en cada tema y ver cómo avanza tu preparación.",
+    description:
+      "En Estudio tienes el temario completo organizado por temas. Aquí puedes ver qué has trabajado, qué está en progreso y entrar en el tema que quieras reforzar. Es tu mapa general de preparación.",
     final: false,
   },
   {
     route: "/estudio" as const,
     target: "study-topic",
     title: "Avanza tema a tema",
-    description: "Abre un tema para trabajar sus unidades y conceptos con el contenido real.",
+    description:
+      "Dentro de cada tema, OpoTest lo divide en unidades y conceptos para que avances por partes manejables. No se trata solo de leer: cada concepto se va comprobando con práctica y repaso hasta quedar asentado.",
     final: false,
   },
   {
@@ -26,21 +28,23 @@ export const PRODUCT_TOUR_STEPS = [
     target: "nav-practice",
     title: "Practica lo aprendido",
     description:
-      "Crea tests para comprobar qué recuerdas. Tus respuestas orientan el siguiente paso.",
+      "Los tests sirven para comprobar si realmente recuerdas lo estudiado. Cada respuesta aporta información sobre lo que dominas y lo que necesita refuerzo, así que practicar también ayuda a OpoTest a ajustar qué conviene hacer después.",
     final: false,
   },
   {
     route: "/estudio" as const,
     target: "study-progress",
     title: "Lo importante vuelve",
-    description: "Aquí ves lo trabajado y lo que necesita atención. Hoy lo ordena para reforzarlo.",
+    description:
+      "Tu progreso no depende solo de completar temas. OpoTest tiene en cuenta lo que fallas, dudas o todavía no está asentado y lo vuelve a poner delante cuando toca, para que no se quede atrás.",
     final: false,
   },
   {
     route: "/inicio" as const,
     target: "today-session",
     title: "Ya está",
-    description: "No necesitas organizar nada más. Empieza por Hoy y OpoTest irá guiando el resto.",
+    description:
+      "El ciclo es sencillo: estudias, practicas y refuerzas lo que lo necesita. Tú no tienes que organizar todo ese proceso cada día. Vuelve a Hoy y empieza por la sesión recomendada.",
     final: true,
   },
 ] as const;
