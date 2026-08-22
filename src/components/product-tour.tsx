@@ -196,9 +196,7 @@ function SpotlightTour({
       targetTimeout = window.setTimeout(() => {
         if (cancelled) return;
         const fallback = document.querySelector<HTMLElement>(
-          item.route === "/estudio"
-            ? '[data-tour="nav-study"]'
-            : '[data-tour="today-session"]',
+          item.route === "/estudio" ? '[data-tour="nav-study"]' : '[data-tour="today-session"]',
         );
         if (fallback) attachTarget(fallback);
       }, 12_000);
@@ -280,7 +278,7 @@ function SpotlightTour({
         style={{ top: cutout.top, left: cutout.right, height: cutout.bottom - cutout.top }}
       />
       <div
-      className="pointer-events-none fixed z-[61] rounded-[1.15rem] border-2 border-white/90 shadow-[0_0_0_3px_oklch(0.65_0.14_240/0.35),0_0_28px_oklch(0.75_0.12_230/0.3)] motion-safe:animate-in motion-safe:fade-in"
+        className="pointer-events-none fixed z-[61] rounded-[1.15rem] border-2 border-white/90 shadow-[0_0_0_3px_oklch(0.65_0.14_240/0.35),0_0_28px_oklch(0.75_0.12_230/0.3)] motion-safe:animate-in motion-safe:fade-in"
         style={{
           top: cutout.top,
           left: cutout.left,
