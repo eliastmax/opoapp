@@ -1,0 +1,152 @@
+{
+  "$schema": "OpoTestV4SourceManifestV1",
+  "manifestVersion": "1.0.0",
+  "factoryVersion": "8",
+  "generatorVersion": "Factory.8-fast-production-bank-depth-2026-08-22",
+  "mainPinned": "098cdde6d643e569ab23ba108f5a717edc8bb8e4",
+  "topicGlobal": "T11",
+  "section": "Parte Específica",
+  "officialTopicNumber": 5,
+  "topicTitle": "POSICIONES ANATÓMICAS BÁSICAS / TÉCNICAS DE MOVILIZACIÓN DE PACIENTES, EL TRASLADO DEL PACIENTE ENCAMADO, EN SILLAS DE RUEDAS Y CAMILLA / UTILIZACIÓN DE MEDIOS MECÁNICOS EN LA MOVILIZACIÓN DE PACIENTES / TRASLADO DE DOCUMENTACIÓN, APARATOS, MOBILIARIO Y OBJETOS.",
+  "oppositionCode": "celador-sms",
+  "oppositionId": "00000000-0000-4000-8000-000000000002",
+  "subjectName": "Celador SMS · Parte Específica",
+  "subjectId": "481a5602-8a4d-4236-b5a5-c1b8b342f941",
+  "topicId": "1f4a5e28-51c0-47c9-8ef1-1189a62ab152",
+  "status": "production-green",
+  "writePreflight": {
+    "read": "GREEN",
+    "rollbackOnlyDml": "GREEN",
+    "postRollbackIdentity": "GREEN",
+    "residue": 0
+  },
+  "sourcePolicy": {
+    "primarySource": {
+      "document": "20260505122707144.pdf",
+      "physicalPages": "3-28",
+      "sha256": "e3819313ef1a557bdf0606a5000371dd18df841c4182bb2f5916daab912b8761",
+      "transport": "T11_CANONICAL.pdf",
+      "transportPages": 26,
+      "transportSha256": "c859559d203ab09752018997ceaeb4c615ce9c3a43d55187cbea26a0ee630a32",
+      "readMode": "visual-multimodal",
+      "substantiveExclusive": true,
+      "ocrAsSubstantiveTruth": false
+    },
+    "examReferenceOnly": {
+      "rows": 22,
+      "supported": 22,
+      "examSourceMismatch": 0,
+      "outdatedOrUnclear": 0,
+      "rule": "Exam material informed frequency, style and traps only; it did not supply substantive facts."
+    },
+    "externalSourcesUsed": [],
+    "factory9Opened": false
+  },
+  "sourceCoverage": {
+    "authorizedPhysicalPages": [3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28],
+    "pagesAudited": 26,
+    "evaluableFacets": 214,
+    "facetsCovered": 214,
+    "coveragePercentage": 100,
+    "unexploitedEvaluableFacets": 0,
+    "sourceCoverageGapsRemaining": 0,
+    "sourceReviewRequiredRemaining": 0,
+    "page19Disposition": "Visual recap of transport rules already covered by the adjacent substantive pages; no independent new fact.",
+    "pageQuestionCoverage": {"3":10,"4":11,"5":5,"6":10,"7":10,"8":11,"9":10,"10":6,"11":6,"12":11,"13":6,"14":9,"15":8,"16":12,"17":9,"18":4,"19":0,"20":11,"21":8,"22":5,"23":8,"24":5,"25":10,"26":12,"27":9,"28":8}
+  },
+  "bankDepth": {
+    "priority": "BANK_DEPTH_AND_USER_EXHAUSTION_RESISTANCE",
+    "fourPrimaryPerMastery": "TECHNICAL_FLOOR_NOT_PRODUCTION_TARGET",
+    "finalActiveQuestions": 214,
+    "masteryConcepts": 38,
+    "minPrimaryPerConcept": 5,
+    "maxPrimaryPerConcept": 6,
+    "sourceLimitedConcepts": 0,
+    "unexploitedEvaluableFacets": 0,
+    "nearDuplicateInflationAllowed": false,
+    "status": "GREEN"
+  },
+  "production": {
+    "finalActiveQuestions": 214,
+    "codeRange": "SMS-CEL-E-T05-0001..0214",
+    "generationReason": "SOURCE_COVERAGE_MASTERY_AND_BANK_DEPTH_CLOSURE",
+    "answerBalance": {"A":54,"B":54,"C":53,"D":53},
+    "levelBalance": {"aprendizaje":72,"consolidacion":71,"tribunal":71},
+    "duplicateQuestionRows": 0,
+    "duplicateOptionsWithinQuestion": 0,
+    "missingRequiredRows": 0,
+    "outOfScopeQuestionHits": 0,
+    "wrongOppositionRows": 0,
+    "finalQuestionImportStatus": "GREEN"
+  },
+  "masteryAndStudy": {
+    "units": 8,
+    "concepts": 38,
+    "primaryMappings": 214,
+    "secondaryMappings": 0,
+    "unmappedQuestions": 0,
+    "multiPrimaryQuestions": 0,
+    "flashcards": 76,
+    "minFlashcardsPerConcept": 2,
+    "sourceLimitedConcepts": 0,
+    "importId": "db6b27d0-e7e8-4faf-9f7b-d90de394d77e",
+    "sourceRevision": "Factory.8:T11:20260505122707144.pdf:pp3-28:c859559d203ab09752018997ceaeb4c615ce9c3a43d55187cbea26a0ee630a32"
+  },
+  "smokes": {
+    "curatorRollback": {
+      "v2": {"aprendizaje":5,"consolidacion":5,"tribunal":5,"smart":5,"status":"GREEN"},
+      "v3": {"recommendedSelection":5,"status":"GREEN"},
+      "v4": {"openedUnitConcepts":10,"openedUnitFlashcards":20,"todayContextConcepts":38,"status":"GREEN"}
+    },
+    "freshUserRollback": {
+      "ownedTopics": 0,
+      "ownedQuestions": 0,
+      "visibleT11Questions": 214,
+      "visibleT11Units": 8,
+      "visibleT11Concepts": 38,
+      "v2Learning": 5,
+      "v2Smart": 5,
+      "v3Recommended": 5,
+      "v4OpenedConcepts": 10,
+      "v4TodayConcepts": 38,
+      "selectedCeladorQuestions": 15,
+      "selectedAuxiliarQuestions": 0,
+      "residue": {"authUsers":0,"profiles":0,"memberships":0,"preparationProfiles":0,"tests":0,"statistics":0},
+      "status": "GREEN"
+    }
+  },
+  "contamination": {
+    "beforeOutsideT11": {"celadorActiveQuestions":339,"units":7,"concepts":35,"primaryMappings":154,"flashcards":60,"auxActiveQuestions":4466},
+    "afterOutsideT11": {"celadorActiveQuestions":339,"units":7,"concepts":35,"primaryMappings":154,"flashcards":60,"auxActiveQuestions":4466},
+    "finalCeladorActiveQuestions": 553,
+    "wrongScopeRows": 0,
+    "mappingContamination": 0,
+    "flashcardContamination": 0,
+    "status": "GREEN"
+  },
+  "quality": {
+    "questions": 553,
+    "equalOptions": 0,
+    "duplicateStems": 0,
+    "missingConcept": 0,
+    "missingReference": 0,
+    "missingPerspective": 0,
+    "insufficientStageCapacity": 0,
+    "status": "GREEN"
+  },
+  "governance": {
+    "questionFacetNotMastery": true,
+    "noQuotaGeneration": true,
+    "bankDepthPriority": true,
+    "sharedCatalogFreshUserGate": "GREEN",
+    "crossOppositionIsolation": "GREEN",
+    "officialNumberReset": "General 1-6 / Específica 1-7 preserved through subject identity",
+    "factory9Opened": false
+  },
+  "notes": [
+    "No web or external substantive knowledge was used.",
+    "All 26 authorized pages were read visually before production.",
+    "Two failed import attempts were fully atomic and left zero residue: the first exposed the active-opposition trigger ordering, the second the current flashcard type catalog. The corrected transaction completed successfully.",
+    "QUESTION FACET remained separate from MASTERY; 214 independent evaluable facets map to 38 stable mastery concepts."
+  ]
+}
