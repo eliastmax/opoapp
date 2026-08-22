@@ -1,0 +1,152 @@
+{
+  "$schema": "OpoTestV4SourceManifestV1",
+  "manifestVersion": "1.0.0",
+  "factoryVersion": "8",
+  "generatorVersion": "Factory.8-fast-production-2026-08-22",
+  "mainPinned": "ae241f30fff8e2687025c715da4917813a20508c",
+  "topicNumber": 1,
+  "topicTitle": "La Constitución Española. Derechos y deberes fundamentales. La protección de la salud en la Constitución. Las Cortes Generales. El Gobierno y la Administración.",
+  "oppositionCode": "auxiliar-administrativo-sms",
+  "topicId": "827baaed-1aa8-4a17-8ef4-f4d6afdfd4b5",
+  "status": "production-green",
+  "sourcePolicy": {
+    "substantiveSources": [
+      {
+        "document": "PARTE GENERAL AUX ADMINISTRATIVO SMS.pdf",
+        "physicalPages": "7-25",
+        "sha256": "f0d053527e7b39b47ac1c68171fdbaf6535055328bebfefc5dd3e73645d6a8f0",
+        "transport": "PARTE_GENERAL_T01_CANONICAL.pdf",
+        "transportPages": 19,
+        "transportSha256": "e5013c6b68fd9b9def52436f9fd5bd8e931bd870851ed595766b4a21dc9d63cf",
+        "readMode": "visual-multimodal"
+      }
+    ],
+    "externalSourcesUsed": [],
+    "temarioRole": "title-only",
+    "excludedPhysicalPages": ["26-28"],
+    "factory9Opened": false
+  },
+  "sourceCoverage": {
+    "physicalPageRange": "7-25",
+    "pagesAudited": 19,
+    "sourceCoverageGapItemsClosed": 44,
+    "sourceCoverageGapsRemaining": 0,
+    "sourceReviewRequiredRemaining": 0,
+    "pageAudit": [
+      {"physicalPage": 7, "status": "covered", "notes": "Index and T01 title structure audited."},
+      {"physicalPage": 8, "status": "covered", "notes": "Articles 4-10 audited; missing representation of articles 4-9 closed."},
+      {"physicalPage": 9, "status": "covered", "notes": "Articles 11-16 audited."},
+      {"physicalPage": 10, "status": "covered", "notes": "Articles 17-20 audited."},
+      {"physicalPage": 11, "status": "covered", "notes": "Articles 21-26 audited; article 26 representation closed."},
+      {"physicalPage": 12, "status": "covered", "notes": "Articles 27-30 audited."},
+      {"physicalPage": 13, "status": "covered", "notes": "Articles 31-38 audited; gaps in 31.3, 32, 34, 35.2 and 36 closed."},
+      {"physicalPage": 14, "status": "covered", "notes": "Articles 39-45 audited; gaps in 39.4, 40, 42 and 44 closed."},
+      {"physicalPage": 15, "status": "covered", "notes": "Continuation of article 45 and articles 46-52 audited; gaps in 46, 48, 51.3 and 52 closed."},
+      {"physicalPage": 16, "status": "covered", "notes": "Articles 53-55 audited; article 56 starts Crown content and was audited as outside the official T01 title."},
+      {"physicalPage": 17, "status": "covered", "notes": "Crown articles 62-65 audited as outside the official T01 title; article 66 audited and represented."},
+      {"physicalPage": 18, "status": "covered", "notes": "Articles 67-70 audited; election, territorial representation and incompatibility facets strengthened."},
+      {"physicalPage": 19, "status": "covered", "notes": "Continuation of article 70 and articles 71-75 audited; article 71.2 and article 74 facets strengthened."},
+      {"physicalPage": 20, "status": "covered", "notes": "Articles 76-81 audited; petition and plenary-publicity gaps closed."},
+      {"physicalPage": 21, "status": "covered", "notes": "Articles 82-87 audited; gaps in articles 84, 85 and 87.2 closed."},
+      {"physicalPage": 22, "status": "covered", "notes": "Continuation of article 87 and articles 88-93 audited; project/proposition processing gaps closed."},
+      {"physicalPage": 23, "status": "covered", "notes": "Articles 94-99 audited; treaty authorization, constitutional review and denunciation gaps closed."},
+      {"physicalPage": 24, "status": "covered", "notes": "Continuation of article 99 and articles 100-105 audited."},
+      {"physicalPage": 25, "status": "covered", "notes": "Continuation of article 105 and articles 106-107 audited; Title V articles 108-112 audited as outside the official T01 title."}
+    ]
+  },
+  "production": {
+    "initialActiveQuestions": 204,
+    "generatedQuestions": 44,
+    "finalActiveQuestions": 248,
+    "answerBalance": {"A": 62, "B": 62, "C": 62, "D": 62},
+    "levelBalance": {"aprendizaje": 82, "consolidacion": 83, "tribunal": 83},
+    "qaHardenedRows": 40,
+    "lengthOutliersRemaining": 0,
+    "duplicateQuestionRows": 0,
+    "exactRepeatedOptionSetGroups": 0,
+    "duplicateOptionsWithinQuestion": 0,
+    "unsupportedQuestionsRemaining": 0,
+    "badSourceRows": 0,
+    "badPageRows": 0,
+    "missingRequiredRows": 0
+  },
+  "masteryAndStudy": {
+    "units": 6,
+    "concepts": 24,
+    "primaryMappings": 248,
+    "unmappedQuestions": 0,
+    "multiPrimaryQuestions": 0,
+    "flashcards": 48,
+    "sourceLimitedConcepts": 0,
+    "minPrimaryQuestionsPerConcept": 6,
+    "maxPrimaryQuestionsPerConcept": 20,
+    "minFlashcardsPerConcept": 2,
+    "importId": "ec228104-2156-4d80-9b72-fcaae8d194c6",
+    "sourceRevision": "Factory.8:T01:PARTE_GENERAL_pp7-25:e5013c6b68fd9b9def52436f9fd5bd8e931bd870851ed595766b4a21dc9d63cf"
+  },
+  "smokes": {
+    "v4": {
+      "studyUnitOpen": "GREEN",
+      "conceptQuestionCapacity": "GREEN",
+      "flashcardInventory": "GREEN",
+      "todayContext": "NOT_APPLICABLE_USER_STATE_DAYS_REMAINING_0"
+    },
+    "v2": {
+      "learningLevelTest": 5,
+      "consolidationLevelTest": 5,
+      "tribunalLevelTest": 5,
+      "smartTest": 5,
+      "status": "GREEN"
+    },
+    "v3": {
+      "recommendedTest": 5,
+      "weeklyRoadmapRows": 1,
+      "status": "GREEN"
+    },
+    "smokeResidueRows": 0
+  },
+  "contamination": {
+    "beforeOutsideT01": {
+      "questionsTotal": 4394,
+      "questionsActive": 4375,
+      "questionsInactive": 19,
+      "units": 133,
+      "concepts": 529,
+      "primaryMappings": 3287,
+      "flashcards": 1063
+    },
+    "afterOutsideT01": {
+      "questionsTotal": 4394,
+      "questionsActive": 4375,
+      "questionsInactive": 19,
+      "units": 133,
+      "concepts": 529,
+      "primaryMappings": 3287,
+      "flashcards": 1063
+    },
+    "status": "GREEN"
+  },
+  "stateSnapshot": {
+    "questionsTotal": 4642,
+    "questionsActive": 4623,
+    "questionsInactive": 19,
+    "units": 139,
+    "concepts": 553,
+    "primaryMappings": 3535,
+    "flashcards": 1111,
+    "otherOppositionQuestionRows": 185
+  },
+  "regressionFloor": {
+    "scope": "T07-T24 + Factory.8 approved replay + accordion visual",
+    "dataIsolation": "outside-T01 state exact match",
+    "qualityGate": "GitHub Actions before normal merge"
+  },
+  "factory9Opened": false,
+  "notes": [
+    "No web, BOE/BORM website, academy source or external substantive knowledge was used.",
+    "The canonical transport PDF was read visually; OCR was not used as substantive truth.",
+    "Physical pages 26-28 were not used.",
+    "Generation followed source-coverage gaps rather than a numeric quota.",
+    "All source_limited concepts were challenged in the same pass; none remained source_limited."
+  ]
+}
