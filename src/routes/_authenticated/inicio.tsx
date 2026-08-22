@@ -14,6 +14,7 @@ import {
 import { WeeklyRoadmapSummary } from "@/components/weekly-roadmap";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -128,6 +129,45 @@ function InicioPage() {
     session: data?.session ?? null,
     plan,
   });
+  const studySummary = useMemo(() => {
+    const rows = data?.rows ?? [];
+    if (rows.length === 0) return null;
+
+    const preferredTopicId =
+      plan.blocks[0]?.topicId ??
+      rows.find((row) => !row.unit_completed)?.topic_id ??
+      rows[0]?.topic_id;
+    if (!preferredTopicId) return null;
+
+    const topicRows = rows.filter((row) => row.topic_id === preferredTopicId);
+    if (topicRows.length === 0) return null;
+
+    const units = new Map<
+      string,
+      { completed: boolean; position: number; title: string }
+    >();
+    for (const row of topicRows) {
+      const current = units.get(row.study_unit_id);
+      units.set(row.study_unit_id, {
+        completed: (current?.completed ?? false) || row.unit_completed,
+        position: Math.min(current?.position ?? row.unit_position, row.unit_position),
+        title: current?.title ?? row.study_unit_title,
+      });
+    }
+
+    const unitList = [...units.values()].sort((a, b) => a.position - b.position);
+    const completedUnits = unitList.filter((unit) => unit.completed).length;
+    const nextUnit = unitList.find((unit) => !unit.completed) ?? null;
+    const topic = topicRows[0];
+
+    return {
+      topicNumber: topic.topic_number,
+      topicName: topic.topic_name,
+      completedUnits,
+      totalUnits: unitList.length,
+      nextUnitTitle: nextUnit?.title ?? null,
+    };
+  }, [data?.rows, plan]);
 
   async function startToday() {
     if (data?.session) return void navigate({ to: "/sesion" });
@@ -150,7 +190,12 @@ function InicioPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="relative isolate space-y-4">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-20 -z-10 h-72 w-[92%] max-w-md -translate-x-1/2 rounded-full bg-primary/10 blur-3xl"
+      />
+
       <header className="pt-1">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Hoy</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight">
@@ -184,18 +229,55 @@ function InicioPage() {
       {!isLoading && !error && data?.unfinished && <UnfinishedTestCard test={data.unfinished} />}
       {!isLoading && !error && data?.preparationConfigured && <WeeklyRoadmapSummary />}
       {!isLoading && !error && data?.preparationConfigured && (
-        <Link to="/estudio" className="block">
-          <Card className="flex items-center gap-3 border-border/70 bg-card/70 p-3.5 transition-colors hover:bg-accent/40">
-            <span className="rounded-xl bg-primary/10 p-2 text-primary">
-              <BookOpen className="h-4 w-4" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold">Centro de estudio</p>
-              <p className="text-xs text-muted-foreground">
-                Consulta unidades y puntos de atención
-              </p>
+        <Link to="/estudio" className="group block">
+          <Card className="border-primary/10 bg-card/85 p-4 shadow-[0_16px_36px_-28px_oklch(0.32_0.14_250/0.5)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-card focus-within:ring-2 focus-within:ring-primary/25">
+            <div className="flex items-start gap-3">
+              <span className="rounded-xl bg-primary/10 p-2.5 text-primary ring-1 ring-primary/10">
+                <BookOpen className="h-4 w-4" aria-hidden="true" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-bold">Centro de estudio</p>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-primary transition-transform duration-200 group-hover:translate-x-0.5" />
+                </div>
+                {studySummary ? (
+                  <>
+                    <p className="mt-1 truncate text-sm font-semibold">
+                      Tema {studySummary.topicNumber} · {studySummary.topicName}
+                    </p>
+                    <div className="mt-3 flex items-center justify-between gap-3 text-[11px] font-semibold text-muted-foreground">
+                      <span>
+                        {studySummary.completedUnits} de {studySummary.totalUnits} unidades
+                      </span>
+                      <span className="text-primary">
+                        {studySummary.totalUnits > 0 &&
+                        studySummary.completedUnits >= studySummary.totalUnits
+                          ? "Completado"
+                          : "Continuar"}
+                      </span>
+                    </div>
+                    <Progress
+                      value={
+                        studySummary.totalUnits > 0
+                          ? (studySummary.completedUnits / studySummary.totalUnits) * 100
+                          : 0
+                      }
+                      className="mt-1.5 h-1.5"
+                      aria-label={`${studySummary.completedUnits} de ${studySummary.totalUnits} unidades completadas en el tema ${studySummary.topicNumber}`}
+                    />
+                    {studySummary.nextUnitTitle ? (
+                      <p className="mt-2 truncate text-xs text-muted-foreground">
+                        Siguiente: {studySummary.nextUnitTitle}
+                      </p>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Tu temario está listo para continuar
+                  </p>
+                )}
+              </div>
             </div>
-            <ArrowRight className="h-4 w-4 text-muted-foreground" />
           </Card>
         </Link>
       )}
@@ -370,21 +452,29 @@ function PrimaryCard({
   return (
     <Card
       data-tour="today-session"
-      className="overflow-hidden border-0 bg-gradient-to-br from-primary via-primary to-[oklch(0.47_0.12_225)] text-primary-foreground shadow-[0_24px_52px_-28px_oklch(0.3_0.14_250/0.9)]"
+      className="relative overflow-hidden border-0 bg-gradient-to-br from-primary via-primary to-[oklch(0.46_0.13_228)] text-primary-foreground shadow-[0_26px_56px_-28px_oklch(0.3_0.14_250/0.95)] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-300"
     >
-      <div className="p-5">
-        <div className="flex items-start gap-3">
-          <span className="rounded-xl bg-white/15 p-2.5 ring-1 ring-white/20">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-16 -top-20 h-52 w-52 rounded-full bg-white/10 blur-3xl"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-24 -left-14 h-44 w-44 rounded-full bg-cyan-200/10 blur-3xl"
+      />
+      <div className="relative p-5 sm:p-6">
+        <div className="flex items-start gap-3.5">
+          <span className="rounded-2xl bg-white/15 p-2.5 ring-1 ring-white/20">
             <Icon className="h-5 w-5" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/70">{eyebrow}</p>
-            <h2 className="mt-1 text-xl font-bold leading-tight">{title}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-white/85">{description}</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/72">{eyebrow}</p>
+            <h2 className="mt-1.5 text-[1.35rem] font-bold leading-[1.15] tracking-tight">{title}</h2>
+            <p className="mt-2.5 text-[15px] leading-relaxed text-white/88">{description}</p>
           </div>
         </div>
         {method && (
-          <div className="mt-4 flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.08em] text-white/85">
+          <div className="mt-5 flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.08em] text-white/88 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:delay-100 motion-safe:duration-300">
             <span>Estudiar</span>
             <ArrowRight className="h-3 w-3" />
             <span>Recordar</span>
@@ -393,14 +483,14 @@ function PrimaryCard({
           </div>
         )}
         {meta && (
-          <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-white/85 [&>span]:inline-flex [&>span]:items-center [&>span]:gap-1.5 [&>span]:rounded-full [&>span]:bg-white/12 [&>span]:px-3 [&>span]:py-1.5 [&>span]:ring-1 [&>span]:ring-white/15">
+          <div className="mt-4 flex flex-wrap gap-2 text-[13px] font-semibold text-white/88 [&>span]:inline-flex [&>span]:items-center [&>span]:gap-1.5 [&>span]:rounded-full [&>span]:bg-white/12 [&>span]:px-3 [&>span]:py-1.5 [&>span]:ring-1 [&>span]:ring-white/15">
             {meta}
           </div>
         )}
         <Button
           onClick={onAction}
           disabled={loading}
-          className="mt-5 h-12 w-full bg-white text-primary hover:bg-white/90"
+          className="mt-5 h-12 w-full bg-white text-primary shadow-sm transition-transform duration-200 hover:bg-white/92 active:scale-[0.995]"
         >
           {loading ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
