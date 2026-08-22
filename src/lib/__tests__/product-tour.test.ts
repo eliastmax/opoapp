@@ -79,6 +79,41 @@ describe("first-run spotlight tour", () => {
     expect(study).toContain('"study-topic"');
   });
 
+  it("keeps the approved concise UX-writing sequence with one selective emphasis per step", () => {
+    expect(PRODUCT_TOUR_STEPS.map(({ title, description }) => ({ title, description }))).toEqual([
+      {
+        title: "Empieza por aquí",
+        description: "OpoTest te propone qué hacer ahora: estudiar, practicar o repasar.",
+      },
+      {
+        title: "Aquí está todo tu temario",
+        description: "Entra en cualquier tema, estudia sus unidades y ve qué has avanzado y qué te queda.",
+      },
+      {
+        title: "Estudia cada tema por partes",
+        description: "Cada tema se divide en unidades para que puedas avanzar poco a poco sin perderte.",
+      },
+      {
+        title: "Comprueba qué sabes de verdad",
+        description: "Haz tests para descubrir qué dominas, dónde fallas y qué necesitas reforzar.",
+      },
+      {
+        title: "Vuelve a lo que todavía falla",
+        description: "Tus fallos, dudas y puntos débiles vuelven para que puedas trabajarlos otra vez.",
+      },
+      {
+        title: "Siempre sabrás qué hacer después",
+        description: "Estudias, practicas y refuerzas. Con tu progreso, OpoTest te propone el siguiente paso.",
+      },
+    ]);
+    for (const step of PRODUCT_TOUR_STEPS) {
+      expect(step.emphasis.length).toBeGreaterThan(0);
+      expect(step.description).toContain(step.emphasis);
+    }
+    expect(component).toContain("EmphasizedDescription");
+    expect(component).toContain("font-semibold text-foreground");
+  });
+
   it("renders a measured spotlight and anchored coach mark without mockups", () => {
     expect(component).toContain("getBoundingClientRect");
     expect(component).toContain("scrollIntoView");
@@ -90,6 +125,24 @@ describe("first-run spotlight tour", () => {
     expect(component).toContain('setAttribute("inert"');
     expect(component).not.toContain("TourVisual");
     expect(component).not.toContain("DialogContent");
+  });
+
+  it("keeps the coach mark compact, icon-free and safe on narrow mobile viewports", () => {
+    expect(component).toContain("Math.min(340, viewportWidth - 32)");
+    expect(component).toContain("viewportWidth - width - 16");
+    expect(component).toContain('className="mt-1 text-lg font-semibold leading-tight"');
+    expect(component).toContain('className="mt-2 text-[15px] leading-[1.45] text-muted-foreground"');
+    expect(component).not.toContain("ArrowLeft");
+    expect(component).not.toContain("ArrowRight");
+  });
+
+  it("sequences exit, target location and re-entry while preserving the scrim across routes", () => {
+    expect(component).toContain("setPopoverVisible(false)");
+    expect(component).toContain("setRouteTransition(true)");
+    expect(component).toContain("prefersReducedMotion() ? 0 : 120");
+    expect(component).toContain("prefersReducedMotion() ? 0 : 220");
+    expect(component).toContain("routeTransition ? 1 : 0");
+    expect(component).toContain("motion-reduce:transition-none");
   });
 
   it("persists completion and skip while replay preserves prior state", () => {
