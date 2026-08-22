@@ -4,6 +4,7 @@ export type RecoveryUrlState = {
   accessToken: string | null;
   refreshToken: string | null;
   code: string | null;
+  tokenHash: string | null;
 };
 
 export function readRecoveryUrlState(url: Pick<Location, "hash" | "search">): RecoveryUrlState {
@@ -14,13 +15,16 @@ export function readRecoveryUrlState(url: Pick<Location, "hash" | "search">): Re
   const accessToken = value("access_token");
   const refreshToken = value("refresh_token");
   const code = value("code");
+  const tokenHash = value("token_hash");
   return {
     hasRecoveryProof:
       (value("type") === "recovery" && Boolean(accessToken) && Boolean(refreshToken)) ||
+      (value("type") === "recovery" && Boolean(tokenHash)) ||
       Boolean(code),
     invalidReason,
     accessToken,
     refreshToken,
     code,
+    tokenHash,
   };
 }
