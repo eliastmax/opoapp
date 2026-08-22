@@ -386,7 +386,7 @@ function SpotlightTour({
         aria-hidden={!popoverVisible}
         aria-labelledby="tour-title"
         aria-describedby="tour-description"
-        className="fixed z-[70] rounded-2xl border border-border/80 bg-card p-4 text-card-foreground shadow-[0_20px_55px_-18px_rgb(0_0_0/0.55)] transition-[opacity,transform] ease-out motion-reduce:transition-none"
+        className="fixed z-[70] rounded-2xl border border-border/80 bg-card p-4 text-card-foreground shadow-[0_20px_55px_-18px_rgb(0_0_0/0.55)] transition-[opacity,transform] ease-out min-[390px]:p-[18px] motion-reduce:transition-none"
         style={{
           top,
           left,
@@ -408,36 +408,36 @@ function SpotlightTour({
           }`}
         />
         <div className="flex items-center justify-between gap-3">
-          <span className="text-xs font-medium text-muted-foreground">
+          <span className="text-[13px] font-medium leading-none text-muted-foreground">
             {step + 1} de {PRODUCT_TOUR_STEPS.length}
           </span>
           <Button
             variant="ghost"
             size="sm"
-            className="h-9 px-2.5 text-muted-foreground"
+            className="h-8 px-2 text-[13px] font-medium text-muted-foreground"
             onClick={onSkip}
             tabIndex={popoverVisible ? 0 : -1}
           >
             Omitir
           </Button>
         </div>
-        <h2 id="tour-title" className="mt-1 text-lg font-semibold leading-tight">
+        <h2
+          id="tour-title"
+          className="mt-3 text-[19px] font-semibold leading-[1.2] min-[390px]:text-xl"
+        >
           {item.title}
         </h2>
-        <p
-          id="tour-description"
-          className="mt-2 text-[15px] leading-[1.45] text-muted-foreground"
-        >
+        <p id="tour-description" className="mt-2 text-base leading-[1.45] text-muted-foreground">
           <EmphasizedDescription description={item.description} emphasis={item.emphasis} />
         </p>
         <div
-          className={`mt-4 flex items-center gap-2 ${step > 0 ? "justify-between" : "justify-end"}`}
+          className={`mt-5 flex items-center gap-2 ${step > 0 ? "justify-between" : "justify-end"}`}
         >
           {step > 0 && (
             <Button
               variant="ghost"
               size="sm"
-              className="h-10 px-2.5 text-muted-foreground"
+              className="h-10 px-2.5 text-[15px] font-semibold text-muted-foreground"
               onClick={() => queueStep(step - 1)}
               aria-label="Paso anterior"
               tabIndex={popoverVisible ? 0 : -1}
@@ -448,7 +448,7 @@ function SpotlightTour({
           <Button
             data-tour-primary
             size="sm"
-            className="h-10"
+            className="h-10 px-4 text-[15px] font-semibold"
             onClick={() => (item.final ? onFinish() : queueStep(step + 1))}
             tabIndex={popoverVisible ? 0 : -1}
           >
