@@ -14,7 +14,7 @@ import { postAuthRoute } from "@/lib/post-auth-route";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { mode: "intro" | AuthTab } => ({
     mode: search.mode === "login" || search.mode === "signup" ? search.mode : "intro",
   }),
   beforeLoad: async () => { const { data } = await supabase.auth.getSession(); if (data.session) { const target = await postAuthRoute(data.session.user.id); throw redirect({ to: target }); } },

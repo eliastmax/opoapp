@@ -57,6 +57,7 @@ export function PreAuthIntro({
 
   const isEntry = step === ENTRY_STEP;
   const current = isEntry ? PRE_AUTH_ENTRY : PRE_AUTH_INTRO_STEPS[step];
+  const currentVisual = isEntry ? null : PRE_AUTH_INTRO_STEPS[step].visual;
 
   return (
     <div className="min-h-[100svh] bg-background">
@@ -108,7 +109,7 @@ export function PreAuthIntro({
           </div>
 
           <div className={`mt-5 min-h-0 flex-1 ${isEntry ? "flex items-center" : "min-h-[210px]"}`}>
-            {isEntry ? <EntryVisual /> : <ValueVisual visual={current.visual} />}
+            {currentVisual ? <ValueVisual visual={currentVisual} /> : <EntryVisual />}
           </div>
         </main>
 
