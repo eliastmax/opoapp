@@ -92,6 +92,17 @@ describe("first-run spotlight tour", () => {
     expect(component).not.toContain("DialogContent");
   });
 
+  it("uses selective emphasis and continuous coach-mark motion", () => {
+    expect(PRODUCT_TOUR_STEPS.every((step) => step.description.includes(step.emphasis))).toBe(true);
+    expect(component).toContain("EmphasizedDescription");
+    expect(component).toContain("font-semibold text-card-foreground");
+    expect(component).toContain("setPopoverVisible(false)");
+    expect(component).toContain("duration-200 ease-out");
+    expect(component).toContain("scale-[0.98]");
+    expect(component).toContain("transition-[top,left,width,height,opacity]");
+    expect(component).not.toContain("zoom-in-95");
+  });
+
   it("persists completion and skip while replay preserves prior state", () => {
     expect(component).toContain('persist("skipped")');
     expect(component).toContain('persist("completed")');
