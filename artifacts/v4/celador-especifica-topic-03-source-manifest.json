@@ -1,0 +1,135 @@
+{
+  "$schema": "OpoTestV4SourceManifestV1",
+  "manifestVersion": "1.0.0",
+  "factoryVersion": "8",
+  "generatorVersion": "Factory.8-fast-production-2026-08-22",
+  "mainPinned": "a29cfe7a97beb4870bd1b25ff979aecc4dcda12b",
+  "continuationMainAtClosure": "ffe1a2527f856cbe01ba0e03d2451934dac4b57e",
+  "topicGlobal": "T09",
+  "section": "Parte Específica",
+  "officialTopicNumber": 3,
+  "topicTitle": "EL CELADOR EN SU PUESTO DE TRABAJO (II): SERVICIO DE REHABILITACIÓN; CONSULTAS EXTERNAS HOSPITALARIAS Y EXTRAHOSPITALARIAS; EQUIPOS DE ATENCIÓN PRIMARIA.",
+  "oppositionCode": "celador-sms",
+  "oppositionId": "00000000-0000-4000-8000-000000000002",
+  "subjectName": "Celador SMS · Parte Específica",
+  "subjectId": "481a5602-8a4d-4236-b5a5-c1b8b342f941",
+  "topicId": "88ab8c8f-067c-4779-a217-0b3a1d2d3024",
+  "status": "production-green",
+  "architecture": {
+    "topicIdentity": "subject + official topic number",
+    "decision": "OPTION_B_TWO_SUBJECTS",
+    "generalTopic3PreservedQuestions": 80,
+    "specificTopic6PreservedQuestions": 105,
+    "catalogRecreated": false,
+    "oppositionIdPreserved": true,
+    "v4ImporterIdentity": "oppositionCode + subjectName + topicNumber; subjectName required when number is ambiguous",
+    "migrations": [
+      "20260822114000_celador_topic_identity_sections.sql",
+      "20260822115000_v4_content_importer_subject_identity.sql"
+    ],
+    "factory9Opened": false
+  },
+  "sourcePolicy": {
+    "primarySource": {
+      "document": "20260505122620401.pdf",
+      "physicalPages": "3-6",
+      "sha256": "0231de248ef332362c16c4ec98059d90a17de5a805a500343650fc06c49a8fd8",
+      "transport": "T09_CANONICAL.pdf",
+      "transportPages": 4,
+      "transportSha256": "f19caf9b5ddd0df79808eafed85d8f2cd4676e3a831d3eed881aef520eb26b6c",
+      "readMode": "visual-multimodal",
+      "substantiveExclusive": true
+    },
+    "examReferenceOnly": {
+      "rows": 10,
+      "supported": 8,
+      "examSourceMismatch": 1,
+      "outdatedOrUnclear": 1,
+      "mismatchQuestionIds": ["FAM_META2019_LB_Q43"],
+      "outdatedQuestionIds": ["FAM_META2023_PI_Q13"],
+      "rule": "Exam material informed frequency/style only and did not complete source gaps."
+    },
+    "externalSourcesUsed": [],
+    "factory9Opened": false
+  },
+  "sourceCoverage": {
+    "authorizedPhysicalPages": [3,4,5,6],
+    "pagesAudited": 4,
+    "evaluableAtoms": 60,
+    "atomsCovered": 60,
+    "coveragePercentage": 100,
+    "sourceCoverageGapsRemaining": 0,
+    "sourceReviewRequiredRemaining": 0,
+    "pageQuestionCoverage": {"3":21,"4":18,"5":16,"6":12},
+    "pageAudit": [
+      {"physicalPage":3,"status":"covered","notes":"Rehabilitación: apoyo al fisioterapeuta, vigilancia/acceso/orden, traslados, material e instalaciones, ayuda asistencial y límites de información clínica."},
+      {"physicalPage":4,"status":"covered","notes":"Consultas externas y ambulancias: apoyo, orden/información, traslados, paso entre camillas, ayuda al conductor y acompañamiento."},
+      {"physicalPage":5,"status":"covered","notes":"EAP y SUAP: dotación, funciones principales, horario/composición/guardias y sistema SURE; inicio de traslados SUAP."},
+      {"physicalPage":6,"status":"covered","notes":"SUAP: traslados de pacientes/muestras, funciones operativas y delegadas, recepción/vigilancia, SIAP y documentación diaria de ambulancia."}
+    ]
+  },
+  "production": {
+    "initialImportedQuestions": 39,
+    "generatedPendingQuestions": 26,
+    "finalActiveQuestions": 65,
+    "codeRange": "SMS-CEL-E-T03-0001..0065",
+    "generationReason": "SOURCE_COVERAGE_AND_MASTERY_CAPACITY_CLOSURE_ONLY",
+    "answerBalance": {"A":17,"B":16,"C":16,"D":16},
+    "levelBalance": {"aprendizaje":22,"consolidacion":22,"tribunal":21},
+    "duplicateQuestionRows": 0,
+    "duplicateOptionsWithinQuestion": 0,
+    "missingRequiredRows": 0,
+    "outOfScopeQuestionHits": 0,
+    "wrongOppositionRows": 0,
+    "failedAtomicImportAttemptsRolledBack": 3,
+    "finalQuestionImportStatus": "GREEN"
+  },
+  "masteryAndStudy": {
+    "units": 3,
+    "concepts": 16,
+    "primaryMappings": 65,
+    "secondaryMappings": 0,
+    "unmappedQuestions": 0,
+    "multiPrimaryQuestions": 0,
+    "flashcards": 22,
+    "sourceLimitedConcepts": 6,
+    "sourceLimited": [
+      {"code":"CEL-E-T03-C05","ceiling":3},
+      {"code":"CEL-E-T03-C07","ceiling":3},
+      {"code":"CEL-E-T03-C08","ceiling":3},
+      {"code":"CEL-E-T03-C09","ceiling":2},
+      {"code":"CEL-E-T03-C12","ceiling":3},
+      {"code":"CEL-E-T03-C16","ceiling":3}
+    ],
+    "standardConceptsAtOrAboveThreshold": 10,
+    "importId": "c07c2cc5-82b0-4952-b4ce-d2b56c35c9fe",
+    "sourceRevision": "Factory.8:CELADOR:E-T03:20260505122620401.pdf:physical_pp3-6:0231de248ef332362c16c4ec98059d90a17de5a805a500343650fc06c49a8fd8"
+  },
+  "smokes": {
+    "v4": {"studyUnitOpenContract":"GREEN","todayContextConcepts":16,"sourceLimitedEvidenceC09":"2 primary / 1 flashcard","verifyOnUnseen":"EXPECTED_PEDAGOGICAL_GATE","flashcardInventory":22,"queueForFreshUnseenState":0,"status":"GREEN"},
+    "v2": {"learning":5,"consolidation":5,"tribunal":5,"smart":5,"status":"GREEN"},
+    "v3": {"recommendedSelection":5,"weeklyRoadmapRows":0,"weeklyRoadmapState":"NO_ROWS_FOR_ROLLBACK_SMOKE_CONTEXT","status":"GREEN"},
+    "crossOppositionSelected": 0,
+    "smokeResidueRows": 0,
+    "executionNote": "Authenticated rollback-only smokes executed against live RPCs under Celador active opposition."
+  },
+  "contamination": {
+    "beforeOutsideT09": {"questions":185,"activeQuestions":185,"units":0,"concepts":0,"primaryMappings":0,"flashcards":0,"auxActiveQuestions":4466,"generalT3":80,"specificT6":105},
+    "afterOutsideT09": {"questions":185,"activeQuestions":185,"units":0,"concepts":0,"primaryMappings":0,"flashcards":0,"auxActiveQuestions":4466,"generalT3":80,"specificT6":105},
+    "status": "GREEN"
+  },
+  "regressionFloor": {
+    "officialNumberReset": "General 1-6 / Específica 1-7 preserved",
+    "v4AmbiguousTopicNumber": "Fails closed without subjectName; exact subjectName supported",
+    "sharedCatalogArchitecture": "Pre-production architecture gate already GREEN",
+    "qualityGate": "GitHub Actions before normal merge"
+  },
+  "notes": [
+    "No web, external academy material or external substantive knowledge was used.",
+    "The four authorized physical pages were read visually/multimodally.",
+    "Exam references classified EXAM_SOURCE_MISMATCH or OUTDATED_OR_UNCLEAR were retained only as historical evidence.",
+    "No topic or question catalog rows were recreated to solve section identity.",
+    "QUESTION FACET remained separate from MASTERY; 16 mastery concepts cover 60 evaluable source atoms.",
+    "Generation was source-driven and capacity-driven, not quota-driven."
+  ]
+}
