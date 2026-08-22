@@ -11,7 +11,7 @@ import { postAuthRoute } from "@/lib/post-auth-route";
 import { readRecoveryUrlState } from "@/lib/recovery-session";
 import { toUserFacingError } from "@/lib/user-facing-error";
 
-export const Route = createFileRoute("/auth/recovery")({
+export const Route = createFileRoute("/password-recovery")({
   ssr: false,
   component: PasswordRecoveryPage,
 });
