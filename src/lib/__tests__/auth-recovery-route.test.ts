@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { readRecoveryUrlState } from "../recovery-session";
 
 const auth = readFileSync(new URL("../../routes/auth.tsx", import.meta.url), "utf8");
-const recovery = readFileSync(new URL("../../routes/auth.recovery.tsx", import.meta.url), "utf8");
+const recovery = readFileSync(new URL("../../routes/password-recovery.tsx", import.meta.url), "utf8");
 
 describe("dedicated password recovery route", () => {
   it("keeps normal authenticated users on the post-auth route", () => {
@@ -13,7 +13,7 @@ describe("dedicated password recovery route", () => {
   });
 
   it("never runs the normal login redirect on the recovery route", () => {
-    expect(recovery).toContain('createFileRoute("/auth/recovery")');
+    expect(recovery).toContain('createFileRoute("/password-recovery")');
     expect(recovery).not.toContain("beforeLoad");
     expect(recovery).not.toContain('to: "/inicio"');
   });
