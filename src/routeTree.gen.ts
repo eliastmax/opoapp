@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as PasswordRecoveryRouteImport } from './routes/password-recovery'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedAjustesRouteImport } from './routes/_authenticated/ajustes'
 import { Route as AuthenticatedCrearRouteImport } from './routes/_authenticated/crear'
@@ -24,7 +25,6 @@ import { Route as AuthenticatedPreparacionRouteImport } from './routes/_authenti
 import { Route as AuthenticatedProgresoRouteImport } from './routes/_authenticated/progreso'
 import { Route as AuthenticatedSesionRouteImport } from './routes/_authenticated/sesion'
 import { Route as AuthenticatedSimulacroRouteImport } from './routes/_authenticated/simulacro'
-import { Route as AuthRecoveryRouteImport } from './routes/auth.recovery'
 import { Route as AuthenticatedEstudiarUnitIdRouteImport } from './routes/_authenticated/estudiar.$unitId'
 import { Route as AuthenticatedRecordarUnitIdRouteImport } from './routes/_authenticated/recordar.$unitId'
 import { Route as AuthenticatedResultadosIdRouteImport } from './routes/_authenticated/resultados.$id'
@@ -42,6 +42,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PasswordRecoveryRoute = PasswordRecoveryRouteImport.update({
+  id: '/password-recovery',
+  path: '/password-recovery',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -105,11 +110,6 @@ const AuthenticatedSimulacroRoute = AuthenticatedSimulacroRouteImport.update({
   path: '/simulacro',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthRecoveryRoute = AuthRecoveryRouteImport.update({
-  id: '/recovery',
-  path: '/recovery',
-  getParentRoute: () => AuthRoute,
-} as any)
 const AuthenticatedEstudiarUnitIdRoute =
   AuthenticatedEstudiarUnitIdRouteImport.update({
     id: '/estudiar/$unitId',
@@ -136,7 +136,8 @@ const AuthenticatedTestIdRoute = AuthenticatedTestIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/password-recovery': typeof PasswordRecoveryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/ajustes': typeof AuthenticatedAjustesRoute
   '/crear': typeof AuthenticatedCrearRoute
@@ -149,7 +150,6 @@ export interface FileRoutesByFullPath {
   '/progreso': typeof AuthenticatedProgresoRoute
   '/sesion': typeof AuthenticatedSesionRoute
   '/simulacro': typeof AuthenticatedSimulacroRoute
-  '/auth/recovery': typeof AuthRecoveryRoute
   '/estudiar/$unitId': typeof AuthenticatedEstudiarUnitIdRoute
   '/recordar/$unitId': typeof AuthenticatedRecordarUnitIdRoute
   '/resultados/$id': typeof AuthenticatedResultadosIdRoute
@@ -157,7 +157,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/password-recovery': typeof PasswordRecoveryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/ajustes': typeof AuthenticatedAjustesRoute
   '/crear': typeof AuthenticatedCrearRoute
@@ -170,7 +171,6 @@ export interface FileRoutesByTo {
   '/progreso': typeof AuthenticatedProgresoRoute
   '/sesion': typeof AuthenticatedSesionRoute
   '/simulacro': typeof AuthenticatedSimulacroRoute
-  '/auth/recovery': typeof AuthRecoveryRoute
   '/estudiar/$unitId': typeof AuthenticatedEstudiarUnitIdRoute
   '/recordar/$unitId': typeof AuthenticatedRecordarUnitIdRoute
   '/resultados/$id': typeof AuthenticatedResultadosIdRoute
@@ -180,7 +180,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/auth': typeof AuthRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/password-recovery': typeof PasswordRecoveryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/ajustes': typeof AuthenticatedAjustesRoute
   '/_authenticated/crear': typeof AuthenticatedCrearRoute
@@ -193,7 +194,6 @@ export interface FileRoutesById {
   '/_authenticated/progreso': typeof AuthenticatedProgresoRoute
   '/_authenticated/sesion': typeof AuthenticatedSesionRoute
   '/_authenticated/simulacro': typeof AuthenticatedSimulacroRoute
-  '/auth/recovery': typeof AuthRecoveryRoute
   '/_authenticated/estudiar/$unitId': typeof AuthenticatedEstudiarUnitIdRoute
   '/_authenticated/recordar/$unitId': typeof AuthenticatedRecordarUnitIdRoute
   '/_authenticated/resultados/$id': typeof AuthenticatedResultadosIdRoute
@@ -204,6 +204,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/password-recovery'
     | '/sitemap.xml'
     | '/ajustes'
     | '/crear'
@@ -216,7 +217,6 @@ export interface FileRouteTypes {
     | '/progreso'
     | '/sesion'
     | '/simulacro'
-    | '/auth/recovery'
     | '/estudiar/$unitId'
     | '/recordar/$unitId'
     | '/resultados/$id'
@@ -225,6 +225,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/password-recovery'
     | '/sitemap.xml'
     | '/ajustes'
     | '/crear'
@@ -237,7 +238,6 @@ export interface FileRouteTypes {
     | '/progreso'
     | '/sesion'
     | '/simulacro'
-    | '/auth/recovery'
     | '/estudiar/$unitId'
     | '/recordar/$unitId'
     | '/resultados/$id'
@@ -247,6 +247,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/password-recovery'
     | '/sitemap.xml'
     | '/_authenticated/ajustes'
     | '/_authenticated/crear'
@@ -259,7 +260,6 @@ export interface FileRouteTypes {
     | '/_authenticated/progreso'
     | '/_authenticated/sesion'
     | '/_authenticated/simulacro'
-    | '/auth/recovery'
     | '/_authenticated/estudiar/$unitId'
     | '/_authenticated/recordar/$unitId'
     | '/_authenticated/resultados/$id'
@@ -269,7 +269,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  AuthRoute: typeof AuthRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  PasswordRecoveryRoute: typeof PasswordRecoveryRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
 
@@ -294,6 +295,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/password-recovery': {
+      id: '/password-recovery'
+      path: '/password-recovery'
+      fullPath: '/password-recovery'
+      preLoaderRoute: typeof PasswordRecoveryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -380,13 +388,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSimulacroRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/auth/recovery': {
-      id: '/auth/recovery'
-      path: '/recovery'
-      fullPath: '/auth/recovery'
-      preLoaderRoute: typeof AuthRecoveryRouteImport
-      parentRoute: typeof AuthRoute
-    }
     '/_authenticated/estudiar/$unitId': {
       id: '/_authenticated/estudiar/$unitId'
       path: '/estudiar/$unitId'
@@ -457,20 +458,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
-interface AuthRouteChildren {
-  AuthRecoveryRoute: typeof AuthRecoveryRoute
-}
-
-const AuthRouteChildren: AuthRouteChildren = {
-  AuthRecoveryRoute: AuthRecoveryRoute,
-}
-
-const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  AuthRoute: AuthRouteWithChildren,
+  AuthRoute: AuthRoute,
+  PasswordRecoveryRoute: PasswordRecoveryRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport
