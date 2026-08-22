@@ -97,7 +97,10 @@ function StudyCenterPage() {
         </Card>
       ) : (
         <>
-          <Card className="grid grid-cols-3 divide-x overflow-hidden p-0">
+          <Card
+            data-tour="study-progress"
+            className="grid grid-cols-3 divide-x overflow-hidden p-0"
+          >
             <Summary value={concepts.size} label="Conocimientos" />
             <Summary value={retained} label="Retenidos" />
             <Summary
@@ -126,7 +129,7 @@ function StudyCenterPage() {
           )}
           {[...grouped.entries()]
             .sort(([a], [b]) => a.localeCompare(b, "es", { numeric: true }))
-            .map(([topic, topicUnits]) => (
+            .map(([topic, topicUnits], index) => (
               <TopicUnitsAccordion
                 key={topic}
                 topic={topic}
@@ -135,6 +138,7 @@ function StudyCenterPage() {
                 onToggleUnit={(unitId) =>
                   setExpandedUnitId((current) => toggleExclusiveUnit(current, unitId))
                 }
+                tourTarget={index === 0}
               />
             ))}
         </>
@@ -150,15 +154,20 @@ function TopicUnitsAccordion({
   units,
   expandedUnitId,
   onToggleUnit,
+  tourTarget,
 }: {
   topic: string;
   units: StudyUnitGroup[];
   expandedUnitId: string | null;
   onToggleUnit: (unitId: string) => void;
+  tourTarget: boolean;
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <section className="overflow-hidden rounded-2xl border bg-card/80">
+    <section
+      data-tour={tourTarget ? "study-topic" : undefined}
+      className="overflow-hidden rounded-2xl border bg-card/80"
+    >
       <button
         type="button"
         className="flex w-full items-center gap-3 px-4 py-3.5 text-left"
