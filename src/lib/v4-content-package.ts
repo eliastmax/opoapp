@@ -60,6 +60,8 @@ export type V4FlashcardPackage = {
 export type V4StudyContentPackage = {
   version: typeof V4_STUDY_CONTENT_VERSION;
   oppositionCode: string;
+  /** Required only when official topic numbering is ambiguous inside the opposition. */
+  subjectName?: string | null;
   topicNumber: number;
   sourceRevision?: string | null;
   units: V4StudyUnitPackage[];

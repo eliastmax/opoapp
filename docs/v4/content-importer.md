@@ -8,6 +8,16 @@ RPC:
 
 `import_v4_study_content(p_package jsonb)`
 
+## Identidad de tema
+
+La identidad primaria sigue anclada a la oposición. `topicNumber` continúa siendo obligatorio.
+
+`subjectName` es opcional cuando ese número identifica un único tema dentro de la oposición. Si la numeración oficial se reinicia por secciones y el mismo `topicNumber` existe en más de un subject, el paquete debe declarar `subjectName` y el importador resuelve por:
+
+`oppositionCode + subjectName + topicNumber`.
+
+Un paquete antiguo sin `subjectName` mantiene compatibilidad si el número es unívoco. Si es ambiguo, la RPC falla cerrada y exige `subjectName`; nunca escoge un tema por orden incidental.
+
 ## Seguridad
 
 La función es `SECURITY INVOKER`.
