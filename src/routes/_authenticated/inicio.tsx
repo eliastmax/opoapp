@@ -261,7 +261,7 @@ function TodayPrimary({
         eyebrow="Sesión terminada"
         title="Cierra el trabajo de hoy"
         description="Revisa qué cambió y qué organizará OpoTest a continuación."
-        action="Ver debrief"
+        action="Ver resumen"
         onAction={() => onNavigate("/sesion")}
       />
     );
