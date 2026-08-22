@@ -21,6 +21,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { formatExamTime, remainingExamSeconds } from "@/lib/exam-simulation";
 import { weeklyRoadmapQueryKey } from "@/hooks/use-weekly-roadmap";
+import { AnswerSaveCoordinator } from "@/lib/answer-save-coordinator";
+import { captureTechnicalEvent } from "@/lib/technical-observability";
+import { toUserFacingError } from "@/lib/user-facing-error";
 
 export const Route = createFileRoute("/_authenticated/test/$id")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -46,8 +49,23 @@ function TestPage() {
   const [initializedTestId, setInitializedTestId] = useState<string | null>(null);
   const [clockNow, setClockNow] = useState(() => Date.now());
   const autoFinishRequested = useRef(false);
+  const [savingAnswerIds, setSavingAnswerIds] = useState<Set<string>>(() => new Set());
+  const [failedAnswerIds, setFailedAnswerIds] = useState<Set<string>>(() => new Set());
+  const answerSaves = useRef<AnswerSaveCoordinator<Respuesta> | null>(null);
+  if (!answerSaves.current) answerSaves.current = new AnswerSaveCoordinator<Respuesta>(async (answerId, value) => {
+    setSavingAnswerIds((ids) => new Set(ids).add(answerId));
+    const { error } = await supabase.from("test_answers").update({ respuesta_usuario: value }).eq("id", answerId);
+    setSavingAnswerIds((ids) => { const next = new Set(ids); next.delete(answerId); return next; });
+    if (error) throw error;
+    setFailedAnswerIds((ids) => { const next = new Set(ids); next.delete(answerId); return next; });
+  }, (answerId, saveError) => {
+    setSavingAnswerIds((ids) => { const next = new Set(ids); next.delete(answerId); return next; });
+    setFailedAnswerIds((ids) => new Set(ids).add(answerId));
+    captureTechnicalEvent("test_answer_save_error", saveError, { operation: "save_answer" });
+    toast.error(`${toUserFacingError(saveError).message} Tu respuesta sigue visible; pulsa Reintentar.`);
+  });
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["test", id],
     queryFn: async () => {
       const { data: test, error: e1 } = await supabase
@@ -70,6 +88,7 @@ function TestPage() {
     if (finishing) return;
     setFinishing(true);
     try {
+      await answerSaves.current?.flush();
       const { error } = await supabase.rpc("complete_test", { p_test_id: id });
       if (error) throw error;
       await Promise.all([
@@ -78,7 +97,8 @@ function TestPage() {
       ]);
       navigate({ to: "/resultados/$id", params: { id }, search, replace: true });
     } catch (error) {
-      toast.error((error as Error).message);
+      captureTechnicalEvent("rpc_error", error, { operation: "complete_test" });
+      toast.error(toUserFacingError(error).message);
       setFinishing(false);
       autoFinishRequested.current = false;
     }
@@ -143,7 +163,7 @@ function TestPage() {
         <Loader2 className="w-6 h-6 animate-spin" />
       </div>
     );
-  if (error) return <p className="text-destructive p-4">{(error as Error).message}</p>;
+  if (error) return <Card className="p-5 text-center"><p className="font-semibold">No hemos podido cargar el test</p><p className="mt-1 text-sm text-muted-foreground">{toUserFacingError(error).message}</p><Button className="mt-4" onClick={() => void refetch()}>Reintentar</Button></Card>;
   if (!data) return null;
 
   if (data.test.completado) {
@@ -155,21 +175,14 @@ function TestPage() {
   const question = item.questions;
   if (!question) return null;
 
-  async function selectOption(opt: Respuesta) {
-    const { error } = await supabase
-      .from("test_answers")
-      .update({ respuesta_usuario: opt })
-      .eq("id", item.id);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+  function selectOption(opt: Respuesta) {
     qc.setQueryData<typeof data>(["test", id], (prev) => {
       if (!prev) return prev;
       const answers = [...prev.answers];
       answers[current] = { ...answers[current], respuesta_usuario: opt };
       return { ...prev, answers };
     });
+    answerSaves.current?.select(item.id, opt);
   }
 
   async function toggleDoubt() {
@@ -179,7 +192,7 @@ function TestPage() {
       .update({ marked_doubt: markedDoubt })
       .eq("id", item.id);
     if (error) {
-      toast.error(error.message);
+      toast.error(toUserFacingError(error).message);
       return;
     }
     qc.setQueryData<typeof data>(["test", id], (prev) => {
@@ -201,7 +214,7 @@ function TestPage() {
     });
     if (error) {
       toast.error(
-        error.code === "23505" ? "Esta incidencia ya está pendiente de revisión." : error.message,
+        error.code === "23505" ? "Esta incidencia ya está pendiente de revisión." : toUserFacingError(error).message,
       );
       setReporting(false);
       return;
@@ -222,6 +235,11 @@ function TestPage() {
   function handleNext() {
     if (current < total - 1) setCurrent((c) => c + 1);
     else setConfirmFinish(true);
+  }
+
+  async function exitTest() {
+    try { await answerSaves.current?.flush(); navigate({ to: "/inicio", replace: true }); }
+    catch (saveError) { toast.error(`${toUserFacingError(saveError).message} Reintenta el guardado antes de salir.`); }
   }
 
   const options: Array<[Respuesta, string]> = [
@@ -344,6 +362,8 @@ function TestPage() {
         })}
       </div>
 
+      {(savingAnswerIds.has(item.id) || failedAnswerIds.has(item.id)) && <div className="flex items-center justify-between text-xs" aria-live="polite"><span className={failedAnswerIds.has(item.id) ? "text-destructive" : "text-muted-foreground"}>{failedAnswerIds.has(item.id) ? "No se ha podido guardar esta respuesta." : "Guardando respuesta…"}</span>{failedAnswerIds.has(item.id) && <Button size="sm" variant="outline" onClick={() => answerSaves.current?.retry(item.id)}>Reintentar</Button>}</div>}
+
       <footer className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-background/90 shadow-[0_-12px_32px_-24px_oklch(0.28_0.08_250/0.55)] backdrop-blur-xl">
         <div className="safe-bottom mx-auto grid max-w-md grid-cols-[0.8fr_1.2fr] gap-2 px-4 py-3">
           <Button
@@ -378,7 +398,7 @@ function TestPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={revisarRespuestas}>Revisar respuestas</AlertDialogCancel>
-            <AlertDialogAction onClick={finish} disabled={finishing}>
+            <AlertDialogAction onClick={finish} disabled={finishing || failedAnswerIds.size > 0}>
               {finishing ? <Loader2 className="w-4 h-4 animate-spin" /> : "Finalizar y corregir"}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -396,7 +416,7 @@ function TestPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Continuar test</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => navigate({ to: "/inicio", replace: true })}
+              onClick={(event) => { event.preventDefault(); void exitTest(); }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Salir del test
