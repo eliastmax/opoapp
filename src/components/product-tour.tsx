@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import type { User } from "@supabase/supabase-js";
-import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import {
   createContext,
   useCallback,
@@ -317,14 +317,14 @@ function SpotlightTour({
     );
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
-  const width = Math.min(330, viewportWidth - 24);
+  const width = Math.min(340, viewportWidth - 32);
   const placeBelow = viewportHeight - cutout.bottom >= popoverHeight + 24;
   const top = placeBelow
-    ? Math.min(cutout.bottom + 14, viewportHeight - popoverHeight - 12)
-    : Math.max(12, cutout.top - popoverHeight - 14);
+    ? Math.min(cutout.bottom + 14, viewportHeight - popoverHeight - 16)
+    : Math.max(16, cutout.top - popoverHeight - 14);
   const left = Math.max(
-    12,
-    Math.min(cutout.left + (cutout.right - cutout.left - width) / 2, viewportWidth - width - 12),
+    16,
+    Math.min(cutout.left + (cutout.right - cutout.left - width) / 2, viewportWidth - width - 16),
   );
   const popoverOffset = placeBelow ? 8 : -8;
   return (
@@ -404,14 +404,14 @@ function SpotlightTour({
         >
           {step > 0 && (
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="h-10"
+              className="h-10 px-2.5 text-muted-foreground"
               onClick={() => queueStep(step - 1)}
               aria-label="Paso anterior"
               tabIndex={popoverVisible ? 0 : -1}
             >
-              <ArrowLeft className="h-4 w-4" /> Anterior
+              Anterior
             </Button>
           )}
           <Button
@@ -422,7 +422,6 @@ function SpotlightTour({
             tabIndex={popoverVisible ? 0 : -1}
           >
             {item.final ? "Empezar mi sesión" : "Siguiente"}
-            {!item.final && <ArrowRight className="h-4 w-4" />}
           </Button>
         </div>
       </div>
