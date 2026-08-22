@@ -1,0 +1,203 @@
+{
+  "$schema": "OpoTestV4SourceManifestV1",
+  "manifestVersion": "1.0.0",
+  "factoryVersion": "8",
+  "generatorVersion": "Factory.8-fast-production-2026-08-22",
+  "mainPinned": "0dbe99baeebaa0160b88ad4bceac262f6c657f6d",
+  "topicNumber": 6,
+  "topicTitle": "La comunicación en la organización: interpersonal, descendente, ascendente y horizontal. Flujos y barreras de comunicación en las organizaciones. La organización y la cultura de la organización. Teorías sobre la motivación.",
+  "oppositionCode": "auxiliar-administrativo-sms",
+  "topicId": "c5978ea7-8bd4-445f-81f5-26ef97f64aa5",
+  "status": "production-green",
+  "sourcePolicy": {
+    "primarySource": {
+      "document": "PARTE GENERAL AUX ADMINISTRATIVO SMS.pdf",
+      "physicalPages": "82-111",
+      "sha256": "f0d053527e7b39b47ac1c68171fdbaf6535055328bebfefc5dd3e73645d6a8f0",
+      "transport": "PARTE_GENERAL_T06_CANONICAL.pdf",
+      "transportPages": 30,
+      "transportSha256": "9c0a53a0a519401c0d916df6af8895448cefe688f651a56d068e135a485bdb86",
+      "readMode": "visual-multimodal",
+      "internalHistoricalNumbering": "TEMA 7 ignored; official topic remains TEMA 6"
+    },
+    "supplementarySource": {
+      "document": "temario_antiguo.pdf",
+      "authorizedPhysicalPages": [381, 386, 387, 388, 389, 407, 408, 409, 410],
+      "sha256": "81ad203a0d5e37926b0e6fad779dcea19b60e40e4c54af49c5c962c7e2a10143",
+      "authorizedFacets": [
+        "active listening and interpersonal improvement mechanisms",
+        "diagonal communication",
+        "noise and redundancy",
+        "semantic barriers",
+        "psychological barriers",
+        "physiological barriers",
+        "physical barriers",
+        "administrative barriers"
+      ],
+      "precedence": "primary source prevails wherever it contains substantive T06 material"
+    },
+    "officialTitleDelimiterOnly": {"document": "Temario_new.pdf", "physicalPage": 381, "substantive": false},
+    "examReferenceOnly": ["EC1.pdf", "EC2.pdf", "EC3.pdf", "EC4.pdf"],
+    "externalSourcesUsed": [],
+    "explicitOutOfScope": [
+      {"physicalPage": 105, "from": "III. LA DIRECCIÓN DE LAS ORGANIZACIONES", "treatment": "IGNORE_NONMATERIAL"},
+      {"physicalPage": 111, "from": "Consecuencias para el voluntariado", "treatment": "IGNORE_NONMATERIAL"},
+      {"document": "temario_antiguo.pdf", "rule": "All material outside the nine authorized pages or outside the authorized supplementary facets", "treatment": "IGNORE_NONMATERIAL"}
+    ],
+    "factory9Opened": false
+  },
+  "sourceCoverage": {
+    "primaryPhysicalPageRange": "82-111",
+    "primaryPagesAudited": 30,
+    "supplementaryPagesAudited": 9,
+    "sourceCoverageGapItemsClosed": 0,
+    "sourceCoverageGapsRemaining": 0,
+    "sourceReviewRequiredRemaining": 0,
+    "primaryPageAudit": [
+      {"physicalPage": 82, "status": "covered", "notes": "Communication as an essential organizational element; internal/external relationships and organizational circuits."},
+      {"physicalPage": 83, "status": "covered", "notes": "Coordination, culture transmission, information climate and introduction to interpersonal communication."},
+      {"physicalPage": 84, "status": "covered", "notes": "Perception as selection, organization and interpretation; attention and subjective construction."},
+      {"physicalPage": 85, "status": "covered", "notes": "Cognitive limitations, stereotypes and beginning of halo effect."},
+      {"physicalPage": 86, "status": "covered", "notes": "Halo continuation, selective perception, projection and Pigmalion expectation effect."},
+      {"physicalPage": 87, "status": "covered", "notes": "Pigmalion continuation and communication process: emitter, receiver, message, code and feedback."},
+      {"physicalPage": 88, "status": "covered", "notes": "Feedback/dialogue and communication axioms including congruence."},
+      {"physicalPage": 89, "status": "covered", "notes": "Oral and written verbal communication; introduction to non-verbal communication."},
+      {"physicalPage": 90, "status": "covered", "notes": "Non-verbal communication and 7/38/55 distribution reproduced by the source."},
+      {"physicalPage": 91, "status": "covered", "notes": "Non-verbal elements/functions and introduction to organizational communication flows."},
+      {"physicalPage": 92, "status": "covered", "notes": "Descending communication and beginning of ascending communication."},
+      {"physicalPage": 93, "status": "covered", "notes": "Ascending and horizontal communication; introduction to informal communication."},
+      {"physicalPage": 94, "status": "covered", "notes": "Informal communication continuation and organizational effects."},
+      {"physicalPage": 95, "status": "covered", "notes": "Organization in contemporary society and conceptual heterogeneity; attached to the organization mastery family."},
+      {"physicalPage": 96, "status": "covered", "notes": "Organization as complex/plural/changing reality and Mayntz organizational traits."},
+      {"physicalPage": 97, "status": "covered", "notes": "Porter-Lawler-Hackman definition and introduction to general systems theory."},
+      {"physicalPage": 98, "status": "covered", "notes": "Open systems, subsystems, interdependence and Schein system aspects."},
+      {"physicalPage": 99, "status": "covered", "notes": "Organizational culture introduction and its intangible character."},
+      {"physicalPage": 100, "status": "covered", "notes": "Culture definition, values, beliefs, norms and behavioral influence."},
+      {"physicalPage": 101, "status": "covered", "notes": "Subcultures, Schein basic assumptions and formation of culture."},
+      {"physicalPage": 102, "status": "covered", "notes": "Cultural socialization and transition to organizational socialization."},
+      {"physicalPage": 103, "status": "covered", "notes": "Organizational socialization, recruitment/selection and adaptation to role."},
+      {"physicalPage": 104, "status": "covered", "notes": "Cultural change in public administration, values, behaviors, service and ethics."},
+      {"physicalPage": 105, "status": "covered_with_explicit_exclusion", "notes": "In-scope cultural-change continuation audited; content from III. LA DIRECCIÓN DE LAS ORGANIZACIONES excluded as adjacent nonmaterial."},
+      {"physicalPage": 106, "status": "covered", "notes": "Maslow hierarchy of needs."},
+      {"physicalPage": 107, "status": "covered", "notes": "Herzberg dual-factor theory and beginning of McClelland."},
+      {"physicalPage": 108, "status": "covered", "notes": "McClelland, McGregor X/Y/Z and Vroom expectations theory."},
+      {"physicalPage": 109, "status": "covered", "notes": "Vroom continuation, Alderfer ERC and beginning of Locke goal setting."},
+      {"physicalPage": 110, "status": "covered", "notes": "Locke continuation and Adams equity theory."},
+      {"physicalPage": 111, "status": "covered_with_explicit_exclusion", "notes": "Post-Adams material headed Consecuencias para el voluntariado and references excluded as adjacent nonmaterial."}
+    ],
+    "supplementaryAudit": [
+      {"physicalPage": 381, "status": "covered_restricted_scope", "notes": "Noise and redundancy only."},
+      {"physicalPage": 386, "status": "covered_restricted_scope", "notes": "Active listening only."},
+      {"physicalPage": 387, "status": "covered_restricted_scope", "notes": "Active listening, empathy and listening behaviors only."},
+      {"physicalPage": 388, "status": "covered_restricted_scope", "notes": "Paraphrasing, reinforcement, summarizing and interpersonal-improvement mechanisms only."},
+      {"physicalPage": 389, "status": "covered_restricted_scope", "notes": "Interpersonal-improvement mechanisms only."},
+      {"physicalPage": 407, "status": "covered_restricted_scope", "notes": "Diagonal communication only."},
+      {"physicalPage": 408, "status": "covered_restricted_scope", "notes": "Semantic and psychological barriers only."},
+      {"physicalPage": 409, "status": "covered_restricted_scope", "notes": "Psychological and physiological barriers only."},
+      {"physicalPage": 410, "status": "covered_restricted_scope", "notes": "Physical and administrative barriers and authorized mitigation rules only."}
+    ]
+  },
+  "production": {
+    "initialActiveQuestions": 180,
+    "generatedQuestions": 8,
+    "generationReason": "MASTERY_CAPACITY_CLOSURE_FOR_EIGHT_DISTINCT_MOTIVATION_THEORIES",
+    "generatedCodes": "SMS-T06-0181..0188",
+    "finalActiveQuestions": 188,
+    "answerBalance": {"A": 47, "B": 47, "C": 47, "D": 47},
+    "levelBalance": {"aprendizaje": 63, "consolidacion": 63, "tribunal": 62},
+    "qaHardenedRows": 3,
+    "lengthOutliersRemaining": 0,
+    "duplicateQuestionRows": 0,
+    "exactRepeatedOptionSetGroups": 0,
+    "duplicateOptionsWithinQuestion": 0,
+    "unsupportedQuestionsRemaining": 0,
+    "outOfScopeQuestionHits": 0,
+    "badSourceRows": 0,
+    "badPageRows": 0,
+    "missingRequiredRows": 0
+  },
+  "masteryAndStudy": {
+    "units": 6,
+    "concepts": 25,
+    "primaryMappings": 188,
+    "unmappedQuestions": 0,
+    "multiPrimaryQuestions": 0,
+    "flashcards": 50,
+    "sourceLimitedConcepts": 0,
+    "minPrimaryQuestionsPerConcept": 4,
+    "maxPrimaryQuestionsPerConcept": 21,
+    "minFlashcardsPerConcept": 2,
+    "importId": "66e220e6-2630-44da-b1d4-1801169ea095",
+    "sourceRevision": "Factory.8:T06:primary_pp82-111:9c0a53a0a519401c0d916df6af8895448cefe688f651a56d068e135a485bdb86:supp_pp381_386-389_407-410:81ad203a0d5e37926b0e6fad779dcea19b60e40e4c54af49c5c962c7e2a10143"
+  },
+  "smokes": {
+    "v4": {
+      "studyUnitOpenContract": "GREEN",
+      "conceptEvidenceAndCapacity": "GREEN",
+      "flashcardInventory": "GREEN",
+      "todayContext": "NOT_APPLICABLE_USER_STATE_NO_REMAINING_PRACTICE_DAYS"
+    },
+    "v2": {
+      "learningLevelSelection": 5,
+      "consolidationLevelSelection": 5,
+      "tribunalLevelSelection": 5,
+      "smartSelection": 5,
+      "status": "GREEN"
+    },
+    "v3": {
+      "recommendedSelection": 5,
+      "weeklyRoadmapState": "NO_DAYS_REMAINING",
+      "status": "GREEN"
+    },
+    "smokeResidueRows": 0,
+    "executionNote": "Authenticated rollback-only RPC smokes were executed with the current user context; no test or study-progress residue remained."
+  },
+  "contamination": {
+    "beforeOutsideT06": {
+      "questionsTotal": 4297,
+      "questionsActive": 4278,
+      "questionsInactive": 19,
+      "units": 163,
+      "concepts": 623,
+      "primaryMappings": 4278,
+      "flashcards": 1251
+    },
+    "afterOutsideT06": {
+      "questionsTotal": 4297,
+      "questionsActive": 4278,
+      "questionsInactive": 19,
+      "units": 163,
+      "concepts": 623,
+      "primaryMappings": 4278,
+      "flashcards": 1251
+    },
+    "status": "GREEN"
+  },
+  "stateSnapshot": {
+    "questionsTotal": 4485,
+    "questionsActive": 4466,
+    "questionsInactive": 19,
+    "units": 169,
+    "concepts": 648,
+    "primaryMappings": 4466,
+    "flashcards": 1301,
+    "otherOppositionQuestionRows": 185
+  },
+  "regressionFloor": {
+    "scope": "T01-T05 + T07-T24 + Factory.8 approved replay + accordion visual",
+    "closedTopicMappingMismatches": 0,
+    "closedTopicsUnmapped": 0,
+    "dataIsolation": "outside-T06 state exact match",
+    "qualityGate": "GitHub Actions before normal merge"
+  },
+  "factory9Opened": false,
+  "notes": [
+    "No web, external BOE/BORM website, academy material or external substantive knowledge was used.",
+    "The canonical 30-page primary transport was read visually/multimodally; OCR was not used as substantive truth.",
+    "All nine supplementary pages were audited only for the explicitly authorized missing facets.",
+    "The historical internal label TEMA 7 was ignored; every T06 question remains associated with official topic 6.",
+    "Eight questions were generated solely to raise each of the eight distinct motivation mastery concepts from three to four source-supported primary questions; no quota-based generation was performed.",
+    "Three editorial warnings were hardened without changing their canonical answers.",
+    "Post-scope direction material and the p111 volunteer/references block were treated as IGNORE_NONMATERIAL, not source gaps."
+  ]
+}
