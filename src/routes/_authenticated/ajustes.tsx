@@ -47,7 +47,7 @@ function AjustesPage() {
     await qc.cancelQueries();
     qc.clear();
     await supabase.auth.signOut();
-    navigate({ to: "/auth", search: { recovery: false }, replace: true });
+    navigate({ to: "/auth", replace: true });
   }
 
   async function resetStatistics() {

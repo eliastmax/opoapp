@@ -24,6 +24,7 @@ import { Route as AuthenticatedPreparacionRouteImport } from './routes/_authenti
 import { Route as AuthenticatedProgresoRouteImport } from './routes/_authenticated/progreso'
 import { Route as AuthenticatedSesionRouteImport } from './routes/_authenticated/sesion'
 import { Route as AuthenticatedSimulacroRouteImport } from './routes/_authenticated/simulacro'
+import { Route as AuthRecoveryRouteImport } from './routes/auth.recovery'
 import { Route as AuthenticatedEstudiarUnitIdRouteImport } from './routes/_authenticated/estudiar.$unitId'
 import { Route as AuthenticatedRecordarUnitIdRouteImport } from './routes/_authenticated/recordar.$unitId'
 import { Route as AuthenticatedResultadosIdRouteImport } from './routes/_authenticated/resultados.$id'
@@ -104,6 +105,11 @@ const AuthenticatedSimulacroRoute = AuthenticatedSimulacroRouteImport.update({
   path: '/simulacro',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthRecoveryRoute = AuthRecoveryRouteImport.update({
+  id: '/recovery',
+  path: '/recovery',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthenticatedEstudiarUnitIdRoute =
   AuthenticatedEstudiarUnitIdRouteImport.update({
     id: '/estudiar/$unitId',
@@ -130,7 +136,7 @@ const AuthenticatedTestIdRoute = AuthenticatedTestIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/ajustes': typeof AuthenticatedAjustesRoute
   '/crear': typeof AuthenticatedCrearRoute
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/progreso': typeof AuthenticatedProgresoRoute
   '/sesion': typeof AuthenticatedSesionRoute
   '/simulacro': typeof AuthenticatedSimulacroRoute
+  '/auth/recovery': typeof AuthRecoveryRoute
   '/estudiar/$unitId': typeof AuthenticatedEstudiarUnitIdRoute
   '/recordar/$unitId': typeof AuthenticatedRecordarUnitIdRoute
   '/resultados/$id': typeof AuthenticatedResultadosIdRoute
@@ -150,7 +157,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/ajustes': typeof AuthenticatedAjustesRoute
   '/crear': typeof AuthenticatedCrearRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/progreso': typeof AuthenticatedProgresoRoute
   '/sesion': typeof AuthenticatedSesionRoute
   '/simulacro': typeof AuthenticatedSimulacroRoute
+  '/auth/recovery': typeof AuthRecoveryRoute
   '/estudiar/$unitId': typeof AuthenticatedEstudiarUnitIdRoute
   '/recordar/$unitId': typeof AuthenticatedRecordarUnitIdRoute
   '/resultados/$id': typeof AuthenticatedResultadosIdRoute
@@ -172,7 +180,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/ajustes': typeof AuthenticatedAjustesRoute
   '/_authenticated/crear': typeof AuthenticatedCrearRoute
@@ -185,6 +193,7 @@ export interface FileRoutesById {
   '/_authenticated/progreso': typeof AuthenticatedProgresoRoute
   '/_authenticated/sesion': typeof AuthenticatedSesionRoute
   '/_authenticated/simulacro': typeof AuthenticatedSimulacroRoute
+  '/auth/recovery': typeof AuthRecoveryRoute
   '/_authenticated/estudiar/$unitId': typeof AuthenticatedEstudiarUnitIdRoute
   '/_authenticated/recordar/$unitId': typeof AuthenticatedRecordarUnitIdRoute
   '/_authenticated/resultados/$id': typeof AuthenticatedResultadosIdRoute
@@ -207,6 +216,7 @@ export interface FileRouteTypes {
     | '/progreso'
     | '/sesion'
     | '/simulacro'
+    | '/auth/recovery'
     | '/estudiar/$unitId'
     | '/recordar/$unitId'
     | '/resultados/$id'
@@ -227,6 +237,7 @@ export interface FileRouteTypes {
     | '/progreso'
     | '/sesion'
     | '/simulacro'
+    | '/auth/recovery'
     | '/estudiar/$unitId'
     | '/recordar/$unitId'
     | '/resultados/$id'
@@ -248,6 +259,7 @@ export interface FileRouteTypes {
     | '/_authenticated/progreso'
     | '/_authenticated/sesion'
     | '/_authenticated/simulacro'
+    | '/auth/recovery'
     | '/_authenticated/estudiar/$unitId'
     | '/_authenticated/recordar/$unitId'
     | '/_authenticated/resultados/$id'
@@ -257,7 +269,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  AuthRoute: typeof AuthRoute
+  AuthRoute: typeof AuthRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
 
@@ -368,6 +380,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSimulacroRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/auth/recovery': {
+      id: '/auth/recovery'
+      path: '/recovery'
+      fullPath: '/auth/recovery'
+      preLoaderRoute: typeof AuthRecoveryRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_authenticated/estudiar/$unitId': {
       id: '/_authenticated/estudiar/$unitId'
       path: '/estudiar/$unitId'
@@ -438,10 +457,20 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface AuthRouteChildren {
+  AuthRecoveryRoute: typeof AuthRecoveryRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthRecoveryRoute: AuthRecoveryRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  AuthRoute: AuthRoute,
+  AuthRoute: AuthRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport
