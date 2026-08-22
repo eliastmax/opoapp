@@ -13,8 +13,10 @@ import {
   type SourcedRow,
 } from "@/lib/csv-batch";
 import { jaccard, normalizeText } from "@/lib/similarity";
+import { requireOppositionAdmin } from "@/lib/opposition-admin";
 
 export const Route = createFileRoute("/_authenticated/importar")({
+  beforeLoad: requireOppositionAdmin,
   component: ImportarPage,
 });
 
