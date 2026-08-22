@@ -26,6 +26,8 @@ import { dailySessionPlanFromTodayPlan } from "@/lib/v4-daily-session";
 import { composeV4TodayPlan, type V4TodayContextRow } from "@/lib/v4-today-plan";
 import { BLOCK_COPY, formatDueDate, localDate, type V4DailySession } from "@/lib/v4-experience";
 import { displayName } from "@/lib/user-greeting";
+import { captureTechnicalEvent } from "@/lib/technical-observability";
+import { toUserFacingError } from "@/lib/user-facing-error";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/inicio")({ component: InicioPage });
@@ -141,7 +143,8 @@ function InicioPage() {
       if (result.error) throw result.error;
       navigate({ to: "/sesion" });
     } catch (caught) {
-      toast.error((caught as Error).message);
+      captureTechnicalEvent("rpc_error", caught, { operation: "create_daily_session" });
+      toast.error(toUserFacingError(caught).message);
       setStarting(false);
     }
   }
