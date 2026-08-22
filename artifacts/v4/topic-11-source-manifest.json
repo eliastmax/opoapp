@@ -1,0 +1,164 @@
+{
+  "topic": "T11",
+  "status": "production-green",
+  "factory": "Factory.8 · Source Coverage Closure",
+  "startingMain": "71958ced7e27e04fcabc5fbf419c0058b4be3506",
+  "sourceContract": {
+    "primary": {
+      "document": "Temario_new.pdf",
+      "canonicalInput": "Temario_new_T11_CANONICAL_PAGES.json",
+      "sha256": "96768192445fa7da87e09d265b0b578737d38ffca2559f22225ea49ac4cebe2a",
+      "pages": "205-231",
+      "boundary": "p205 from explicit TEMA 11; pp206-230 complete; p231 only before explicit TEMA 12",
+      "evaluatedScope": "Complete evaluable material present in the supplied canonical T11 range: Articles 9-43 and 61-66"
+    },
+    "externalSubstantiveSources": 0,
+    "manualProvider": 0,
+    "manualMap": 0,
+    "manualSpans": 0
+  },
+  "questionBank": {
+    "initialActive": 180,
+    "generated": 20,
+    "generatedRange": "SMS-T11-0181..0200",
+    "generatedForClosure": [
+      "Article 9",
+      "Article 10",
+      "Articles 41-43",
+      "Articles 64-66"
+    ],
+    "finalActive": 200,
+    "finalBySource": {
+      "Temario_new.pdf": 200
+    },
+    "learningStages": {
+      "aprendizaje": 67,
+      "consolidacion": 67,
+      "tribunal": 66
+    }
+  },
+  "sourceCoverageClosure": {
+    "finalUncoveredCanonicalMaterial": 0,
+    "actionableGaps": 0,
+    "sourceReviewRequired": 0,
+    "auditedEdgePages": [
+      "205-207",
+      "230-231"
+    ],
+    "ignoredNonMaterialOrOutOfScope": [
+      "page 205 topic cover, consolidated-legislation publication metadata and index material",
+      "page 206 index material and an incomplete editorial carryover fragment from Article 8 preceding the complete Article 9; Article 8 is outside the stated T11 focus and is not present as a complete evaluable provision in the canonical range"
+    ],
+    "closureNotes": [
+      "Article 9 on page 207 and Article 10 on page 208 were uncovered by the initial bank and received source-supported closure questions",
+      "Articles 41-43 on pages 226-227 were uncovered by the initial bank and received source-supported closure questions",
+      "Articles 64-66 on pages 230-231 were uncovered by the initial bank and received source-supported closure questions",
+      "The canonical source jumps from Article 43 to Title VII Article 61; no absent Articles 44-60 were inferred or reconstructed"
+    ]
+  },
+  "mastery": {
+    "units": 7,
+    "concepts": 18,
+    "primaryMappings": 200,
+    "flashcards": 36,
+    "unmapped": 0,
+    "multiplePrimary": 0
+  },
+  "capacity": {
+    "standardReady": 18,
+    "sourceLimited": 0,
+    "factoryPrimaryQuestionFloor": 4,
+    "minimumObservedPrimaryQuestionsPerConcept": 4,
+    "challengeResult": "No source_limited persisted. The narrow Article 43 and protection/guarantee families each meet the four-primary-question floor after same-pass source-supported closure without artificial concept splitting."
+  },
+  "generation": {
+    "generatedQuestions": 20,
+    "reason": "Factory.8 source coverage required closure of evaluable canonical families absent from the initial 180-question bank; no quota filling was performed."
+  },
+  "qa": {
+    "answerBalance": {
+      "A": 50,
+      "B": 50,
+      "C": 50,
+      "D": 50
+    },
+    "duplicateStemGroups": 0,
+    "duplicateOptionRows": 0,
+    "badSourceRows": 0,
+    "badPageRows": 0,
+    "missingRequiredRows": 0,
+    "strongLengthOutliers": 0,
+    "editorialWarningsAutoFixed": 3,
+    "autoFixedQuestionCodes": [
+      "SMS-T11-0039",
+      "SMS-T11-0058",
+      "SMS-T11-0079"
+    ]
+  },
+  "productionImport": {
+    "id": "ed70de66-2ec0-4dcb-85b0-27d9d75de729",
+    "contractVersion": "4.0",
+    "units": 7,
+    "concepts": 18,
+    "questionMappings": 200,
+    "flashcards": 36,
+    "importReady": true
+  },
+  "smokes": {
+    "v4TodayT11": 18,
+    "studyOpen": true,
+    "cardsMin": 2,
+    "questionsMin": 4,
+    "v2Aprendizaje": 5,
+    "v2Consolidacion": 5,
+    "v2Tribunal": 5,
+    "v3Recommended": 5,
+    "weeklyRoadmapRows": 1,
+    "smokeResidue": 0,
+    "studyProgressResidue": 0
+  },
+  "contamination": {
+    "outsideT11WritesDetected": 0,
+    "oppositionScoped": true,
+    "outsideSnapshot": {
+      "questionsTotal": 4213,
+      "questionsActive": 4194,
+      "questionsInactive": 19,
+      "units": 121,
+      "concepts": 499,
+      "primaryMappings": 2967,
+      "flashcards": 1003
+    },
+    "globalPostT11": {
+      "questionsTotal": 4413,
+      "questionsActive": 4394,
+      "questionsInactive": 19,
+      "units": 128,
+      "concepts": 517,
+      "primaryMappings": 3167,
+      "flashcards": 1039
+    },
+    "otherOppositionQuestionRowsExcluded": 185
+  },
+  "regressionFloor": [
+    "T07",
+    "T08",
+    "T09",
+    "T10",
+    "T13",
+    "T14",
+    "T15",
+    "T16",
+    "T17",
+    "T18",
+    "T19",
+    "T20",
+    "T21",
+    "T22",
+    "T23",
+    "T24",
+    "Factory.8 approved replay",
+    "accordion visual"
+  ],
+  "factory9Opened": false
+}
