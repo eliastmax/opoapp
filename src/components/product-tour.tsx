@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { postAuthRoute } from "@/lib/post-auth-route";
 import {
   PRODUCT_TOUR_STEPS,
+  maintainTourSession,
   shouldOpenProductTour,
   spotlightRect,
   type ProductTourCompletionKind,
@@ -38,6 +39,7 @@ export function ProductTourProvider({ user, children }: { user: User; children: 
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (router) => router.location.pathname });
   const [replaying, setReplaying] = useState(false);
+  const [tourSessionActive, setTourSessionActive] = useState(false);
   const [step, setStep] = useState(0);
   const [dismissedForSession, setDismissedForSession] = useState(false);
   const state = useQuery({
@@ -58,7 +60,7 @@ export function ProductTourProvider({ user, children }: { user: User; children: 
     enabled: pathname !== "/preparacion",
     queryFn: async () => (await postAuthRoute(user.id)) === "/inicio",
   });
-  const automatic = shouldOpenProductTour({
+  const eligibleToStart = shouldOpenProductTour({
     loading: state.isLoading || preparation.isLoading,
     error: state.isError || preparation.isError,
     completedAt: state.data?.completed_at,
@@ -66,10 +68,14 @@ export function ProductTourProvider({ user, children }: { user: User; children: 
     preparationCompleted: preparation.data === true,
     pathname,
   });
-  const open = replaying || automatic;
+  useEffect(() => {
+    setTourSessionActive((current) => maintainTourSession(current, eligibleToStart));
+  }, [eligibleToStart]);
+  const open = replaying || tourSessionActive;
   const closeSafely = useCallback(() => {
     setDismissedForSession(true);
     setReplaying(false);
+    setTourSessionActive(false);
     setStep(0);
   }, []);
   const persist = useCallback(
@@ -154,15 +160,13 @@ function SpotlightTour({
     if (pathname !== item.route) return;
     let cancelled = false;
     let frame = 0;
-    let attempts = 0;
     let cleanup: (() => void) | undefined;
-    const findAndMeasure = () => {
+    let targetObserver: MutationObserver | undefined;
+    let targetTimeout = 0;
+    const attachTarget = (target: HTMLElement) => {
       if (cancelled) return;
-      const target = document.querySelector<HTMLElement>(`[data-tour="${item.target}"]`);
-      if (!target) {
-        if (attempts++ < 180) frame = window.requestAnimationFrame(findAndMeasure);
-        return;
-      }
+      targetObserver?.disconnect();
+      window.clearTimeout(targetTimeout);
       target.scrollIntoView({
         block: item.target.startsWith("nav-") ? "nearest" : "center",
         behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
@@ -181,10 +185,29 @@ function SpotlightTour({
         observer.disconnect();
       };
     };
-    findAndMeasure();
+    const findTarget = () => {
+      const target = document.querySelector<HTMLElement>(`[data-tour="${item.target}"]`);
+      if (target) attachTarget(target);
+    };
+    findTarget();
+    if (!document.querySelector(`[data-tour="${item.target}"]`)) {
+      targetObserver = new MutationObserver(findTarget);
+      targetObserver.observe(document.body, { childList: true, subtree: true });
+      targetTimeout = window.setTimeout(() => {
+        if (cancelled) return;
+        const fallback = document.querySelector<HTMLElement>(
+          item.route === "/estudio"
+            ? '[data-tour="nav-study"]'
+            : '[data-tour="today-session"]',
+        );
+        if (fallback) attachTarget(fallback);
+      }, 12_000);
+    }
     return () => {
       cancelled = true;
       window.cancelAnimationFrame(frame);
+      window.clearTimeout(targetTimeout);
+      targetObserver?.disconnect();
       cleanup?.();
     };
   }, [item.route, item.target, pathname]);
