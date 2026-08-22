@@ -84,13 +84,16 @@ export function WeeklyRoadmapSummary() {
   if (roadmap.isLoading) {
     return (
       <Card
-        className="flex items-center gap-3 border-border/70 bg-card/70 p-3.5"
+        className="border-primary/10 bg-card/85 p-4 shadow-[0_14px_34px_-28px_oklch(0.32_0.14_250/0.45)]"
         aria-label="Cargando resumen semanal"
       >
-        <Skeleton className="h-9 w-9 rounded-xl" />
-        <div className="flex-1 space-y-2">
-          <Skeleton className="h-3 w-20" />
-          <Skeleton className="h-4 w-44 max-w-full" />
+        <div className="flex items-start gap-3">
+          <Skeleton className="h-10 w-10 rounded-xl" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-4 w-36 max-w-full" />
+            <Skeleton className="h-1.5 w-full rounded-full" />
+          </div>
         </div>
       </Card>
     );
@@ -113,27 +116,69 @@ export function WeeklyRoadmapSummary() {
   const state = weeklyRoadmapViewState(roadmap.data ?? []);
   const row =
     state.status === "active" ? state.rows[0] : state.status === "empty" ? null : state.row;
+  const targetSessions = row?.target_sessions ?? 0;
+  const completedSessions = row?.completed_sessions ?? 0;
+  const visualCompleted = Math.min(completedSessions, targetSessions);
+  const remainingSessions = Math.max(0, targetSessions - completedSessions);
   const summary = !row
     ? "Tu ruta aparecerá cuando haya una propuesta disponible"
-    : state.status === "week_complete"
-      ? "Objetivo semanal completado"
-      : `${row.completed_sessions} de ${row.target_sessions} sesiones completadas`;
+    : `${visualCompleted} de ${targetSessions} ${targetSessions === 1 ? "sesión" : "sesiones"}`;
+  const helper = !row
+    ? null
+    : completedSessions > targetSessions
+      ? `Objetivo superado · ${completedSessions} sesiones realizadas`
+      : state.status === "week_complete" || remainingSessions === 0
+        ? "Objetivo semanal completado"
+        : completedSessions === 0
+          ? "Empieza la primera y pon tu semana en marcha"
+          : remainingSessions === 1
+            ? "Te queda 1 sesión para completar tu objetivo"
+            : `Te quedan ${remainingSessions} sesiones para completar tu objetivo`;
 
   return (
-    <Card className="border-border/70 bg-card/70 p-3.5">
-      <div className="flex items-center gap-3">
-        <span className="rounded-xl bg-muted p-2 text-muted-foreground">
+    <Card className="border-primary/10 bg-card/85 p-4 shadow-[0_14px_34px_-28px_oklch(0.32_0.14_250/0.45)] transition-colors hover:bg-card">
+      <div className="flex items-start gap-3">
+        <span className="rounded-xl bg-primary/10 p-2.5 text-primary ring-1 ring-primary/10">
           <CalendarDays className="h-4 w-4" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-            Esta semana
-          </p>
-          <p className="text-sm font-semibold">{summary}</p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-[0.13em] text-primary">
+                Esta semana
+              </p>
+              <p className="mt-0.5 text-sm font-bold">{summary}</p>
+            </div>
+            <Button asChild variant="ghost" size="sm" className="-mr-2 -mt-1 shrink-0 text-primary">
+              <Link to="/estudio">Ver ruta</Link>
+            </Button>
+          </div>
+
+          {row && targetSessions > 0 ? (
+            <div
+              className="mt-3 flex gap-1.5"
+              role="progressbar"
+              aria-label={`${completedSessions} de ${targetSessions} sesiones completadas esta semana`}
+              aria-valuemin={0}
+              aria-valuemax={targetSessions}
+              aria-valuenow={visualCompleted}
+            >
+              {Array.from({ length: targetSessions }, (_, index) => (
+                <span
+                  key={index}
+                  aria-hidden="true"
+                  className={`h-1.5 min-w-0 flex-1 rounded-full transition-colors duration-300 ${
+                    index < visualCompleted ? "bg-primary" : "bg-primary/12"
+                  }`}
+                />
+              ))}
+            </div>
+          ) : null}
+
+          {helper ? (
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{helper}</p>
+          ) : null}
         </div>
-        <Button asChild variant="ghost" size="sm" className="shrink-0 text-primary">
-          <Link to="/estudio">Ver ruta</Link>
-        </Button>
       </div>
     </Card>
   );
