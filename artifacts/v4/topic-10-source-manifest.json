@@ -1,0 +1,119 @@
+{
+  "topic": "T10",
+  "status": "production-green",
+  "factory": "Factory.8 · Source Coverage Closure",
+  "startingMain": "fad8ea4d76b737b3f68acd0520ae773e96842765",
+  "sourceContract": {
+    "primary": {
+      "document": "Temario_new.pdf",
+      "canonicalInput": "Temario_new_T10_CANONICAL_PAGES.json",
+      "sha256": "96768192445fa7da87e09d265b0b578737d38ffca2559f22225ea49ac4cebe2a",
+      "pages": "428-443",
+      "evaluatedScope": "Annex sections I-II, articles 1-18 on pages 431-441"
+    },
+    "externalSubstantiveSources": 0,
+    "manualProvider": 0,
+    "manualMap": 0,
+    "manualSpans": 0
+  },
+  "questionBank": {
+    "initialActive": 179,
+    "generated": 0,
+    "finalActive": 179,
+    "finalSource": "Temario_new.pdf"
+  },
+  "sourceCoverageClosure": {
+    "finalUncoveredCanonicalMaterial": 0,
+    "actionableGaps": 0,
+    "sourceReviewRequired": 0,
+    "auditedEdgePages": ["428-430", "442-443"],
+    "ignoredNonMaterialOrOutOfScope": [
+      "page 428 title and consolidated-legislation front matter",
+      "page 429 index and publication metadata",
+      "page 430 index continuation and Royal Decree derogatory provisions preceding the Annex, outside the stated T10 focus on the Regulation's general provisions and direction structure",
+      "page 431 final provision of the Royal Decree preceding the Annex, outside the stated T10 focus",
+      "pages 442-443 belong to Section III, collegiate participation and advisory bodies, outside T10's stated scope of general provisions, structure and direction bodies"
+    ],
+    "coveredMaterial": "Annex Section I articles 1-5 and Section II articles 6-18"
+  },
+  "mastery": {
+    "units": 6,
+    "concepts": 16,
+    "primaryMappings": 179,
+    "flashcards": 32,
+    "unmapped": 0,
+    "multiplePrimary": 0
+  },
+  "capacity": {
+    "standardReady": 16,
+    "sourceLimited": 0,
+    "factoryPrimaryQuestionFloor": 4,
+    "minimumObservedPrimaryQuestionsPerConcept": 4,
+    "challengeResult": "Article 18 is only a derogation marker; it was merged into the natural mastery family for Commission functions, periodicity and Section II closure instead of creating an artificial source_limited concept."
+  },
+  "generation": {
+    "generatedQuestions": 0,
+    "reason": "The existing 179-question bank covers every evaluable source family in Annex Sections I-II; quota filling was not justified."
+  },
+  "qa": {
+    "answerBalance": {"A": 45, "B": 45, "C": 45, "D": 44},
+    "duplicateStemGroups": 0,
+    "duplicateOptionRows": 0,
+    "badSourceRows": 0,
+    "badPageRows": 0,
+    "missingRequiredRows": 0,
+    "strongLengthOutliers": 0,
+    "editorialWarningsAutoFixed": 1,
+    "autoFixedQuestionCodes": ["SMS-T10-0035"]
+  },
+  "productionImport": {
+    "id": "ae96ab73-6090-4a6c-85c9-0dd0cb9b65c8",
+    "contractVersion": "4.0",
+    "units": 6,
+    "concepts": 16,
+    "questionMappings": 179,
+    "flashcards": 32,
+    "importReady": true
+  },
+  "smokes": {
+    "v4TodayT10": 16,
+    "studyOpen": true,
+    "cardsMin": 2,
+    "questionsMin": 4,
+    "v2Aprendizaje": 5,
+    "v2Consolidacion": 5,
+    "v2Tribunal": 5,
+    "v3Recommended": 5,
+    "weeklyRoadmapRows": 1,
+    "smokeResidue": 0,
+    "studyProgressResidue": 0
+  },
+  "contamination": {
+    "outsideT10WritesDetected": 0,
+    "oppositionScoped": true,
+    "outsideSnapshot": {
+      "questionsTotal": 4214,
+      "questionsActive": 4195,
+      "questionsInactive": 19,
+      "units": 115,
+      "concepts": 483,
+      "primaryMappings": 2788,
+      "flashcards": 971
+    },
+    "globalPostT10": {
+      "questionsTotal": 4393,
+      "questionsActive": 4374,
+      "questionsInactive": 19,
+      "units": 121,
+      "concepts": 499,
+      "primaryMappings": 2967,
+      "flashcards": 1003
+    },
+    "otherOppositionQuestionRowsExcluded": 185
+  },
+  "regressionFloor": [
+    "T07", "T08", "T09", "T13", "T14", "T15", "T16", "T17", "T18", "T19", "T20", "T21", "T22", "T23", "T24",
+    "Factory.8 approved replay", "accordion visual"
+  ],
+  "factory9Opened": false
+}
