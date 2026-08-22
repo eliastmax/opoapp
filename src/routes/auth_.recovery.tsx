@@ -16,13 +16,16 @@ export const Route = createFileRoute("/auth_/recovery")({
   component: PasswordRecoveryPage,
 });
 
-type RecoveryState = "processing" | "valid" | "invalid";
+type RecoveryState = "processing" | "confirm" | "valid" | "invalid";
 
 function PasswordRecoveryPage() {
   const navigate = useNavigate();
-  // Read the callback before the lazy Supabase client can consume or clean its URL.
+  // Capture recovery proof before the browser history is cleaned. A token_hash is
+  // intentionally NOT verified on mount: email scanners may prefetch this page.
   const urlState = useMemo(() => readRecoveryUrlState(window.location), []);
-  const [state, setState] = useState<RecoveryState>("processing");
+  const [state, setState] = useState<RecoveryState>(
+    urlState.tokenHash ? "confirm" : "processing",
+  );
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -46,11 +49,21 @@ function PasswordRecoveryPage() {
         return;
       }
 
-      // Once captured in memory, remove credentials from browser history and referrers.
+      // Once captured in memory, remove recovery credentials from browser history
+      // and referrers. For token_hash callbacks this happens before any verification.
       if (urlState.hasRecoveryProof) {
         window.history.replaceState(window.history.state, "", window.location.pathname);
       }
 
+      // Prefetch-safe flow: the email points to our app with the token hash in the
+      // fragment. A GET/prefetch can render this page, but only a deliberate user
+      // button press below performs the POST verification that consumes the token.
+      if (urlState.tokenHash) {
+        settle("confirm");
+        return;
+      }
+
+      // Legacy implicit callback support.
       if (urlState.accessToken && urlState.refreshToken) {
         const { data, error } = await supabase.auth.setSession({
           access_token: urlState.accessToken,
@@ -65,6 +78,7 @@ function PasswordRecoveryPage() {
         return;
       }
 
+      // PKCE callback support.
       if (urlState.code) {
         const { data, error } = await supabase.auth.exchangeCodeForSession(urlState.code);
         if (error) {
@@ -78,8 +92,6 @@ function PasswordRecoveryPage() {
         return;
       }
 
-      // A normal authenticated session is not recovery authority. A valid callback
-      // reaches one of the branches above or emits PASSWORD_RECOVERY.
       settle("invalid");
     }
 
@@ -93,6 +105,24 @@ function PasswordRecoveryPage() {
   useEffect(() => {
     if (message) errorRef.current?.focus();
   }, [message]);
+
+  async function confirmRecovery() {
+    if (!urlState.tokenHash || loading) return;
+    setLoading(true);
+    setMessage(null);
+    const { data, error } = await supabase.auth.verifyOtp({
+      token_hash: urlState.tokenHash,
+      type: "recovery",
+    });
+    setLoading(false);
+    if (error) {
+      captureTechnicalEvent("auth_error", error, { operation: "verify_password_recovery" });
+      setMessage(toUserFacingError(error).message);
+      setState("invalid");
+      return;
+    }
+    setState(data.session ? "valid" : "invalid");
+  }
 
   async function updatePassword(event: React.FormEvent) {
     event.preventDefault();
@@ -136,12 +166,44 @@ function PasswordRecoveryPage() {
                 Estamos validando tu recuperación de contraseña.
               </p>
             </div>
+          ) : state === "confirm" ? (
+            <div className="space-y-4 text-center">
+              <h2 className="text-xl font-bold">Cambiar contraseña</h2>
+              <p className="text-sm text-muted-foreground">
+                Por seguridad, confirma que quieres continuar. El enlace no se consume hasta que pulses el botón.
+              </p>
+              {message && (
+                <p
+                  ref={errorRef}
+                  tabIndex={-1}
+                  role="alert"
+                  id="recovery-feedback"
+                  className="text-sm text-destructive"
+                >
+                  {message}
+                </p>
+              )}
+              <Button className="w-full" disabled={loading} onClick={() => void confirmRecovery()}>
+                {loading ? <Loader2 className="animate-spin" /> : "Confirmar y continuar"}
+              </Button>
+            </div>
           ) : state === "invalid" ? (
             <div className="space-y-4 text-center">
               <h2 className="text-xl font-bold">Enlace no válido o caducado</h2>
               <p className="text-sm text-muted-foreground">
                 Solicita un enlace nuevo para cambiar tu contraseña.
               </p>
+              {message && (
+                <p
+                  ref={errorRef}
+                  tabIndex={-1}
+                  role="alert"
+                  id="recovery-feedback"
+                  className="text-sm text-destructive"
+                >
+                  {message}
+                </p>
+              )}
               <Button className="w-full" onClick={() => void requestAnotherLink()}>
                 Solicitar otro enlace
               </Button>
