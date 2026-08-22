@@ -31,16 +31,35 @@ function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-function EmphasizedDescription({ description, emphasis }: { description: string; emphasis: string }) {
-  const index = description.indexOf(emphasis);
-  if (index < 0) return description;
-  return (
-    <>
-      {description.slice(0, index)}
-      <span className="font-semibold text-foreground">{emphasis}</span>
-      {description.slice(index + emphasis.length)}
-    </>
-  );
+function EmphasizedDescription({
+  description,
+  emphasis,
+}: {
+  description: string;
+  emphasis: readonly string[];
+}) {
+  const ranges = emphasis
+    .map((fragment) => ({ fragment, start: description.indexOf(fragment) }))
+    .filter(({ start }) => start >= 0)
+    .sort((a, b) => a.start - b.start);
+
+  if (!ranges.length) return description;
+
+  const parts: React.ReactNode[] = [];
+  let cursor = 0;
+  for (const { fragment, start } of ranges) {
+    if (start < cursor) continue;
+    if (start > cursor) parts.push(description.slice(cursor, start));
+    parts.push(
+      <span key={`${fragment}-${start}`} className="font-semibold text-foreground">
+        {fragment}
+      </span>,
+    );
+    cursor = start + fragment.length;
+  }
+  if (cursor < description.length) parts.push(description.slice(cursor));
+
+  return <>{parts}</>;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -126,7 +145,6 @@ export function ProductTourProvider({ user, children }: { user: User; children: 
         <SpotlightTour
           step={step}
           pathname={pathname}
-          replaying={replaying}
           onStep={setStep}
           onNavigate={(route) => void navigate({ to: route })}
           onSkip={() => (replaying ? closeSafely() : void persist("skipped"))}
@@ -146,7 +164,6 @@ type Cutout = { top: number; left: number; right: number; bottom: number };
 function SpotlightTour({
   step,
   pathname,
-  replaying,
   onStep,
   onNavigate,
   onSkip,
@@ -154,7 +171,6 @@ function SpotlightTour({
 }: {
   step: number;
   pathname: string;
-  replaying: boolean;
   onStep: (step: number) => void;
   onNavigate: (route: "/inicio" | "/estudio") => void;
   onSkip: () => void;
@@ -167,16 +183,18 @@ function SpotlightTour({
   const [popoverHeight, setPopoverHeight] = useState(190);
   const [popoverVisible, setPopoverVisible] = useState(false);
   const [routeTransition, setRouteTransition] = useState(false);
+  const [targetAccent, setTargetAccent] = useState(false);
 
   const queueStep = useCallback(
     (nextStep: number) => {
       const nextItem = PRODUCT_TOUR_STEPS[nextStep];
       setPopoverVisible(false);
+      setTargetAccent(false);
       if (nextItem.route !== item.route) setRouteTransition(true);
       if (stepTimerRef.current !== null) window.clearTimeout(stepTimerRef.current);
       stepTimerRef.current = window.setTimeout(
         () => onStep(nextStep),
-        prefersReducedMotion() ? 0 : 120,
+        prefersReducedMotion() ? 0 : 130,
       );
     },
     [item.route, onStep],
@@ -205,6 +223,7 @@ function SpotlightTour({
     let targetObserver: MutationObserver | undefined;
     let targetTimeout = 0;
     let revealTimer = 0;
+    let accentTimer = 0;
     const scheduleReveal = () => {
       window.clearTimeout(revealTimer);
       revealTimer = window.setTimeout(
@@ -212,6 +231,15 @@ function SpotlightTour({
           if (cancelled) return;
           setRouteTransition(false);
           setPopoverVisible(true);
+          if (prefersReducedMotion()) {
+            setTargetAccent(false);
+            return;
+          }
+          setTargetAccent(true);
+          window.clearTimeout(accentTimer);
+          accentTimer = window.setTimeout(() => {
+            if (!cancelled) setTargetAccent(false);
+          }, 240);
         },
         prefersReducedMotion() ? 0 : 220,
       );
@@ -262,6 +290,7 @@ function SpotlightTour({
       window.cancelAnimationFrame(frame);
       window.clearTimeout(targetTimeout);
       window.clearTimeout(revealTimer);
+      window.clearTimeout(accentTimer);
       targetObserver?.disconnect();
       cleanup?.();
     };
@@ -333,14 +362,15 @@ function SpotlightTour({
       aria-label={`Tutorial de OpoTest, paso ${step + 1} de ${PRODUCT_TOUR_STEPS.length}`}
     >
       <div
-        className="pointer-events-none fixed z-[60] rounded-[1.15rem] border-2 border-white/90 transition-[top,left,width,height] duration-200 ease-out motion-reduce:transition-none"
+        className="pointer-events-none fixed z-[60] rounded-[1.15rem] border border-white/75 transition-[top,left,width,height,box-shadow] duration-200 ease-out motion-reduce:transition-none"
         style={{
           top: cutout.top,
           left: cutout.left,
           width: cutout.right - cutout.left,
           height: cutout.bottom - cutout.top,
-          boxShadow:
-            "0 0 0 9999px rgb(0 0 0 / 0.68), 0 0 0 3px rgb(96 165 250 / 0.28), 0 0 28px rgb(125 211 252 / 0.28)",
+          boxShadow: targetAccent
+            ? "0 0 0 9999px rgb(0 0 0 / 0.68), 0 0 0 2px rgb(125 211 252 / 0.20), 0 0 18px rgb(125 211 252 / 0.22)"
+            : "0 0 0 9999px rgb(0 0 0 / 0.68), 0 0 0 1px rgb(125 211 252 / 0.14), 0 0 10px rgb(125 211 252 / 0.12)",
         }}
         aria-hidden="true"
       />
@@ -356,7 +386,7 @@ function SpotlightTour({
         aria-hidden={!popoverVisible}
         aria-labelledby="tour-title"
         aria-describedby="tour-description"
-        className="fixed z-[70] rounded-2xl border border-border/80 bg-card p-4 text-card-foreground shadow-[0_20px_55px_-18px_rgb(0_0_0/0.55)] transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none"
+        className="fixed z-[70] rounded-2xl border border-border/80 bg-card p-4 text-card-foreground shadow-[0_20px_55px_-18px_rgb(0_0_0/0.55)] transition-[opacity,transform] ease-out motion-reduce:transition-none"
         style={{
           top,
           left,
@@ -365,6 +395,7 @@ function SpotlightTour({
           transform: popoverVisible
             ? "translateY(0) scale(1)"
             : `translateY(${popoverOffset}px) scale(0.98)`,
+          transitionDuration: prefersReducedMotion() ? "0ms" : popoverVisible ? "210ms" : "120ms",
           pointerEvents: popoverVisible ? "auto" : "none",
         }}
       >
@@ -387,7 +418,7 @@ function SpotlightTour({
             onClick={onSkip}
             tabIndex={popoverVisible ? 0 : -1}
           >
-            {replaying ? "Cerrar" : "Omitir"}
+            Omitir
           </Button>
         </div>
         <h2 id="tour-title" className="mt-1 text-lg font-semibold leading-tight">

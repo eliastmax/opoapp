@@ -4,7 +4,7 @@ export const PRODUCT_TOUR_STEPS = [
     target: "today-session",
     title: "Empieza por aquí",
     description: "OpoTest te propone qué hacer ahora: estudiar, practicar o repasar.",
-    emphasis: "qué hacer ahora",
+    emphasis: ["estudiar, practicar o repasar"],
     final: false,
   },
   {
@@ -13,7 +13,7 @@ export const PRODUCT_TOUR_STEPS = [
     title: "Aquí está todo tu temario",
     description:
       "Entra en cualquier tema, estudia sus unidades y ve qué has avanzado y qué te queda.",
-    emphasis: "qué has avanzado y qué te queda",
+    emphasis: ["qué has avanzado", "qué te queda"],
     final: false,
   },
   {
@@ -22,7 +22,7 @@ export const PRODUCT_TOUR_STEPS = [
     title: "Estudia cada tema por partes",
     description:
       "Cada tema se divide en unidades para que puedas avanzar poco a poco sin perderte.",
-    emphasis: "avanzar poco a poco",
+    emphasis: ["poco a poco"],
     final: false,
   },
   {
@@ -31,7 +31,7 @@ export const PRODUCT_TOUR_STEPS = [
     title: "Comprueba qué sabes de verdad",
     description:
       "Haz tests para descubrir qué dominas, dónde fallas y qué necesitas reforzar.",
-    emphasis: "qué dominas, dónde fallas y qué necesitas reforzar",
+    emphasis: ["qué dominas", "dónde fallas"],
     final: false,
   },
   {
@@ -40,7 +40,7 @@ export const PRODUCT_TOUR_STEPS = [
     title: "Vuelve a lo que todavía falla",
     description:
       "Tus fallos, dudas y puntos débiles vuelven para que puedas trabajarlos otra vez.",
-    emphasis: "fallos, dudas y puntos débiles",
+    emphasis: ["fallos, dudas y puntos débiles"],
     final: false,
   },
   {
@@ -49,7 +49,7 @@ export const PRODUCT_TOUR_STEPS = [
     title: "Siempre sabrás qué hacer después",
     description:
       "Estudias, practicas y refuerzas. Con tu progreso, OpoTest te propone el siguiente paso.",
-    emphasis: "el siguiente paso",
+    emphasis: ["el siguiente paso"],
     final: true,
   },
 ] as const;

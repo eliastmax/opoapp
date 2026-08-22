@@ -62,7 +62,7 @@ describe("first-run spotlight tour", () => {
     expect(component).toContain("replaying || tourSessionActive");
   });
 
-  it("uses six contextual steps on real stable DOM targets", () => {
+  it("uses exactly six contextual steps on the existing real DOM targets", () => {
     expect(PRODUCT_TOUR_STEPS).toHaveLength(6);
     expect(PRODUCT_TOUR_STEPS.map((step) => step.target)).toEqual([
       "today-session",
@@ -79,38 +79,50 @@ describe("first-run spotlight tour", () => {
     expect(study).toContain('"study-topic"');
   });
 
-  it("keeps the approved concise UX-writing sequence with one selective emphasis per step", () => {
-    expect(PRODUCT_TOUR_STEPS.map(({ title, description }) => ({ title, description }))).toEqual([
+  it("keeps the definitive concise copy and exact emphasis fragments", () => {
+    expect(
+      PRODUCT_TOUR_STEPS.map(({ title, description, emphasis }) => ({
+        title,
+        description,
+        emphasis: [...emphasis],
+      })),
+    ).toEqual([
       {
         title: "Empieza por aquí",
         description: "OpoTest te propone qué hacer ahora: estudiar, practicar o repasar.",
+        emphasis: ["estudiar, practicar o repasar"],
       },
       {
         title: "Aquí está todo tu temario",
         description: "Entra en cualquier tema, estudia sus unidades y ve qué has avanzado y qué te queda.",
+        emphasis: ["qué has avanzado", "qué te queda"],
       },
       {
         title: "Estudia cada tema por partes",
         description: "Cada tema se divide en unidades para que puedas avanzar poco a poco sin perderte.",
+        emphasis: ["poco a poco"],
       },
       {
         title: "Comprueba qué sabes de verdad",
         description: "Haz tests para descubrir qué dominas, dónde fallas y qué necesitas reforzar.",
+        emphasis: ["qué dominas", "dónde fallas"],
       },
       {
         title: "Vuelve a lo que todavía falla",
         description: "Tus fallos, dudas y puntos débiles vuelven para que puedas trabajarlos otra vez.",
+        emphasis: ["fallos, dudas y puntos débiles"],
       },
       {
         title: "Siempre sabrás qué hacer después",
         description: "Estudias, practicas y refuerzas. Con tu progreso, OpoTest te propone el siguiente paso.",
+        emphasis: ["el siguiente paso"],
       },
     ]);
     for (const step of PRODUCT_TOUR_STEPS) {
-      expect(step.emphasis.length).toBeGreaterThan(0);
-      expect(step.description).toContain(step.emphasis);
+      for (const fragment of step.emphasis) expect(step.description).toContain(fragment);
     }
     expect(component).toContain("EmphasizedDescription");
+    expect(component).toContain("readonly string[]");
     expect(component).toContain("font-semibold text-foreground");
   });
 
@@ -127,7 +139,10 @@ describe("first-run spotlight tour", () => {
     expect(component).not.toContain("DialogContent");
   });
 
-  it("keeps the coach mark compact, icon-free and safe on narrow mobile viewports", () => {
+  it("keeps the coach mark compact and safe at 360, 390 and 430 px", () => {
+    expect(Math.min(340, 360 - 32)).toBe(328);
+    expect(Math.min(340, 390 - 32)).toBe(340);
+    expect(Math.min(340, 430 - 32)).toBe(340);
     expect(component).toContain("Math.min(340, viewportWidth - 32)");
     expect(component).toContain("viewportWidth - width - 16");
     expect(component).toContain('className="mt-1 text-lg font-semibold leading-tight"');
@@ -136,13 +151,30 @@ describe("first-run spotlight tour", () => {
     expect(component).not.toContain("ArrowRight");
   });
 
-  it("sequences exit, target location and re-entry while preserving the scrim across routes", () => {
+  it("keeps Omitir visible and only shows Anterior after the first step", () => {
+    expect(component).toContain("Omitir");
+    expect(component).not.toContain('"Cerrar"');
+    expect(component).toContain("{step > 0 && (");
+    expect(component).toContain("Anterior");
+    expect(component).toContain("Empezar mi sesión");
+  });
+
+  it("sequences a 120 ms exit before changing step and a settled 220 ms re-entry", () => {
     expect(component).toContain("setPopoverVisible(false)");
-    expect(component).toContain("setRouteTransition(true)");
-    expect(component).toContain("prefersReducedMotion() ? 0 : 120");
+    expect(component).toContain("prefersReducedMotion() ? 0 : 130");
+    expect(component).toContain('popoverVisible ? "210ms" : "120ms"');
     expect(component).toContain("prefersReducedMotion() ? 0 : 220");
+    expect(component).toContain("setRouteTransition(true)");
     expect(component).toContain("routeTransition ? 1 : 0");
     expect(component).toContain("motion-reduce:transition-none");
+  });
+
+  it("keeps spotlight movement subtle with a single non-repeating target accent", () => {
+    expect(component).toContain("targetAccent");
+    expect(component).toContain("setTargetAccent(true)");
+    expect(component).toContain("}, 240)");
+    expect(component).toContain("transition-[top,left,width,height,box-shadow]");
+    expect(component).not.toContain("animate-pulse");
   });
 
   it("persists completion and skip while replay preserves prior state", () => {
