@@ -1,31 +1,47 @@
 export const PRODUCT_TOUR_STEPS = [
   {
-    eyebrow: "Hoy",
-    title: "Abre la app y empieza",
+    route: "/inicio" as const,
+    target: "today-session",
+    title: "Empieza aquí",
     description:
-      "Hoy te propone qué conviene estudiar, practicar o repasar. No tienes que organizarlo todo cada vez.",
+      "Esta es tu mejor siguiente acción. OpoTest te indica qué estudiar, practicar o repasar hoy.",
+    final: false,
   },
   {
-    eyebrow: "Estudio",
+    route: "/inicio" as const,
+    target: "nav-study",
+    title: "Todo tu temario está aquí",
+    description: "Desde Estudio puedes entrar en cada tema y ver cómo avanza tu preparación.",
+    final: false,
+  },
+  {
+    route: "/estudio" as const,
+    target: "study-topic",
     title: "Avanza tema a tema",
+    description: "Abre un tema para trabajar sus unidades y conceptos con el contenido real.",
+    final: false,
+  },
+  {
+    route: "/estudio" as const,
+    target: "nav-practice",
+    title: "Practica lo aprendido",
     description:
-      "En Estudio tienes el temario organizado. Entra en un tema y trabaja sus unidades y conceptos.",
+      "Crea tests para comprobar qué recuerdas. Tus respuestas orientan el siguiente paso.",
+    final: false,
   },
   {
-    eyebrow: "Practicar",
-    title: "Practica para saber qué dominas",
-    description: "Cada respuesta ayuda a comprobar qué recuerdas y qué necesitas reforzar.",
-  },
-  {
-    eyebrow: "Refuerzo",
+    route: "/estudio" as const,
+    target: "study-progress",
     title: "Lo importante vuelve",
-    description:
-      "Los fallos, dudas y conceptos que necesitan refuerzo vuelven a aparecer para que no se queden atrás.",
+    description: "Aquí ves lo trabajado y lo que necesita atención. Hoy lo ordena para reforzarlo.",
+    final: false,
   },
   {
-    eyebrow: "Todo listo",
-    title: "Ya sabes todo lo necesario",
-    description: "Empieza por Hoy. OpoTest irá guiando el resto del camino.",
+    route: "/inicio" as const,
+    target: "today-session",
+    title: "Ya está",
+    description: "No necesitas organizar nada más. Empieza por Hoy y OpoTest irá guiando el resto.",
+    final: true,
   },
 ] as const;
 
@@ -36,6 +52,27 @@ export function shouldOpenProductTour(args: {
   error: boolean;
   completedAt: string | null | undefined;
   dismissedForSession: boolean;
+  preparationCompleted: boolean;
+  pathname: string;
 }) {
-  return !args.loading && !args.error && !args.completedAt && !args.dismissedForSession;
+  return (
+    !args.loading &&
+    !args.error &&
+    !args.completedAt &&
+    !args.dismissedForSession &&
+    args.preparationCompleted &&
+    args.pathname === "/inicio"
+  );
+}
+
+export function spotlightRect(
+  rect: Pick<DOMRect, "top" | "left" | "right" | "bottom">,
+  padding = 8,
+) {
+  return {
+    top: Math.max(6, rect.top - padding),
+    left: Math.max(6, rect.left - padding),
+    right: Math.min(window.innerWidth - 6, rect.right + padding),
+    bottom: Math.min(window.innerHeight - 6, rect.bottom + padding),
+  };
 }
