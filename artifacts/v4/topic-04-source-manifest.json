@@ -1,0 +1,119 @@
+{
+  "$schema": "OpoTestV4SourceManifestV1",
+  "manifestVersion": "1.0.0",
+  "factoryVersion": "8",
+  "generatorVersion": "Factory.8-fast-production-2026-08-22",
+  "mainPinned": "0fe19c5e5ec69f90665223b9997f53a8f42554af",
+  "topicNumber": 4,
+  "topicTitle": "La Ley 31/1995, de 8 de noviembre, de Prevención de Riesgos Laborales: objeto, ámbito de aplicación y definiciones. Derechos y obligaciones. Servicio de Prevención: concepto y funciones.",
+  "oppositionCode": "auxiliar-administrativo-sms",
+  "topicId": "3de08513-c80f-4acd-ad22-6b5233507b19",
+  "status": "production-green",
+  "sourcePolicy": {
+    "substantiveSources": [
+      {
+        "role": "sole-substantive-source",
+        "document": "temario_antiguo.pdf",
+        "physicalPages": "330-356",
+        "sha256": "81ad203a0d5e37926b0e6fad779dcea19b60e40e4c54af49c5c962c7e2a10143",
+        "precedence": "authoritative-within-authorized-slice"
+      }
+    ],
+    "externalSourcesUsed": [],
+    "titleDelimiterOnly": {"document": "Temario_new.pdf", "physicalPage": 381, "substantive": false},
+    "explicitIncludedScope": [
+      "normativa, objeto y carácter", "ámbito de aplicación y exclusiones", "definiciones",
+      "derecho a protección", "principios de la acción preventiva", "plan, evaluación y planificación",
+      "equipos de trabajo y EPIs", "información, consulta y participación", "formación", "medidas de emergencia",
+      "riesgo grave e inminente", "vigilancia de la salud", "documentación y coordinación", "protecciones específicas",
+      "trabajo temporal y ETT", "obligaciones de los trabajadores", "servicio de prevención: concepto y funciones"
+    ],
+    "explicitOutOfScope": [
+      "modalidades organizativas reglamentarias del servicio de prevención",
+      "umbrales o requisitos para constituir servicio de prevención propio",
+      "auditorías", "acreditaciones", "mutuas", "recursos preventivos",
+      "otras reglas reglamentarias antiguas no pedidas por el epígrafe vigente", "contenido fuera de pp330-356"
+    ],
+    "excludedTreatment": "IGNORE_NONMATERIAL_WITH_RATIONALE",
+    "factory9Opened": false
+  },
+  "sourceCoverage": {
+    "physicalPageRange": "330-356",
+    "pagesAudited": 27,
+    "sourceCoverageGapItemsClosed": 0,
+    "sourceCoverageGapsRemaining": 0,
+    "sourceReviewRequiredRemaining": 0,
+    "pageAudit": [
+      {"physicalPages": "330-334", "status": "covered", "notes": "Normativa, objeto, carácter, ámbito, exclusiones y definiciones audited against the sole source."},
+      {"physicalPages": "334-340", "status": "covered", "notes": "Protection right, employer duty, preventive principles, plan, evaluation, planning, work equipment and PPE audited."},
+      {"physicalPages": "340-344", "status": "covered", "notes": "Information, consultation, participation, training, emergencies, serious and imminent risk and health surveillance audited."},
+      {"physicalPages": "344-351", "status": "covered", "notes": "Documentation, coordination, specific protections, temporary work and ETT audited."},
+      {"physicalPages": "351-352", "status": "covered", "notes": "Worker prevention obligations and consequences of non-compliance audited."},
+      {"physicalPages": "352-354", "status": "covered_with_explicit_exclusion", "notes": "Old regulatory organization/modalities/threshold/audit material is outside the current epigraph and was treated as IGNORE_NONMATERIAL, never as a source gap."},
+      {"physicalPages": "355-356", "status": "covered_with_mixed_scope", "notes": "Service-of-prevention concept, addressees, functions, interdisciplinary character and adequacy criteria are in scope; accreditation and later regulatory material in the same tail are explicitly excluded."}
+    ]
+  },
+  "production": {
+    "initialActiveQuestions": 180,
+    "initialProvenanceValidated": {"document": "temario_antiguo.pdf", "physicalPages": "330-356", "rows": 180},
+    "outOfScopeActiveQuestionsResolved": 0,
+    "generatedQuestions": 2,
+    "generationReason": "CAPACITY_AFTER_SOURCE_LIMITED_CHALLENGE",
+    "generationNotes": "The two otherwise three-question mastery families were demonstrably expandable from the authorized source. One supported question was added to worker obligations and one to service-of-prevention adequacy, avoiding false source_limited classification and satisfying the standard V4 verification minimum of four primary questions.",
+    "finalActiveQuestions": 182,
+    "answerBalance": {"A": 46, "B": 45, "C": 45, "D": 46},
+    "levelBalance": {"aprendizaje": 60, "consolidacion": 61, "tribunal": 61},
+    "qaHardenedExistingRows": 0,
+    "lengthOutliersRemaining": 0,
+    "duplicateQuestionRows": 0,
+    "exactRepeatedOptionSetGroups": 0,
+    "duplicateOptionsWithinQuestion": 0,
+    "unsupportedQuestionsRemaining": 0,
+    "outOfScopeQuestionHits": 0,
+    "badSourceRows": 0,
+    "badPageRows": 0,
+    "missingRequiredRows": 0
+  },
+  "masteryAndStudy": {
+    "units": 6,
+    "concepts": 19,
+    "primaryMappings": 182,
+    "unmappedQuestions": 0,
+    "multiPrimaryQuestions": 0,
+    "flashcards": 38,
+    "sourceLimitedConcepts": 0,
+    "minPrimaryQuestionsPerConcept": 4,
+    "maxPrimaryQuestionsPerConcept": 18,
+    "minFlashcardsPerConcept": 2,
+    "importId": "23cbeb2f-40f0-44af-a8ef-03fec41208d5",
+    "sourceRevision": "Factory.8:T04:temario_antiguo_pp330-356:81ad203a0d5e37926b0e6fad779dcea19b60e40e4c54af49c5c962c7e2a10143"
+  },
+  "smokes": {
+    "v4": {"studyUnitOpenContract": "GREEN", "openedUnit": "SMS-T04-U01", "openedConcepts": 4, "openedFlashcards": 8, "conceptQuestionCapacity": "GREEN", "flashcardInventory": "GREEN"},
+    "v2": {"learningLevelSelection": 5, "consolidationLevelSelection": 5, "tribunalLevelSelection": 5, "smartSelection": 5, "status": "GREEN"},
+    "v3": {"recommendedSelection": 5, "weeklyRoadmapState": "NO_DAYS_REMAINING", "status": "GREEN"},
+    "smokeResidueRows": 0,
+    "executionNote": "Authenticated contracts were exercised in a rollback-only SQL transaction using the catalog administrator identity; V4 study-unit open and V2/V3 test creation executed successfully and left zero test or unit-progress residue."
+  },
+  "contamination": {
+    "beforeOutsideT04": {"questionsTotal": 4480, "questionsActive": 4461, "questionsInactive": 19, "units": 151, "concepts": 587, "primaryMappings": 3913, "flashcards": 1179},
+    "afterOutsideT04": {"questionsTotal": 4480, "questionsActive": 4461, "questionsInactive": 19, "units": 151, "concepts": 587, "primaryMappings": 3913, "flashcards": 1179},
+    "status": "GREEN"
+  },
+  "stateSnapshot": {"questionsTotal": 4662, "questionsActive": 4643, "questionsInactive": 19, "units": 157, "concepts": 606, "primaryMappings": 4095, "flashcards": 1217, "otherOppositionQuestionRows": 185},
+  "regressions": {
+    "scope": "T01-T03 + T07-T24 + Factory.8 approved replay + accordion visual",
+    "closedTopicMappingInvariant": "GREEN",
+    "dataIsolation": "outside-T04 state exact match",
+    "qualityGate": "GitHub Actions before normal merge"
+  },
+  "factory9Opened": false,
+  "notes": [
+    "No web, external BOE/BORM website, academy material or external substantive knowledge was used.",
+    "All 27 authorized physical pages were audited, including source-only and explicitly excluded regulatory material.",
+    "The historical 180-question bank already represented every in-scope source family; no source-coverage gap required generation.",
+    "The two generated rows were capacity-driven only after challenging potential source_limited classifications and proving additional distinct support in the authorized source.",
+    "No active historical question was found to depend on excluded organizational, audit, accreditation, mutua or resource-preventive material.",
+    "Document and physical-page provenance remains temario_antiguo.pdf pp330-356 for every T04 question."
+  ]
+}
