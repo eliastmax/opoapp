@@ -102,8 +102,7 @@ function AjustesPage() {
           </div>
         </Card>
       </Link>
-      {isAdmin && (
-        <Link to="/preguntas">
+      {isAdmin && <Link to="/preguntas">
           <Card className="p-4 flex items-center gap-3 hover:bg-accent/50 transition-colors">
             <Database className="w-5 h-5 text-primary" />
             <div className="flex-1">
@@ -111,8 +110,7 @@ function AjustesPage() {
               <div className="text-xs text-muted-foreground">Editar y desactivar</div>
             </div>
           </Card>
-        </Link>
-      )}
+      </Link>}
       <Card className="space-y-3 border-destructive/15 bg-destructive/5 p-4">
         <div>
           <div className="font-medium">Datos de estudio</div>
