@@ -1,0 +1,150 @@
+{
+  "$schema": "OpoTestV4SourceManifestV1",
+  "manifestVersion": "1.0.0",
+  "factoryVersion": "8",
+  "generatorVersion": "Factory.8-fast-production-2026-08-22",
+  "mainPinned": "0e6eab8696bf9fcd9c57be95cc66dd130649d9ed",
+  "topicNumber": 2,
+  "topicTitle": "El Estatuto de Autonomía de la Región de Murcia: órganos institucionales. Régimen jurídico. La reforma del Estatuto: procedimiento.",
+  "oppositionCode": "auxiliar-administrativo-sms",
+  "topicId": "e769a69d-cb06-4e62-9eaf-da7e2af8e402",
+  "status": "production-green",
+  "sourcePolicy": {
+    "substantiveSources": [
+      {
+        "document": "PARTE GENERAL AUX ADMINISTRATIVO SMS.pdf",
+        "physicalPages": "31-37",
+        "sha256": "f0d053527e7b39b47ac1c68171fdbaf6535055328bebfefc5dd3e73645d6a8f0",
+        "transport": "PARTE_GENERAL_T02_CANONICAL.pdf",
+        "transportPages": 7,
+        "transportSha256": "9cba74795757536a97631b18f1c2929b3301995f60b2cdbb7a6a059f99a944c6",
+        "readMode": "visual-multimodal"
+      }
+    ],
+    "externalSourcesUsed": [],
+    "temarioRole": "title-only",
+    "nonSubstantiveContext": [
+      {"physicalPage": 29, "reason": "TEMA 2 title/cover only"}
+    ],
+    "explicitOutOfScope": [
+      {"physicalPage": 35, "from": "NO ENTRA / TÍTULO III / De la Administración de Justicia", "treatment": "IGNORE_NONMATERIAL"},
+      {"physicalPage": 37, "from": "NO ENTRA / Disposición adicional primera", "treatment": "IGNORE_NONMATERIAL"}
+    ],
+    "factory9Opened": false
+  },
+  "sourceCoverage": {
+    "physicalPageRange": "31-37",
+    "pagesAudited": 7,
+    "sourceCoverageGapItemsClosed": 0,
+    "sourceCoverageGapsRemaining": 0,
+    "sourceReviewRequiredRemaining": 0,
+    "pageAudit": [
+      {"physicalPage": 31, "status": "covered", "notes": "Articles 20-23 audited: institutional organs, Assembly nature and general and specific powers."},
+      {"physicalPage": 32, "status": "covered", "notes": "Article 23.11 and articles 24-27 audited: elections, deputies, sessions, voting, autonomy and Mesa."},
+      {"physicalPage": 33, "status": "covered", "notes": "Articles 27.4-5 and 28-30 audited: dissolution, organization, groups, initiative, laws and decree-laws."},
+      {"physicalPage": 34, "status": "covered", "notes": "Articles 31-33.1 audited: President and Council of Government."},
+      {"physicalPage": 35, "status": "covered_with_explicit_exclusion", "notes": "Remaining article 33 audited. Content from the explicit NO ENTRA marker beginning TÍTULO III was excluded and did not create gaps, mastery or questions."},
+      {"physicalPage": 36, "status": "covered", "notes": "Articles 51-54 and article 55.1 audited: regional administration, controls and reform initiative."},
+      {"physicalPage": 37, "status": "covered_with_explicit_exclusion", "notes": "Articles 55.2-55.3 audited. Content from the explicit NO ENTRA marker beginning Disposición adicional primera was excluded and did not create gaps, mastery or questions."}
+    ]
+  },
+  "production": {
+    "initialActiveQuestions": 180,
+    "generatedQuestions": 0,
+    "generationReason": "NO_SOURCE_COVERAGE_GAP_FOUND",
+    "finalActiveQuestions": 180,
+    "answerBalance": {"A": 45, "B": 45, "C": 45, "D": 45},
+    "levelBalance": {"aprendizaje": 60, "consolidacion": 60, "tribunal": 60},
+    "qaHardenedRows": 1,
+    "lengthOutliersRemaining": 0,
+    "duplicateQuestionRows": 0,
+    "exactRepeatedOptionSetGroups": 0,
+    "duplicateOptionsWithinQuestion": 0,
+    "unsupportedQuestionsRemaining": 0,
+    "outOfScopeQuestionHits": 0,
+    "badSourceRows": 0,
+    "badPageRows": 0,
+    "missingRequiredRows": 0
+  },
+  "masteryAndStudy": {
+    "units": 6,
+    "concepts": 16,
+    "primaryMappings": 180,
+    "unmappedQuestions": 0,
+    "multiPrimaryQuestions": 0,
+    "flashcards": 32,
+    "sourceLimitedConcepts": 0,
+    "minPrimaryQuestionsPerConcept": 6,
+    "maxPrimaryQuestionsPerConcept": 18,
+    "minFlashcardsPerConcept": 2,
+    "importId": "27d9fcd4-9fcc-4410-980a-0c5429e31a91",
+    "sourceRevision": "Factory.8:T02:PARTE_GENERAL_pp31-37:9cba74795757536a97631b18f1c2929b3301995f60b2cdbb7a6a059f99a944c6"
+  },
+  "smokes": {
+    "v4": {
+      "studyUnitOpenContract": "GREEN",
+      "conceptQuestionCapacity": "GREEN",
+      "flashcardInventory": "GREEN",
+      "todayContext": "NOT_APPLICABLE_USER_STATE_NO_REMAINING_PRACTICE_DAYS"
+    },
+    "v2": {
+      "learningLevelSelection": 5,
+      "consolidationLevelSelection": 5,
+      "tribunalLevelSelection": 5,
+      "smartSelection": 5,
+      "status": "GREEN"
+    },
+    "v3": {
+      "recommendedSelection": 5,
+      "weeklyRoadmapState": "NO_DAYS_REMAINING",
+      "status": "GREEN"
+    },
+    "smokeResidueRows": 0,
+    "executionNote": "Authenticated RPC execution is not exposed by the service SQL connector; smoke assertions were executed against the same persisted contracts and selection pools without creating test residue."
+  },
+  "contamination": {
+    "beforeOutsideT02": {
+      "questionsTotal": 4462,
+      "questionsActive": 4443,
+      "questionsInactive": 19,
+      "units": 139,
+      "concepts": 553,
+      "primaryMappings": 3535,
+      "flashcards": 1111
+    },
+    "afterOutsideT02": {
+      "questionsTotal": 4462,
+      "questionsActive": 4443,
+      "questionsInactive": 19,
+      "units": 139,
+      "concepts": 553,
+      "primaryMappings": 3535,
+      "flashcards": 1111
+    },
+    "status": "GREEN"
+  },
+  "stateSnapshot": {
+    "questionsTotal": 4642,
+    "questionsActive": 4623,
+    "questionsInactive": 19,
+    "units": 145,
+    "concepts": 569,
+    "primaryMappings": 3715,
+    "flashcards": 1143,
+    "otherOppositionQuestionRows": 185
+  },
+  "regressionFloor": {
+    "scope": "T01 + T07-T24 + Factory.8 approved replay + accordion visual",
+    "dataIsolation": "outside-T02 state exact match",
+    "qualityGate": "GitHub Actions before normal merge"
+  },
+  "factory9Opened": false,
+  "notes": [
+    "No web, external BOE/BORM website, academy material or external substantive knowledge was used.",
+    "The canonical seven-page transport was read visually/multimodally; OCR was not used as substantive truth.",
+    "Physical page 29 and all content after explicit NO ENTRA markers were excluded from substantive coverage.",
+    "No questions were generated because the evaluable canonical corpus had no source-coverage gap.",
+    "All source_limited candidates were challenged in the same pass; none remained source_limited.",
+    "One repeated-option-set editorial warning was hardened without changing the canonical answer."
+  ]
+}
