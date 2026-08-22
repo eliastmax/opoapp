@@ -1,0 +1,177 @@
+{
+  "$schema": "OpoTestV4SourceManifestV1",
+  "manifestVersion": "1.0.0",
+  "factoryVersion": "8",
+  "generatorVersion": "Factory.8-fast-production-bank-depth-2026-08-22",
+  "mainPinned": "74efdce221e0d75999ae312d3ac8f6a9d2616e0d",
+  "topicGlobal": "T12",
+  "section": "Parte Específica",
+  "officialTopicNumber": 6,
+  "topicTitle": "NOCIONES SOBRE MÁQUINAS REPRODUCTORAS, MULTICOPISTAS, FOTOCOPIADORAS, FAX, ENCUADERNADORAS Y ANÁLOGAS / ENVÍOS Y SERVICIOS POSTALES / SISTEMAS DE FRANQUEO / RECOGIDA Y DISTRIBUCIÓN DE CORRESPONDENCIA Y PAQUETERÍA.",
+  "oppositionCode": "celador-sms",
+  "oppositionId": "00000000-0000-4000-8000-000000000002",
+  "subjectName": "Celador SMS · Parte Específica",
+  "topicId": "ae1e0edc-105a-464d-9151-628ee40685ec",
+  "status": "production-green",
+  "writePreflight": {
+    "read": "GREEN",
+    "rollbackOnlyDml": "GREEN",
+    "postRollbackIdentity": "GREEN",
+    "residue": 0
+  },
+  "sourcePolicy": {
+    "primarySource": {
+      "document": "20260505122739048.pdf",
+      "physicalPages": "3-16",
+      "sha256": "5bad76aadf35aa0c7ae7730f5b87182c3dae41cb047edd5f5b618107ae48626a",
+      "transport": "T12_CANONICAL.pdf",
+      "transportPages": 14,
+      "transportSha256": "00c40d8b07933b89f5f59b7827aa109c5d59a8adcb825d069ae9ebe5b64c023d",
+      "readMode": "visual-multimodal",
+      "substantiveExclusive": true,
+      "ocrAsSubstantiveTruth": false
+    },
+    "examReferenceOnly": {
+      "rows": 3,
+      "supported": 3,
+      "mismatch": 0,
+      "rule": "Frequency, style and traps only; no substantive authority."
+    },
+    "externalSourcesUsed": []
+  },
+  "legacyAudit": {
+    "activeRowsAudited": 105,
+    "supported": 105,
+    "unsupported": 0,
+    "materiallyDubious": 0,
+    "preserved": 105
+  },
+  "sourceCoverage": {
+    "pagesAudited": 14,
+    "legacyFacets": 105,
+    "newIndependentFacets": 48,
+    "finalQuestions": 153,
+    "coveragePercentage": 100,
+    "unexploitedEvaluableFacets": 0,
+    "sourceCoverageGapsRemaining": 0,
+    "sourceReviewRequiredRemaining": 0
+  },
+  "bankDepth": {
+    "priority": "BANK_DEPTH_AND_USER_EXHAUSTION_RESISTANCE",
+    "fourPrimaryPerMastery": "TECHNICAL_FLOOR_NOT_TARGET",
+    "masteryConcepts": 18,
+    "minPrimaryPerConcept": 5,
+    "maxPrimaryPerConcept": 12,
+    "sourceLimitedConcepts": 0,
+    "nearDuplicateInflationAllowed": false,
+    "status": "GREEN"
+  },
+  "production": {
+    "finalActiveQuestions": 153,
+    "codeRange": "SMS-CEL-E-T06-0001..0153",
+    "answerBalance": {
+      "A": 39,
+      "B": 38,
+      "C": 38,
+      "D": 38
+    },
+    "levelBalance": {
+      "aprendizaje": 51,
+      "consolidacion": 51,
+      "tribunal": 51
+    },
+    "duplicateStems": 0,
+    "duplicateOptionsWithinQuestion": 0,
+    "badPageRows": 0,
+    "wrongOppositionRows": 0,
+    "status": "GREEN"
+  },
+  "masteryAndStudy": {
+    "units": 8,
+    "concepts": 18,
+    "primaryMappings": 153,
+    "secondaryMappings": 0,
+    "unmappedQuestions": 0,
+    "multiPrimaryQuestions": 0,
+    "flashcards": 36,
+    "minFlashcardsPerConcept": 2,
+    "importId": "17fb4a6d-0da3-493f-9652-0cca73905a11",
+    "sourceRevision": "Factory.8:T12:20260505122739048.pdf:pp3-16:00c40d8b07933b89f5f59b7827aa109c5d59a8adcb825d069ae9ebe5b64c023d"
+  },
+  "smokes": {
+    "curator": {
+      "v2Learning": 5,
+      "v2Consolidation": 5,
+      "v2Tribunal": 5,
+      "v2Smart": 5,
+      "v3Recommended": 5,
+      "v4OpenedPrimary": 9,
+      "v4OpenedFlashcards": 2,
+      "status": "GREEN"
+    },
+    "freshUserRollback": {
+      "ownedTopics": 0,
+      "ownedQuestions": 0,
+      "visibleQuestions": 153,
+      "visibleUnits": 8,
+      "visibleConcepts": 18,
+      "v2Learning": 5,
+      "v2Smart": 5,
+      "v4OpenedPrimary": 9,
+      "v4OpenedFlashcards": 2,
+      "auxInT12": 0,
+      "residue": {
+        "authUsers": 0,
+        "profiles": 0,
+        "memberships": 0,
+        "preparationProfiles": 0,
+        "tests": 0
+      },
+      "status": "GREEN"
+    }
+  },
+  "contamination": {
+    "beforeOutsideT12": {
+      "celadorQuestions": 448,
+      "units": 15,
+      "concepts": 73,
+      "primaryMappings": 368,
+      "flashcards": 136,
+      "auxQuestions": 4466
+    },
+    "afterOutsideT12": {
+      "celadorQuestions": 448,
+      "units": 15,
+      "concepts": 73,
+      "primaryMappings": 368,
+      "flashcards": 136,
+      "auxQuestions": 4466
+    },
+    "finalCeladorQuestions": 601,
+    "status": "GREEN"
+  },
+  "quality": {
+    "questions": 601,
+    "equalOptions": 0,
+    "duplicateStems": 0,
+    "missingConcept": 0,
+    "missingReference": 0,
+    "missingPerspective": 0,
+    "insufficientStageCapacity": 0,
+    "status": "GREEN"
+  },
+  "governance": {
+    "questionFacetNotMastery": true,
+    "noQuotaGeneration": true,
+    "bankDepthPriority": true,
+    "sharedCatalogFreshUserGate": "GREEN",
+    "crossOppositionIsolation": "GREEN",
+    "factory9Opened": false
+  },
+  "notes": [
+    "No web or external substantive knowledge was used.",
+    "All 14 authorized pages were read visually before production.",
+    "Two rejected question-import attempts were atomic and left zero residue; current check catalogs were then respected.",
+    "QUESTION FACET remained separate from MASTERY: 153 independent questions map to 18 stable concepts."
+  ]
+}
