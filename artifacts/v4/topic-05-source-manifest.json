@@ -1,0 +1,171 @@
+{
+  "$schema": "OpoTestV4SourceManifestV1",
+  "manifestVersion": "1.0.0",
+  "factoryVersion": "8",
+  "generatorVersion": "Factory.8-fast-production-2026-08-22",
+  "mainPinned": "63af96ea4d8768d3a883794070c4b1b7eaf5e8b3",
+  "topicNumber": 5,
+  "topicTitle": "El principio de igualdad y la tutela contra la discriminación en la Ley Orgánica 3/2007, de 22 de marzo. Planes de igualdad: concepto y contenido. El acoso por razón de sexo en el trabajo en la Ley 7/2007, de 4 de abril.",
+  "oppositionCode": "auxiliar-administrativo-sms",
+  "topicId": "420faeb5-bf11-4b66-9265-cb70ce4fcdcb",
+  "status": "production-green",
+  "sourcePolicy": {
+    "substantiveSources": [
+      {
+        "role": "sole-substantive-source",
+        "document": "PARTE GENERAL AUX ADMINISTRATIVO SMS.pdf",
+        "physicalPages": "69-78",
+        "sha256Original": "f0d053527e7b39b47ac1c68171fdbaf6535055328bebfefc5dd3e73645d6a8f0",
+        "transport": "PARTE_GENERAL_T05_CANONICAL.pdf",
+        "transportPages": 10,
+        "transportSha256": "ad909ff424f0da437e1f2b4753e1411619477042b40bf40be90f1ebc4d679ab2",
+        "readMode": "visual-multimodal"
+      }
+    ],
+    "externalSourcesUsed": [],
+    "titleDelimiterOnly": {"document": "Temario_new.pdf", "physicalPage": 381, "substantive": false},
+    "contrastOnly": {"document": "temario_antiguo.pdf", "physicalPages": "358-378", "substantive": false},
+    "explicitIncludedScope": [
+      "LO 3/2007 articles 3-13",
+      "LO 3/2007 articles 45-47",
+      "Ley 7/2007 de Murcia article 22"
+    ],
+    "explicitOutOfScope": [
+      "physical page 69 title/cover",
+      "physical page 70 blank page",
+      "physical page 71 index",
+      "LO 3/2007 articles 41-44",
+      "LO 3/2007 articles 48-50",
+      "physical page 77 Ley 7/2007 index",
+      "Ley 7/2007 article 23 and later adjacent content",
+      "any material outside the official T05 epigraph"
+    ],
+    "excludedTreatment": "IGNORE_NONMATERIAL_WITH_RATIONALE",
+    "manualProviderMapSpans": 0,
+    "factory9Opened": false
+  },
+  "sourceCoverage": {
+    "physicalPageRange": "69-78",
+    "pagesAudited": 10,
+    "sourceCoverageGapItemsClosed": 0,
+    "sourceCoverageGapsRemaining": 0,
+    "sourceReviewRequiredRemaining": 0,
+    "pageAudit": [
+      {"physicalPage": 69, "status": "ignore_nonmaterial", "notes": "TEMA 5 title/cover only; no mastery, questions or source gap."},
+      {"physicalPage": 70, "status": "ignore_nonmaterial", "notes": "Blank page."},
+      {"physicalPage": 71, "status": "ignore_nonmaterial", "notes": "LO 3/2007 index page only."},
+      {"physicalPage": 72, "status": "covered", "notes": "LO 3/2007 articles 3-7 audited visually against the canonical source."},
+      {"physicalPage": 73, "status": "covered", "notes": "LO 3/2007 articles 8-13 audited visually against the canonical source."},
+      {"physicalPage": 74, "status": "covered_with_explicit_exclusion", "notes": "LO 3/2007 article 45.1 is in scope. Articles 41-44 on the same page are explicit IGNORE_NONMATERIAL."},
+      {"physicalPage": 75, "status": "covered", "notes": "LO 3/2007 articles 45.2-45.5 and 46.1-46.6 audited visually."},
+      {"physicalPage": 76, "status": "covered_with_explicit_exclusion", "notes": "LO 3/2007 article 47 is in scope. Articles 48-50 are explicit IGNORE_NONMATERIAL."},
+      {"physicalPage": 77, "status": "ignore_nonmaterial", "notes": "Ley 7/2007 index page only."},
+      {"physicalPage": 78, "status": "covered_with_explicit_exclusion", "notes": "Ley 7/2007 article 22 audited in full. Adjacent tail before article 22 and article 23 onward are outside the T05 epigraph and ignored."}
+    ]
+  },
+  "production": {
+    "initialActiveQuestions": 183,
+    "initialProvenanceValidated": {"document": "PARTE GENERAL AUX ADMINISTRATIVO SMS.pdf", "physicalPages": "69-78", "rows": 183},
+    "outOfScopeActiveQuestionsResolved": 0,
+    "generatedQuestions": 0,
+    "generationReason": "NO_SOURCE_COVERAGE_GAP_FOUND",
+    "generationNotes": "All evaluable source families inside the exact T05 scope were already represented by the historical bank. Mastery families were grouped at concept granularity and every concept retained at least six distinct primary questions, so no quota or capacity generation was justified.",
+    "finalActiveQuestions": 183,
+    "answerBalance": {"A": 46, "B": 46, "C": 46, "D": 45},
+    "levelBalance": {"aprendizaje": 61, "consolidacion": 61, "tribunal": 61},
+    "qaHardenedRows": 0,
+    "lengthOutliersRemaining": 0,
+    "duplicateQuestionRows": 0,
+    "exactRepeatedOptionSetGroups": 0,
+    "duplicateOptionsWithinQuestion": 0,
+    "unsupportedQuestionsRemaining": 0,
+    "outOfScopeQuestionHits": 0,
+    "badSourceRows": 0,
+    "badPageRows": 0,
+    "missingRequiredRows": 0
+  },
+  "masteryAndStudy": {
+    "units": 6,
+    "concepts": 17,
+    "primaryMappings": 183,
+    "unmappedQuestions": 0,
+    "multiPrimaryQuestions": 0,
+    "flashcards": 34,
+    "sourceLimitedConcepts": 0,
+    "minPrimaryQuestionsPerConcept": 6,
+    "maxPrimaryQuestionsPerConcept": 21,
+    "minFlashcardsPerConcept": 2,
+    "importId": "6c8ccd11-6f8f-4e07-a975-701fac17370f",
+    "sourceRevision": "Factory.8:T05:PARTE_GENERAL_pp69-78:ad909ff424f0da437e1f2b4753e1411619477042b40bf40be90f1ebc4d679ab2"
+  },
+  "smokes": {
+    "v4": {
+      "studyUnitOpenContract": "GREEN",
+      "openedUnit": "SMS-T05-U01",
+      "openedConcepts": 4,
+      "openedFlashcards": 8,
+      "conceptQuestionCapacity": "GREEN",
+      "flashcardInventory": "GREEN"
+    },
+    "v2": {
+      "learningLevelSelection": 5,
+      "consolidationLevelSelection": 5,
+      "tribunalLevelSelection": 5,
+      "smartSelection": 5,
+      "status": "GREEN"
+    },
+    "v3": {
+      "recommendedSelection": 5,
+      "weeklyRoadmapState": "NO_DAYS_REMAINING",
+      "status": "GREEN"
+    },
+    "smokeResidueRows": 0,
+    "executionNote": "Authenticated V4 study-unit open and V2/V3 test creation were exercised using the active-opposition user in a rollback-only SQL transaction. Every asserted selection returned the requested count and no test or unit-progress residue remained."
+  },
+  "contamination": {
+    "beforeOutsideT05": {
+      "questionsTotal": 4479,
+      "questionsActive": 4460,
+      "questionsInactive": 19,
+      "units": 157,
+      "concepts": 606,
+      "primaryMappings": 4095,
+      "flashcards": 1217
+    },
+    "afterOutsideT05": {
+      "questionsTotal": 4479,
+      "questionsActive": 4460,
+      "questionsInactive": 19,
+      "units": 157,
+      "concepts": 606,
+      "primaryMappings": 4095,
+      "flashcards": 1217
+    },
+    "status": "GREEN"
+  },
+  "stateSnapshot": {
+    "questionsTotal": 4662,
+    "questionsActive": 4643,
+    "questionsInactive": 19,
+    "units": 163,
+    "concepts": 623,
+    "primaryMappings": 4278,
+    "flashcards": 1251,
+    "otherOppositionQuestionRows": 185
+  },
+  "regressions": {
+    "scope": "T01-T04 + T07-T24 + Factory.8 approved replay + accordion visual",
+    "closedTopicMappingInvariant": "GREEN",
+    "dataIsolation": "outside-T05 state exact match",
+    "qualityGate": "GitHub Actions before normal merge"
+  },
+  "factory9Opened": false,
+  "notes": [
+    "No web, external BOE/BORM website, academy material or external substantive knowledge was used.",
+    "The canonical ten-page transport was read visually/multimodally; OCR was not used as substantive truth.",
+    "All 183 active historical questions were validated question-to-source before mastery and are supported by the authorized physical pages and exact included articles.",
+    "Explicitly excluded cover, blank, index and adjacent articles were treated as IGNORE_NONMATERIAL and never became source gaps or mastery.",
+    "No questions were generated because there was no source-coverage gap and no genuine capacity deficit after challenging possible source-limited classifications.",
+    "Every T05 question preserves the real document name and physical page provenance."
+  ]
+}
