@@ -1,0 +1,137 @@
+{
+  "$schema": "OpoTestV4SourceManifestV1",
+  "manifestVersion": "1.0.0",
+  "factoryVersion": "8",
+  "generatorVersion": "Factory.8-fast-production-bank-depth-2026-08-22",
+  "mainPinned": "b0b2372273bae6236ea0995af9c533435b3623e0",
+  "closureBaseMain": "5100d99505cd802e0c8e4286036e047897835c0e",
+  "topicGlobal": "T10",
+  "section": "Parte Específica",
+  "officialTopicNumber": 4,
+  "topicTitle": "EL CELADOR EN SU PUESTO DE TRABAJO (III): EL ALMACÉN Y FARMACIA (RECEPCIÓN Y ALMACENAMIENTO DE MERCANCÍAS); ORGANIZACIÓN DEL ALMACÉN Y DISTRIBUCIÓN DE PEDIDOS.",
+  "oppositionCode": "celador-sms",
+  "oppositionId": "00000000-0000-4000-8000-000000000002",
+  "subjectName": "Celador SMS · Parte Específica",
+  "subjectId": "481a5602-8a4d-4236-b5a5-c1b8b342f941",
+  "topicId": "0ecb5b4f-ae90-4a46-850c-91ea4456c861",
+  "status": "production-green",
+  "sourcePolicy": {
+    "primarySource": {
+      "document": "20260505122638172.pdf",
+      "physicalPages": "3-10",
+      "sha256": "88f735cc6c931a6ec99ad49be47df5083a8c32726ecdae2805746a94f3510ebb",
+      "transport": "T10_CANONICAL.pdf",
+      "transportPages": 8,
+      "transportSha256": "3255d58b80144baf4f927be65e1eace3738e4113962a182de58f7c4dc3cd020a",
+      "readMode": "visual-multimodal",
+      "substantiveExclusive": true,
+      "ocrAsSubstantiveTruth": false
+    },
+    "examReferenceOnly": {
+      "rows": 13,
+      "supported": 12,
+      "examSourceMismatch": 0,
+      "outdatedOrUnclear": 1,
+      "outdatedQuestionIds": ["FAM_META2023_PI_Q48"],
+      "rule": "Exam material informed frequency, style, traps and difficulty only and did not complete source gaps."
+    },
+    "externalSourcesUsed": [],
+    "factory9Opened": false
+  },
+  "sourceCoverage": {
+    "authorizedPhysicalPages": [3,4,5,6,7,8,9,10],
+    "pagesAudited": 8,
+    "evaluableFacets": 89,
+    "facetsCovered": 89,
+    "coveragePercentage": 100,
+    "unexploitedEvaluableFacets": 0,
+    "sourceCoverageGapsRemaining": 0,
+    "sourceReviewRequiredRemaining": 0,
+    "pageQuestionCoverage": {"3":10,"4":12,"5":13,"6":8,"7":15,"8":17,"9":12,"10":2}
+  },
+  "bankDepth": {
+    "priority": "BANK_DEPTH_AND_USER_EXHAUSTION_RESISTANCE",
+    "fourPrimaryPerMastery": "TECHNICAL_FLOOR_NOT_PRODUCTION_TARGET",
+    "finalActiveQuestions": 89,
+    "masteryConcepts": 19,
+    "minPrimaryPerConcept": 4,
+    "maxPrimaryPerConcept": 6,
+    "sourceLimitedConcepts": 0,
+    "unexploitedEvaluableFacets": 0,
+    "nearDuplicateInflationAllowed": false,
+    "status": "GREEN"
+  },
+  "production": {
+    "finalActiveQuestions": 89,
+    "codeRange": "SMS-CEL-E-T04-0001..0089",
+    "generationReason": "SOURCE_COVERAGE_MASTERY_AND_BANK_DEPTH_CLOSURE",
+    "answerBalance": {"A":23,"B":22,"C":22,"D":22},
+    "levelBalance": {"aprendizaje":38,"consolidacion":29,"tribunal":22},
+    "duplicateQuestionRows": 0,
+    "duplicateOptionsWithinQuestion": 0,
+    "missingRequiredRows": 0,
+    "outOfScopeQuestionHits": 0,
+    "wrongOppositionRows": 0,
+    "lengthCueQuestionsHardened": 20,
+    "finalQuestionImportStatus": "GREEN"
+  },
+  "masteryAndStudy": {
+    "units": 4,
+    "concepts": 19,
+    "primaryMappings": 89,
+    "secondaryMappings": 0,
+    "unmappedQuestions": 0,
+    "multiPrimaryQuestions": 0,
+    "flashcards": 38,
+    "minFlashcardsPerConcept": 2,
+    "sourceLimitedConcepts": 0,
+    "importId": "4ee35ba6-5092-4a7b-8c57-539a41a33c67",
+    "sourceRevision": "Factory.8:T10:20260505122638172.pdf:pp3-10:3255d58b80144baf4f927be65e1eace3738e4113962a182de58f7c4dc3cd020a"
+  },
+  "smokes": {
+    "curatorRollback": {
+      "v2": {"learning":5,"consolidation":5,"tribunal":5,"smart":5,"status":"GREEN"},
+      "v3": {"recommendedSelection":5,"status":"GREEN"},
+      "v4": {"studyUnitOpenContract":"GREEN","todayContextConcepts":19,"conceptEvidenceRows":1,"status":"GREEN"},
+      "residue": {"preparationProfiles":0,"mastery":0,"progress":0}
+    },
+    "freshUserRollback": {
+      "ownedTopics": 0,
+      "ownedQuestions": 0,
+      "visibleT10Questions": 89,
+      "visibleT10Units": 4,
+      "visibleT10Concepts": 19,
+      "visibleAuxQuestions": 0,
+      "v2Learning": 5,
+      "v2Smart": 5,
+      "v3Recommended": 5,
+      "v4Study": "GREEN",
+      "v4TodayConcepts": 19,
+      "residue": {"authUsers":0,"profiles":0,"userOppositions":0,"tests":0,"statistics":0},
+      "status": "GREEN"
+    }
+  },
+  "contamination": {
+    "beforeOutsideT10": {"celadorActiveQuestions":250,"units":3,"concepts":16,"primaryMappings":65,"flashcards":22,"auxActiveQuestions":4466},
+    "afterOutsideT10": {"celadorActiveQuestions":250,"units":3,"concepts":16,"primaryMappings":65,"flashcards":22,"auxActiveQuestions":4466},
+    "finalCeladorActiveQuestions": 339,
+    "status": "GREEN"
+  },
+  "governance": {
+    "questionFacetNotMastery": true,
+    "noQuotaGeneration": true,
+    "bankDepthPriority": true,
+    "sharedCatalogFreshUserGate": "GREEN",
+    "crossOppositionIsolation": "GREEN",
+    "officialNumberReset": "General 1-6 / Específica 1-7 preserved through subject identity",
+    "factory9Opened": false
+  },
+  "notes": [
+    "No web or external substantive knowledge was used.",
+    "The eight authorized physical pages were read visually/multimodally in the source Work before import.",
+    "The OUTDATED_OR_UNCLEAR exam-reference row was not used to fill any substantive source gap.",
+    "QUESTION FACET remained separate from MASTERY; 89 genuinely independent evaluable facets map to 19 stable mastery concepts.",
+    "Bank depth and user exhaustion resistance were treated as production gates; four primary questions per mastery was a floor, not a target.",
+    "A first production Work was blocked by its connector write environment; this continuation completed the import and all gates without reconstructing the source analysis."
+  ]
+}
