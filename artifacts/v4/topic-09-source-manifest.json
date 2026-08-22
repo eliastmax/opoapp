@@ -1,0 +1,113 @@
+{
+  "topic": "T09",
+  "status": "production-green",
+  "factory": "Factory.8 · Source Coverage Closure",
+  "startingMain": "78b74a06584749ecb0fb04e5b14ab35b72df3486",
+  "sourceContract": {
+    "primary": {
+      "document": "Temario_new.pdf",
+      "canonicalInput": "Temario_new_T09_CANONICAL_PAGES.json",
+      "sha256": "96768192445fa7da87e09d265b0b578737d38ffca2559f22225ea49ac4cebe2a",
+      "pages": "410-428",
+      "evaluatedScope": "Articles 2-25 on pages 411-424"
+    },
+    "externalSubstantiveSources": 0,
+    "manualProvider": 0,
+    "manualMap": 0,
+    "manualSpans": 0
+  },
+  "questionBank": {
+    "initialActive": 180,
+    "generated": 0,
+    "finalActive": 180,
+    "finalSource": "Temario_new.pdf"
+  },
+  "sourceCoverageClosure": {
+    "finalUncoveredCanonicalMaterial": 0,
+    "actionableGaps": 0,
+    "sourceReviewRequired": 0,
+    "ignoredNonMaterialOrOutOfScope": [
+      "page 410 contains only the explicit TEMA 9 heading",
+      "Chapter IV and Articles 26-27 are marked NO ENTRA by the canonical source",
+      "Chapter V and Article 28 are marked NO ENTRA by the canonical source",
+      "Chapter VI and Articles 29-31 remain beyond the canonical NO ENTRA boundary",
+      "Chapter VII and Article 32 are marked NO ENTRA before TEMA 10"
+    ]
+  },
+  "mastery": {
+    "units": 6,
+    "concepts": 17,
+    "primaryMappings": 180,
+    "flashcards": 34,
+    "unmapped": 0,
+    "multiplePrimary": 0
+  },
+  "capacity": {
+    "standardReady": 17,
+    "sourceLimited": 0,
+    "factoryPrimaryQuestionFloor": 4,
+    "minimumObservedPrimaryQuestionsPerConcept": 6,
+    "challengeResult": "No source_limited persisted: every mastery concept retained at least six active primary questions after same-pass challenge."
+  },
+  "generation": {
+    "generatedQuestions": 0,
+    "reason": "The existing 180-question bank closed all evaluable source families; no quota fill was justified."
+  },
+  "qa": {
+    "answerBalance": {"A": 45, "B": 45, "C": 45, "D": 45},
+    "duplicateStemGroups": 0,
+    "duplicateOptionRows": 0,
+    "badSourceRows": 0,
+    "badPageRows": 0,
+    "missingRequiredRows": 0,
+    "strongLengthOutliers": 0,
+    "editorialWarningsAutoFixed": 2
+  },
+  "productionImport": {
+    "id": "654c530e-0116-46eb-91f3-0f72aa0b7179",
+    "contractVersion": "4.0",
+    "units": 6,
+    "concepts": 17,
+    "questionMappings": 180,
+    "flashcards": 34,
+    "importReady": true
+  },
+  "smokes": {
+    "v4TodayT09": 17,
+    "studyOpen": true,
+    "cardsMin": 2,
+    "questionsMin": 6,
+    "v2Aprendizaje": 5,
+    "v2Consolidacion": 5,
+    "v2Tribunal": 5,
+    "v3Recommended": 5,
+    "weeklyRoadmapRows": 1,
+    "smokeResidue": 0
+  },
+  "contamination": {
+    "outsideT09WritesDetected": 0,
+    "outsideSnapshot": {
+      "questionsTotal": 4213,
+      "questionsActive": 4194,
+      "questionsInactive": 19,
+      "units": 109,
+      "concepts": 466,
+      "primaryMappings": 2608,
+      "flashcards": 937
+    },
+    "globalPostT09": {
+      "questionsTotal": 4393,
+      "questionsActive": 4374,
+      "questionsInactive": 19,
+      "units": 115,
+      "concepts": 483,
+      "primaryMappings": 2788,
+      "flashcards": 971
+    }
+  },
+  "regressionFloor": [
+    "T07", "T08", "T13", "T14", "T15", "T16", "T17", "T18", "T19", "T20", "T21", "T22", "T23", "T24",
+    "Factory.8 approved replay", "accordion visual"
+  ],
+  "factory9Opened": false
+}
