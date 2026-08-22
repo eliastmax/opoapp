@@ -368,7 +368,10 @@ function PrimaryCard({
   onAction: () => void;
 }) {
   return (
-    <Card className="overflow-hidden border-0 bg-gradient-to-br from-primary via-primary to-[oklch(0.47_0.12_225)] text-primary-foreground shadow-[0_24px_52px_-28px_oklch(0.3_0.14_250/0.9)]">
+    <Card
+      data-tour="today-session"
+      className="overflow-hidden border-0 bg-gradient-to-br from-primary via-primary to-[oklch(0.47_0.12_225)] text-primary-foreground shadow-[0_24px_52px_-28px_oklch(0.3_0.14_250/0.9)]"
+    >
       <div className="p-5">
         <div className="flex items-start gap-3">
           <span className="rounded-xl bg-white/15 p-2.5 ring-1 ring-white/20">
