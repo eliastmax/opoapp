@@ -47,6 +47,10 @@ export const PRODUCT_TOUR_STEPS = [
 
 export type ProductTourCompletionKind = "completed" | "skipped";
 
+export function maintainTourSession(current: boolean, eligibleToStart: boolean) {
+  return current || eligibleToStart;
+}
+
 export function shouldOpenProductTour(args: {
   loading: boolean;
   error: boolean;

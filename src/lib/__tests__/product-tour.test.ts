@@ -1,7 +1,7 @@
 // @ts-expect-error bun:test is provided by the Bun test runtime
 import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
-import { PRODUCT_TOUR_STEPS, shouldOpenProductTour } from "../product-tour";
+import { PRODUCT_TOUR_STEPS, maintainTourSession, shouldOpenProductTour } from "../product-tour";
 
 const migration = readFileSync(
   new URL(
@@ -52,6 +52,16 @@ describe("first-run spotlight tour", () => {
     expect(eligibility({ dismissedForSession: true })).toBe(false);
   });
 
+  it("keeps an automatic tour mounted after navigating from step 2 to Study", () => {
+    const startedOnToday = maintainTourSession(false, eligibility());
+    expect(startedOnToday).toBe(true);
+    const eligibilityAfterNavigation = eligibility({ pathname: "/estudio" });
+    expect(eligibilityAfterNavigation).toBe(false);
+    expect(maintainTourSession(startedOnToday, eligibilityAfterNavigation)).toBe(true);
+    expect(component).toContain("tourSessionActive");
+    expect(component).toContain("replaying || tourSessionActive");
+  });
+
   it("uses six contextual steps on real stable DOM targets", () => {
     expect(PRODUCT_TOUR_STEPS).toHaveLength(6);
     expect(PRODUCT_TOUR_STEPS.map((step) => step.target)).toEqual([
@@ -73,6 +83,9 @@ describe("first-run spotlight tour", () => {
     expect(component).toContain("getBoundingClientRect");
     expect(component).toContain("scrollIntoView");
     expect(component).toContain("ResizeObserver");
+    expect(component).toContain("MutationObserver");
+    expect(component).toContain("12_000");
+    expect(component).not.toContain("attempts++ < 180");
     expect(component).toContain('role="dialog"');
     expect(component).toContain('setAttribute("inert"');
     expect(component).not.toContain("TourVisual");
