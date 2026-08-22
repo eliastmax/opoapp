@@ -342,6 +342,27 @@ export type Database = {
           },
         ]
       }
+      product_tour_states: {
+        Row: {
+          completed_at: string
+          completion_kind: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          completion_kind: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          completion_kind?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       question_concepts: {
         Row: {
           concept_id: string
