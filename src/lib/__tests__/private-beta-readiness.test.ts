@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { toUserFacingError } from "../user-facing-error";
 
 const auth = readFileSync(new URL("../../routes/auth.tsx", import.meta.url), "utf8");
+const recovery = readFileSync(new URL("../../routes/auth.recovery.tsx", import.meta.url), "utf8");
 const importer = readFileSync(new URL("../../routes/_authenticated/importar.tsx", import.meta.url), "utf8");
 const questions = readFileSync(new URL("../../routes/_authenticated/preguntas.tsx", import.meta.url), "utf8");
 const settings = readFileSync(new URL("../../routes/_authenticated/ajustes.tsx", import.meta.url), "utf8");
@@ -17,8 +18,10 @@ describe("private beta readiness contracts", () => {
     expect(auth).toContain("if (!data.session)"); expect(auth).toContain("Revisa tu correo"); expect(auth).toContain("supabase.auth.resend");
   });
   it("provides password recovery and accessible labels", () => {
-    expect(auth).toContain("resetPasswordForEmail"); expect(auth).toContain('event === "PASSWORD_RECOVERY"'); expect(auth).toContain("updateUser({ password })");
-    for (const id of ["login-email", "login-password", "signup-name", "new-password", "confirm-password"]) expect(auth).toContain(`id=\"${id}\"`);
+    expect(auth).toContain("resetPasswordForEmail"); expect(auth).toContain("/auth/recovery");
+    expect(recovery).toContain('event !== "PASSWORD_RECOVERY"'); expect(recovery).toContain("updateUser({ password })");
+    for (const id of ["login-email", "login-password", "signup-name"]) expect(auth).toContain(`id=\"${id}\"`);
+    for (const id of ["recovery-new-password", "recovery-confirm-password"]) expect(recovery).toContain(`id=\"${id}\"`);
   });
   it("guards both curator routes and hides the curator CTA for learners", () => {
     expect(importer).toContain("beforeLoad: requireOppositionAdmin"); expect(questions).toContain("beforeLoad: requireOppositionAdmin"); expect(settings).toContain("isAdmin && <Link");
