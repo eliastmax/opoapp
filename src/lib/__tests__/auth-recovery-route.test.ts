@@ -33,10 +33,27 @@ describe("dedicated password recovery route", () => {
       accessToken: "access",
       refreshToken: "refresh",
       code: null,
+      tokenHash: null,
     });
     expect(readRecoveryUrlState({ hash: "", search: "?code=pkce-code" }).hasRecoveryProof).toBe(
       true,
     );
+  });
+
+  it("recognizes a prefetch-safe recovery token hash in the URL fragment", () => {
+    expect(
+      readRecoveryUrlState({
+        hash: "#token_hash=recovery-hash&type=recovery",
+        search: "",
+      }),
+    ).toEqual({
+      hasRecoveryProof: true,
+      invalidReason: null,
+      accessToken: null,
+      refreshToken: null,
+      code: null,
+      tokenHash: "recovery-hash",
+    });
   });
 
   it("fails closed for expired and reused links", () => {
@@ -48,11 +65,22 @@ describe("dedicated password recovery route", () => {
       accessToken: null,
       refreshToken: null,
       code: null,
+      tokenHash: null,
     });
     expect(readRecoveryUrlState({ hash: "", search: "" }).hasRecoveryProof).toBe(false);
   });
 
-  it("consumes the callback before deciding whether recovery is invalid", () => {
+  it("requires a deliberate user action before consuming a token hash", () => {
+    expect(recovery).toContain('state === "confirm"');
+    expect(recovery).toContain("Confirmar y continuar");
+    expect(recovery).toContain("supabase.auth.verifyOtp");
+    expect(recovery).toContain('type: "recovery"');
+    expect(recovery).toContain("token_hash: urlState.tokenHash");
+    expect(recovery).toContain("if (urlState.tokenHash)");
+    expect(recovery).toContain('settle("confirm")');
+  });
+
+  it("keeps legacy implicit and PKCE recovery support", () => {
     expect(recovery).toContain('event === "PASSWORD_RECOVERY"');
     expect(recovery).toContain("supabase.auth.setSession");
     expect(recovery).toContain("supabase.auth.exchangeCodeForSession");
