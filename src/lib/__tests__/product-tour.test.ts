@@ -139,16 +139,29 @@ describe("first-run spotlight tour", () => {
     expect(component).not.toContain("DialogContent");
   });
 
-  it("keeps the coach mark compact and safe at 360, 390 and 430 px", () => {
+  it("keeps the coach mark readable and safe at 360, 390 and 430 px", () => {
     expect(Math.min(340, 360 - 32)).toBe(328);
     expect(Math.min(340, 390 - 32)).toBe(340);
     expect(Math.min(340, 430 - 32)).toBe(340);
     expect(component).toContain("Math.min(340, viewportWidth - 32)");
     expect(component).toContain("viewportWidth - width - 16");
-    expect(component).toContain('className="mt-1 text-lg font-semibold leading-tight"');
-    expect(component).toContain('className="mt-2 text-[15px] leading-[1.45] text-muted-foreground"');
+    expect(component).toContain("p-4");
+    expect(component).toContain("min-[390px]:p-[18px]");
+    expect(component).toContain('className="mt-3 text-[19px] font-semibold leading-[1.2] min-[390px]:text-xl"');
+    expect(component).toContain('className="mt-2 text-base leading-[1.45] text-muted-foreground"');
+    expect(component).toContain('className="text-[13px] font-medium leading-none text-muted-foreground"');
+    expect(component).not.toContain("text-[15px] leading-[1.45] text-muted-foreground");
     expect(component).not.toContain("ArrowLeft");
     expect(component).not.toContain("ArrowRight");
+  });
+
+  it("gives the short copy breathing room without making the coach mark oversized", () => {
+    expect(component).toContain("mt-3 text-[19px]");
+    expect(component).toContain("mt-2 text-base");
+    expect(component).toContain("mt-5 flex items-center gap-2");
+    expect(component).toContain('className="h-8 px-2 text-[13px] font-medium text-muted-foreground"');
+    expect(component).toContain('className="h-10 px-2.5 text-[15px] font-semibold text-muted-foreground"');
+    expect(component).toContain('className="h-10 px-4 text-[15px] font-semibold"');
   });
 
   it("keeps Omitir visible and only shows Anterior after the first step", () => {
