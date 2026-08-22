@@ -1,0 +1,123 @@
+{
+  "topic": "T12",
+  "status": "production-green",
+  "factory": "Factory.8 · Source Coverage Closure",
+  "startingMain": "073cb78225466768f44a33111cfb4fb33e730023",
+  "sourceContract": {
+    "primary": {
+      "document": "Temario_new.pdf",
+      "canonicalInput": "Temario_new_T12_CANONICAL_PAGES.json",
+      "sha256": "96768192445fa7da87e09d265b0b578737d38ffca2559f22225ea49ac4cebe2a",
+      "pages": "231-239",
+      "evaluatedScope": "Articles 4-7 and 56: órganos superiores de dirección y gestión del personal estatutario y jornada de trabajo"
+    },
+    "externalSubstantiveSources": 0,
+    "manualProvider": 0,
+    "manualMap": 0,
+    "manualSpans": 0
+  },
+  "questionBank": {
+    "initialActive": 120,
+    "generated": 0,
+    "finalActive": 120,
+    "finalSource": "Temario_new.pdf",
+    "learningStages": {"aprendizaje": 40, "consolidacion": 40, "tribunal": 40}
+  },
+  "sourceCoverageClosure": {
+    "finalUncoveredCanonicalMaterial": 0,
+    "actionableGaps": 0,
+    "sourceReviewRequired": 0,
+    "auditedEdgePages": ["231-233", "239"],
+    "coveredMaterial": "Articles 4-7 and 56",
+    "ignoredNonMaterialOrOutOfScope": [
+      "page 231 contains only the explicit TEMA 12 heading",
+      "page 232 contains topic title, consolidated-legislation front matter and index material",
+      "page 233 contains index material and Article 3 principles, outside T12's stated scope of organs superiores and jornada de trabajo",
+      "page 234 begins with the continuation of Article 3 before Chapter II, outside the stated T12 scope",
+      "pages 237-238 contain Articles 54-55 between Article 7 and Chapter X, outside the stated T12 scope",
+      "page 239 contains Article 57 after Article 56, outside the stated T12 scope"
+    ]
+  },
+  "mastery": {
+    "units": 5,
+    "concepts": 12,
+    "primaryMappings": 120,
+    "flashcards": 24,
+    "unmapped": 0,
+    "multiplePrimary": 0
+  },
+  "capacity": {
+    "standardReady": 12,
+    "sourceLimited": 0,
+    "factoryPrimaryQuestionFloor": 4,
+    "minimumObservedPrimaryQuestionsPerConcept": 6,
+    "challengeResult": "No source_limited persisted: every mastery concept retains at least six active primary questions after consolidating question facets into source-natural mastery families."
+  },
+  "generation": {
+    "generatedQuestions": 0,
+    "reason": "The existing 120-question bank already covers every evaluable family in Articles 4-7 and 56; Factory.8 did not justify quota filling."
+  },
+  "qa": {
+    "answerBalance": {"A": 30, "B": 30, "C": 30, "D": 30},
+    "duplicateStemGroups": 0,
+    "duplicateQuestionRows": 0,
+    "exactRepeatedOptionSetGroups": 14,
+    "repeatedOptionSetDisposition": "Accepted: these are intentional competent-body matrices using the same four legally plausible organs across distinct attribution questions; they do not create answer-by-length or absurd-distractor shortcuts.",
+    "badSourceRows": 0,
+    "badPageRows": 0,
+    "missingRequiredRows": 0,
+    "strongLengthOutliers": 0,
+    "editorialWarningsAutoFixed": 0
+  },
+  "productionImport": {
+    "id": "bda0a242-028c-47c9-8421-a6060b3934df",
+    "contractVersion": "4.0",
+    "units": 5,
+    "concepts": 12,
+    "questionMappings": 120,
+    "flashcards": 24,
+    "importReady": true
+  },
+  "smokes": {
+    "v4TodayT12": 12,
+    "studyOpen": true,
+    "cardsMin": 2,
+    "questionsMin": 6,
+    "v2Aprendizaje": 5,
+    "v2Consolidacion": 5,
+    "v2Tribunal": 5,
+    "v3Recommended": 5,
+    "weeklyRoadmapRows": 1,
+    "smokeResidue": 0,
+    "studyProgressResidue": 0,
+    "masterySmokeResidue": 0
+  },
+  "contamination": {
+    "outsideT12WritesDetected": 0,
+    "oppositionScoped": true,
+    "outsideSnapshot": {
+      "questionsTotal": 4598,
+      "questionsActive": 4579,
+      "questionsInactive": 19,
+      "units": 128,
+      "concepts": 517,
+      "primaryMappings": 3167,
+      "flashcards": 1039
+    },
+    "globalPostT12": {
+      "questionsTotal": 4598,
+      "questionsActive": 4579,
+      "questionsInactive": 19,
+      "units": 133,
+      "concepts": 529,
+      "primaryMappings": 3287,
+      "flashcards": 1063
+    },
+    "otherOppositionQuestionRowsExcluded": 185
+  },
+  "regressionFloor": [
+    "T07", "T08", "T09", "T10", "T11", "T13", "T14", "T15", "T16", "T17", "T18", "T19", "T20", "T21", "T22", "T23", "T24",
+    "Factory.8 approved replay", "accordion visual"
+  ],
+  "factory9Opened": false
+}
