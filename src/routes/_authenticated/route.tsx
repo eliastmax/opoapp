@@ -32,7 +32,7 @@ function AuthLayout() {
     pathname.startsWith("/recordar/");
   return (
     <ProductTourProvider user={user}>
-      <div className="min-h-screen flex flex-col">
+      <div data-app-shell className="min-h-screen flex flex-col">
         <main
           className={cn(
             "flex-1 w-full max-w-md mx-auto px-4 pt-[calc(env(safe-area-inset-top,0px)+1rem)]",
@@ -51,6 +51,13 @@ function AuthLayout() {
                   <Link
                     key={item.to}
                     to={item.to}
+                    data-tour={
+                      item.to === "/estudio"
+                        ? "nav-study"
+                        : item.to === "/crear"
+                          ? "nav-practice"
+                          : undefined
+                    }
                     className={cn(
                       "group flex min-h-14 flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium transition-colors sm:text-[11px]",
                       active ? "text-primary" : "text-muted-foreground",
