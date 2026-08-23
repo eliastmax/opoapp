@@ -96,7 +96,19 @@ function StudyCenterPage() {
 
           <StudyRoadmapStrip open={roadmapOpen} onToggle={() => setRoadmapOpen((value) => !value)} />
           {roadmapOpen && (
-            <section id="hoja-de-ruta" aria-label="Hoja de ruta semanal" className="animate-in fade-in-0 slide-in-from-top-1 duration-200">
+            <section
+              id="hoja-de-ruta"
+              aria-label="Hoja de ruta semanal"
+              className="animate-in fade-in-0 slide-in-from-top-1 duration-200"
+            >
+              <div className="mb-3 px-1">
+                <p className="text-xs font-bold">Por qué esta ruta</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  La construimos a partir de tus días disponibles y del ritmo que configuraste.
+                  Sirve para repartir el trabajo de la semana sin que tengas que decidir desde cero
+                  cada día. Dentro verás también por qué se prioriza cada sesión.
+                </p>
+              </div>
               <WeeklyRoadmap />
             </section>
           )}
@@ -216,6 +228,9 @@ function StudyRoadmapStrip({ open, onToggle }: { open: boolean; onToggle: () => 
               : row && target > 0
                 ? `${completed} de ${target} sesiones`
                 : "Tu hoja de ruta"}
+          </p>
+          <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+            Ajustada a tus días y a tu ritmo para repartir el trabajo sin planificar cada jornada.
           </p>
         </div>
         <span className="shrink-0 text-xs font-semibold text-primary">{open ? "Ocultar" : "Ver ruta"}</span>

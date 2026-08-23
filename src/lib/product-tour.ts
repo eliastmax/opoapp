@@ -1,4 +1,4 @@
-export type ProductTourRoute = "/inicio" | "/estudio" | "study-preview";
+export type ProductTourRoute = "/inicio" | "/estudio" | "/crear" | "/progreso" | "study-preview";
 
 export type ProductTourScene = {
   route: ProductTourRoute;
@@ -71,12 +71,12 @@ export const PRODUCT_TOUR_STEPS = [
   {
     scenes: [
       {
-        route: "/estudio",
-        target: "nav-practice",
-        title: "Comprueba qué sabes de verdad",
+        route: "/crear",
+        target: "practice-builder",
+        title: "Crea el test que necesitas",
         description:
-          "Haz tests para descubrir qué dominas, dónde fallas y qué necesitas reforzar.",
-        emphasis: ["qué dominas", "dónde fallas"],
+          "Elige qué quieres practicar y ajusta cantidad, nivel y tipo de preguntas antes de empezar.",
+        emphasis: ["cantidad, nivel y tipo de preguntas"],
       },
     ],
     final: false,
@@ -84,12 +84,12 @@ export const PRODUCT_TOUR_STEPS = [
   {
     scenes: [
       {
-        route: "/inicio",
-        target: "today-session",
-        title: "Siempre sabrás qué hacer después",
+        route: "/progreso",
+        target: "progress-overview",
+        title: "Mira cómo evoluciona tu preparación",
         description:
-          "Tus fallos, dudas y puntos débiles vuelven a tu preparación. Con tu progreso, OpoTest te propone el siguiente paso.",
-        emphasis: ["fallos, dudas y puntos débiles", "el siguiente paso"],
+          "Aquí ves qué temas avanzan, cuáles necesitan atención y qué necesitas seguir trabajando.",
+        emphasis: ["qué temas avanzan", "cuáles necesitan atención"],
       },
     ],
     final: true,

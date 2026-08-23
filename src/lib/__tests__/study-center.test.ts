@@ -1,7 +1,13 @@
 // @ts-expect-error bun:test is provided by the Bun test runtime
 import { describe, expect, it } from "bun:test";
+import { readFileSync } from "node:fs";
 import { buildStudyCenterModel, studyUnitActionLabel, studyUnitStatusLabel } from "../study-center";
 import type { V4TodayContextRow } from "../v4-today-plan";
+
+const studyRoute = readFileSync(
+  new URL("../../routes/_authenticated/estudio.tsx", import.meta.url),
+  "utf8",
+);
 
 function row(
   overrides: Partial<V4TodayContextRow> & Pick<V4TodayContextRow, "concept_id" | "study_unit_id">,
@@ -97,5 +103,12 @@ describe("study center view model", () => {
     expect(studyUnitActionLabel("not_started")).toBe("Estudiar");
     expect(studyUnitActionLabel("in_progress")).toBe("Continuar");
     expect(studyUnitActionLabel("needs_attention")).toBe("Repasar");
+  });
+
+  it("explains why the weekly roadmap exists instead of presenting it as an unexplained assignment", () => {
+    expect(studyRoute).toContain("Por qué esta ruta");
+    expect(studyRoute).toContain("tus días disponibles y del ritmo que configuraste");
+    expect(studyRoute).toContain("sin que tengas que decidir desde cero");
+    expect(studyRoute).toContain("por qué se prioriza cada sesión");
   });
 });

@@ -143,7 +143,7 @@ export function ProductTourProvider({ user, children }: { user: User; children: 
   }, [navigate]);
   const navigateTourRoute = useCallback(
     (route: ProductTourRoute, unitId: string | null) => {
-      if (route === "/inicio" || route === "/estudio") {
+      if (route !== "study-preview") {
         void navigate({ to: route });
         return;
       }
@@ -335,9 +335,13 @@ function SpotlightTour({
         const fallbackSelector =
           item.route === "/estudio"
             ? '[data-tour="nav-study"]'
-            : item.route === "/inicio"
-              ? '[data-tour="today-session"]'
-              : null;
+            : item.route === "/crear"
+              ? '[data-tour="nav-practice"]'
+              : item.route === "/progreso"
+                ? '[data-tour="nav-progress"]'
+                : item.route === "/inicio"
+                  ? '[data-tour="today-session"]'
+                  : null;
         const fallback = fallbackSelector
           ? document.querySelector<HTMLElement>(fallbackSelector)
           : null;

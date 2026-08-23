@@ -64,7 +64,7 @@ describe("first-run spotlight tour", () => {
     expect(eligibility({ dismissedForSession: true })).toBe(false);
   });
 
-  it("keeps an automatic tour mounted while it moves through Study", () => {
+  it("keeps an automatic tour mounted while it moves through the product", () => {
     const startedOnToday = maintainTourSession(false, eligibility());
     expect(startedOnToday).toBe(true);
     const eligibilityAfterNavigation = eligibility({ pathname: "/estudio" });
@@ -74,7 +74,7 @@ describe("first-run spotlight tour", () => {
     expect(component).toContain("replaying || tourSessionActive");
   });
 
-  it("keeps six top-level moments while teaching summary and flashcards inside Study", () => {
+  it("keeps six top-level moments while showing Study, test creation and Progress", () => {
     expect(PRODUCT_TOUR_STEPS).toHaveLength(6);
     expect(PRODUCT_TOUR_STEPS.map((_, index) => productTourSceneCount(index))).toEqual([
       1, 1, 1, 2, 1, 1,
@@ -89,12 +89,15 @@ describe("first-run spotlight tour", () => {
       "study-unit",
       "study-summary",
       "flashcard-preview",
-      "nav-practice",
-      "today-session",
+      "practice-builder",
+      "progress-overview",
     ]);
     expect(today).toContain('data-tour="today-session"');
     expect(layout).toContain('"nav-study"');
     expect(layout).toContain('"nav-practice"');
+    expect(layout).toContain('"nav-progress"');
+    expect(layout).toContain('"practice-builder"');
+    expect(layout).toContain('"progress-overview"');
     expect(study).toContain('data-tour={tourTarget ? "study-unit" : undefined}');
     expect(studyUnit).toContain('data-tour="study-summary"');
     expect(studyUnit).toContain('data-tour="flashcard-preview"');
@@ -103,6 +106,9 @@ describe("first-run spotlight tour", () => {
   it("routes the learning demonstration to the real unit in read-only preview mode", () => {
     expect(productTourPath("study-preview", "unit-123")).toBe("/estudiar/unit-123");
     expect(productTourPath("study-preview", null)).toBeNull();
+    expect(productTourPath("/crear", null)).toBe("/crear");
+    expect(productTourPath("/progreso", null)).toBe("/progreso");
+    expect(component).toContain('route !== "study-preview"');
     expect(component).toContain('search: { tour: "preview" }');
     expect(studyUnit).toContain('tour: search.tour === "preview" ? "preview" : undefined');
     expect(studyUnit).toContain("if (previewing) return loadStudyPreview(unitId)");
@@ -120,7 +126,7 @@ describe("first-run spotlight tour", () => {
     expect(studyUnit).not.toContain("review_my_v4_flashcard");
   });
 
-  it("keeps concise copy with selective emphasis", () => {
+  it("uses six distinct product moments instead of returning to Today twice", () => {
     const scenes = PRODUCT_TOUR_STEPS.flatMap<ProductTourScene>((phase) => phase.scenes);
     expect(scenes.map((scene) => scene.title)).toEqual([
       "Empieza por aquí",
@@ -128,9 +134,10 @@ describe("first-run spotlight tour", () => {
       "Estudia cada tema por partes",
       "Aquí es donde estudias",
       "Después, intenta recordarlo",
-      "Comprueba qué sabes de verdad",
-      "Siempre sabrás qué hacer después",
+      "Crea el test que necesitas",
+      "Mira cómo evoluciona tu preparación",
     ]);
+    expect(scenes.filter((scene) => scene.target === "today-session")).toHaveLength(1);
     for (const scene of scenes) {
       for (const fragment of scene.emphasis) expect(scene.description).toContain(fragment);
     }
