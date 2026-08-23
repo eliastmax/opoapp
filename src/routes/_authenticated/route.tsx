@@ -43,7 +43,8 @@ function ProgressTourTarget() {
       const marker = document.querySelector<HTMLElement>(
         '[aria-label="Distribución del conocimiento"]',
       );
-      const card = marker?.parentElement?.parentElement ?? null;
+      const knowledgeBar = marker?.closest<HTMLElement>(".overflow-hidden") ?? null;
+      const card = knowledgeBar?.parentElement?.parentElement ?? null;
       const exactKnowledgeCard =
         card instanceof HTMLElement &&
         card.textContent?.includes("Conocimiento real") &&
