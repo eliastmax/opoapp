@@ -74,9 +74,9 @@ describe("short product tour v2", () => {
     expect(component).toContain("replaying || tourSessionActive");
   });
 
-  it("reduces the journey to four value moments", () => {
+  it("keeps four value moments while giving every micro-scene one exact target", () => {
     expect(PRODUCT_TOUR_STEPS).toHaveLength(4);
-    expect(PRODUCT_TOUR_STEPS.map((_, index) => productTourSceneCount(index))).toEqual([4, 3, 1, 1]);
+    expect(PRODUCT_TOUR_STEPS.map((_, index) => productTourSceneCount(index))).toEqual([5, 6, 1, 1]);
     expect(PRODUCT_TOUR_STEPS.map((_, index) => productTourJourneyLabel(index))).toEqual([
       "Estudia",
       "Practica",
@@ -89,13 +89,18 @@ describe("short product tour v2", () => {
       "study-unit",
       "tour-study-understand",
       "tour-study-traps",
-      "tour-study-flashcard",
+      "tour-study-flashcard-question",
+      "tour-study-flashcard-answer",
       "practice-builder",
-      "practice-levels",
-      "practice-check",
+      "tour-study-practice-aprendizaje",
+      "tour-study-practice-consolidacion",
+      "tour-study-practice-tribunal",
+      "tour-study-practice-question",
+      "tour-study-practice-feedback",
       "progress-overview",
       "today-session",
     ]);
+    expect(new Set(scenes.map((scene) => scene.target)).size).toBe(scenes.length);
   });
 
   it("uses Today exactly once and only as the final close", () => {
@@ -117,21 +122,26 @@ describe("short product tour v2", () => {
     }
     expect(productTourScene(0, 1).title).toBe("Entiende lo importante");
     expect(productTourScene(0, 2).title).toBe("No caigas en las trampas");
-    expect(productTourScene(1, 1).title).toBe("No practiques siempre igual");
+    expect(productTourScene(1, 2).title).toContain("Consolidación");
+    expect(productTourScene(1, 3).title).toContain("Tribunal");
     expect(productTourScene(2, 0).title).toBe("Tus fallos sirven para algo");
   });
 
-  it("uses focused study scenes instead of chasing long-page scroll targets", () => {
+  it("uses focused study targets and separates flashcard recall from its answer", () => {
     expect(studyDemo).toContain('data-tour="tour-study-understand"');
     expect(studyDemo).toContain('data-tour="tour-study-traps"');
-    expect(studyDemo).toContain('data-tour="tour-study-flashcard"');
-    expect(studyDemo).toContain('className="fixed inset-0 z-[50] overflow-hidden bg-background"');
+    expect(studyDemo).toContain('data-tour="tour-study-flashcard-question"');
+    expect(studyDemo).toContain('data-tour="tour-study-flashcard-answer"');
+    expect(productTourScene(0, 3).target).toBe("tour-study-flashcard-question");
+    expect(productTourScene(0, 4).target).toBe("tour-study-flashcard-answer");
+    expect(productTourScene(0, 3).description).toContain("no basta");
+    expect(productTourScene(0, 4).description).toContain("Después de intentarlo");
+    expect(studyDemo).toContain('className="fixed inset-0 z-[50] overflow-y-auto bg-background"');
+    expect(studyDemo).toContain("pb-[48dvh]");
     expect(studyDemo).toContain("Al estudiar verás el resumen completo.");
     expect(studyDemo).toContain("data.keys.slice(0, 1)");
     expect(studyDemo).toContain("data.confusions.slice(0, 1)");
     expect(studyDemo).toContain("data.traps.slice(0, 1)");
-    expect(component).toContain('targetName.startsWith("tour-study-")');
-    expect(component).toContain("isDemoTarget(item.target)");
   });
 
   it("keeps study focus mode read-only and based on real catalog content", () => {
@@ -158,39 +168,59 @@ describe("short product tour v2", () => {
     expect(study).toContain("data-tour-unit-id");
   });
 
-  it("turns the three learning levels into one fast unlock demonstration", () => {
-    expect(practiceDemo).toContain("Tres niveles. Tres objetivos.");
-    expect(practiceDemo).toContain("Empiezas por la base y avanzas cuando tu práctica demuestra seguridad.");
-    expect(practiceDemo).toContain("Base, reglas y conceptos esenciales. Empiezas aquí.");
-    expect(practiceDemo).toContain("Se desbloquea cuando tu base ya es estable.");
-    expect(practiceDemo).toContain("Se desbloquea tras consolidar con seguridad.");
+  it("gives Aprendizaje, Consolidación and Tribunal independent spotlight targets", () => {
+    expect(practiceDemo).toContain("STAGE_TARGETS");
+    expect(practiceDemo).toContain('"tour-study-practice-aprendizaje"');
+    expect(practiceDemo).toContain('"tour-study-practice-consolidacion"');
+    expect(practiceDemo).toContain('"tour-study-practice-tribunal"');
+    expect(practiceDemo).toContain("data-tour={STAGE_TARGETS[stage.index]}");
+    expect(practiceDemo).toContain("const active = stage.index === activeIndex");
+    expect(productTourScene(1, 1).target).toBe("tour-study-practice-aprendizaje");
+    expect(productTourScene(1, 2).target).toBe("tour-study-practice-consolidacion");
+    expect(productTourScene(1, 3).target).toBe("tour-study-practice-tribunal");
+  });
+
+  it("synchronizes each advanced stage unlock with the scene that highlights it", () => {
+    expect(practiceDemo).toContain("const targetUnlock = scene - 1");
+    expect(practiceDemo).toContain("setUnlocked(previousUnlock)");
+    expect(practiceDemo).toContain("setUnlocking(targetUnlock)");
+    expect(practiceDemo).toContain("setUnlocked(targetUnlock)");
     expect(practiceDemo).toContain("<Lock");
     expect(practiceDemo).toContain("<LockOpen");
-    expect(practiceDemo).toContain("setUnlocked(1)");
-    expect(practiceDemo).toContain("setUnlocked(2)");
-    expect(practiceDemo).toContain("setUnlocking(1)");
-    expect(practiceDemo).toContain("setUnlocking(2)");
     expect(practiceDemo).toContain("tour-lock-release");
     expect(practiceDemo).toContain("tour-unlock-pop");
     expect(practiceDemo).toContain("Desbloqueado");
-    expect(practiceDemo).toContain('data-tour="practice-levels"');
   });
 
-  it("shows a real question, visibly selects a wrong answer and then corrects it", () => {
-    expect(practiceDemo).toContain('supabase.rpc("prepare_my_v4_today_context")');
-    expect(practiceDemo).toContain('.from("questions")');
+  it("separates the real question from the correction target", () => {
+    expect(productTourScene(1, 4).target).toBe("tour-study-practice-question");
+    expect(productTourScene(1, 5).target).toBe("tour-study-practice-feedback");
+    expect(practiceDemo).toContain('data-tour="tour-study-practice-question"');
+    expect(practiceDemo).toContain('data-tour="tour-study-practice-feedback"');
     expect(practiceDemo).toContain('setAnswerPhase("selected")');
     expect(practiceDemo).toContain('setAnswerPhase("feedback")');
     expect(practiceDemo).toContain("Tu respuesta");
     expect(practiceDemo).toContain("Respuesta correcta");
     expect(practiceDemo).toContain("font-normal leading-[1.45] text-success");
-    expect(practiceDemo).toContain('data-tour="practice-check"');
+  });
 
+  it("keeps practice demos read-only", () => {
+    expect(practiceDemo).toContain('supabase.rpc("prepare_my_v4_today_context")');
+    expect(practiceDemo).toContain('.from("questions")');
     expect(practiceDemo).not.toContain('.from("tests")');
     expect(practiceDemo).not.toContain('.from("test_answers")');
     expect(practiceDemo).not.toContain(".insert(");
     expect(practiceDemo).not.toContain(".update(");
     expect(practiceDemo).not.toContain("complete_test");
+  });
+
+  it("keeps demo surfaces scrollable enough to position a lower target above the coach mark", () => {
+    expect(practiceDemo).toContain('className="fixed inset-0 z-[50] overflow-y-auto bg-background"');
+    expect(practiceDemo).toContain("pb-[48dvh]");
+    expect(studyDemo).toContain('className="fixed inset-0 z-[50] overflow-y-auto bg-background"');
+    expect(studyDemo).toContain("pb-[48dvh]");
+    expect(component).toContain("bringRealTargetIntoView");
+    expect(component).toContain('target.scrollIntoView({');
   });
 
   it("keeps desktop demo content and its spotlight in the same reserved rail geometry", () => {
