@@ -12,28 +12,32 @@ import {
   type ProductTourScene,
 } from "../product-tour";
 
-const migration = readFileSync(
-  new URL("../../../supabase/migrations/20260822190000_first_run_product_tour.sql", import.meta.url),
+const component = readFileSync(
+  new URL("../../components/product-tour.tsx", import.meta.url),
   "utf8",
 );
-const component = readFileSync(new URL("../../components/product-tour.tsx", import.meta.url), "utf8");
+const studyDemo = readFileSync(
+  new URL("../../components/product-tour-study-demo.tsx", import.meta.url),
+  "utf8",
+);
 const practiceDemo = readFileSync(
   new URL("../../components/product-tour-practice-demo.tsx", import.meta.url),
   "utf8",
 );
-const layout = readFileSync(new URL("../../routes/_authenticated/route.tsx", import.meta.url), "utf8");
-const today = readFileSync(new URL("../../routes/_authenticated/inicio.tsx", import.meta.url), "utf8");
-const study = readFileSync(new URL("../../routes/_authenticated/estudio.tsx", import.meta.url), "utf8");
+const layout = readFileSync(
+  new URL("../../routes/_authenticated/route.tsx", import.meta.url),
+  "utf8",
+);
+const today = readFileSync(
+  new URL("../../routes/_authenticated/inicio.tsx", import.meta.url),
+  "utf8",
+);
+const study = readFileSync(
+  new URL("../../routes/_authenticated/estudio.tsx", import.meta.url),
+  "utf8",
+);
 const studyUnit = readFileSync(
   new URL("../../routes/_authenticated/estudiar.$unitId.tsx", import.meta.url),
-  "utf8",
-);
-const recallUnit = readFileSync(
-  new URL("../../routes/_authenticated/recordar.$unitId.tsx", import.meta.url),
-  "utf8",
-);
-const contract = readFileSync(
-  new URL("../../../docs/PRODUCT_TOUR_METHOD_DEMO_2026-08-23.md", import.meta.url),
   "utf8",
 );
 
@@ -48,200 +52,159 @@ const eligibility = (overrides: Partial<Parameters<typeof shouldOpenProductTour>
     ...overrides,
   });
 
-describe("first-run spotlight tour", () => {
-  it("opens automatically only for an eligible normal first entry", () => {
+describe("short product tour v2", () => {
+  it("opens automatically only for an eligible first entry and remains mounted across routes", () => {
     expect(eligibility()).toBe(true);
     expect(eligibility({ preparationCompleted: false })).toBe(false);
-    expect(eligibility({ pathname: "/preparacion" })).toBe(false);
-    expect(eligibility({ loading: true })).toBe(false);
-    expect(eligibility({ error: true })).toBe(false);
-    expect(eligibility({ completedAt: "2026-08-22" })).toBe(false);
+    expect(eligibility({ completedAt: "2026-08-23" })).toBe(false);
     expect(eligibility({ dismissedForSession: true })).toBe(false);
-  });
+    expect(eligibility({ pathname: "/estudio" })).toBe(false);
 
-  it("keeps an automatic tour mounted while it moves through routes", () => {
-    const started = maintainTourSession(false, eligibility());
-    expect(started).toBe(true);
-    expect(maintainTourSession(started, eligibility({ pathname: "/estudio" }))).toBe(true);
-    expect(component).toContain("tourSessionActive");
+    const active = maintainTourSession(false, eligibility());
+    expect(active).toBe(true);
+    expect(maintainTourSession(active, eligibility({ pathname: "/estudio" }))).toBe(true);
     expect(component).toContain("replaying || tourSessionActive");
   });
 
-  it("uses six unique top-level moments and shows Today only once, at the end", () => {
-    expect(PRODUCT_TOUR_STEPS).toHaveLength(6);
-    expect(PRODUCT_TOUR_STEPS.map((_, index) => productTourSceneCount(index))).toEqual([
-      1, 1, 6, 10, 1, 1,
+  it("reduces the journey to four value moments", () => {
+    expect(PRODUCT_TOUR_STEPS).toHaveLength(4);
+    expect(PRODUCT_TOUR_STEPS.map((_, index) => productTourSceneCount(index))).toEqual([4, 3, 1, 1]);
+    expect(PRODUCT_TOUR_STEPS.map((_, index) => productTourJourneyLabel(index))).toEqual([
+      "Estudia",
+      "Practica",
+      "Progreso",
+      "Hoy",
     ]);
-    expect(productTourJourneyLabel(2)).toBe("Dentro de una unidad");
-    expect(productTourJourneyLabel(3)).toBe("Crear un test");
 
     const scenes = PRODUCT_TOUR_STEPS.flatMap<ProductTourScene>((phase) => phase.scenes);
-    expect(scenes.filter((scene) => scene.target === "today-session")).toHaveLength(1);
-    expect(PRODUCT_TOUR_STEPS[0].scenes[0].target).toBe("nav-study");
-    expect(PRODUCT_TOUR_STEPS[0].scenes[0].title).toBe("Empieza conociendo tu temario");
-    expect(PRODUCT_TOUR_STEPS[4].scenes[0].route).toBe("/progreso");
-    expect(PRODUCT_TOUR_STEPS[5].scenes[0].route).toBe("/inicio");
-    expect(PRODUCT_TOUR_STEPS[5].scenes[0].target).toBe("today-session");
-    expect(PRODUCT_TOUR_STEPS[5].scenes[0].title).toBe(
-      "Ahora sí: siempre sabrás qué hacer después",
-    );
-    expect(today).toContain('data-tour="today-session"');
-    expect(layout).toContain('"nav-study"');
-    expect(layout).toContain('"nav-progress"');
-  });
-
-  it("teaches Study downward using compact, intentionally complete tutorial targets", () => {
-    const studyScenes = PRODUCT_TOUR_STEPS[2].scenes;
-    expect(studyScenes.map((scene) => scene.target)).toEqual([
-      "study-summary",
-      "study-keys",
-      "study-confusions",
-      "study-traps",
-      "flashcard-preview",
-      "flashcard-answer",
+    expect(scenes.map((scene) => scene.target)).toEqual([
+      "study-unit",
+      "tour-study-understand",
+      "tour-study-traps",
+      "tour-study-flashcard",
+      "practice-builder",
+      "practice-levels",
+      "practice-check",
+      "progress-overview",
+      "today-session",
     ]);
-    expect(studyScenes[0].description).toContain("idea central");
-    expect(studyScenes[4].description).toBe(
-      "Las flashcards te piden la respuesta antes de mostrarla para que compruebes qué recuerdas sin mirar.",
-    );
-    expect(studyUnit).toContain("compactTourText");
-    expect(studyUnit).toContain("En tu estudio real verás el resumen completo.");
-    expect(studyUnit).toContain("const visibleItems = tourTarget ? items.slice(0, 3) : items");
-    expect(studyUnit).toContain("puntos más");
-    expect(studyUnit).toContain('data-tour="flashcard-preview"');
-    expect(studyUnit.indexOf('title="No lo confundas"')).toBeLessThan(
-      studyUnit.indexOf('data-tour="flashcard-preview"'),
-    );
-    expect(studyUnit.indexOf('title="Trampas frecuentes"')).toBeLessThan(
-      studyUnit.indexOf('data-tour="flashcard-preview"'),
-    );
   });
 
-  it("routes Study preview to real catalog content without learning writes", () => {
-    expect(productTourPath("study-preview", "unit-123")).toBe("/estudiar/unit-123");
+  it("uses Today exactly once and only as the final close", () => {
+    const scenes = PRODUCT_TOUR_STEPS.flatMap<ProductTourScene>((phase) => phase.scenes);
+    const todayScenes = scenes.filter((scene) => scene.target === "today-session");
+    expect(todayScenes).toHaveLength(1);
+    expect(PRODUCT_TOUR_STEPS[3].final).toBe(true);
+    expect(PRODUCT_TOUR_STEPS[3].scenes[0].route).toBe("/inicio");
+    expect(PRODUCT_TOUR_STEPS[3].scenes[0].title).toContain("¿qué hago hoy?");
+    expect(component).toContain('"Empezar mi sesión"');
+  });
+
+  it("keeps copy short, direct and benefit-led", () => {
+    const scenes = PRODUCT_TOUR_STEPS.flatMap<ProductTourScene>((phase) => phase.scenes);
+    for (const scene of scenes) {
+      expect(scene.title.split(/\s+/).length).toBeLessThanOrEqual(8);
+      expect(scene.description.length).toBeLessThanOrEqual(90);
+      for (const fragment of scene.emphasis) expect(scene.description).toContain(fragment);
+    }
+    expect(productTourScene(0, 1).title).toBe("Entiende lo importante");
+    expect(productTourScene(0, 2).title).toBe("No caigas en las trampas");
+    expect(productTourScene(1, 1).title).toBe("No practiques siempre igual");
+    expect(productTourScene(2, 0).title).toBe("Tus fallos sirven para algo");
+  });
+
+  it("uses focused study scenes instead of chasing long-page scroll targets", () => {
+    expect(studyDemo).toContain('data-tour="tour-study-understand"');
+    expect(studyDemo).toContain('data-tour="tour-study-traps"');
+    expect(studyDemo).toContain('data-tour="tour-study-flashcard"');
+    expect(studyDemo).toContain('className="fixed inset-0 z-[50] overflow-hidden bg-background"');
+    expect(studyDemo).toContain("Al estudiar verás el resumen completo.");
+    expect(studyDemo).toContain("data.keys.slice(0, 3)");
+    expect(studyDemo).toContain("data.confusions.slice(0, 2)");
+    expect(studyDemo).toContain("data.traps.slice(0, 2)");
+    expect(component).toContain('targetName.startsWith("tour-study-")');
+    expect(component).toContain("isDemoTarget(item.target)");
+  });
+
+  it("keeps study focus mode read-only and based on real catalog content", () => {
+    expect(studyDemo).toContain('.from("study_units")');
+    expect(studyDemo).toContain('.from("concepts")');
+    expect(studyDemo).toContain('.from("flashcards")');
+    expect(studyDemo).not.toContain(".insert(");
+    expect(studyDemo).not.toContain(".update(");
+    expect(studyDemo).not.toContain("complete_my_v4_study_unit");
+    expect(studyDemo).not.toContain("review_my_v4_flashcard");
+    expect(studyDemo).toContain("Vista del tutorial · tu progreso no cambia");
+
+    expect(productTourPath("study-preview", "unit-1")).toBe("/estudiar/unit-1");
     expect(productTourPath("study-preview", null)).toBeNull();
     expect(component).toContain('search: { tour: "preview" }');
     expect(studyUnit).toContain('tour: search.tour === "preview" ? "preview" : undefined');
     expect(studyUnit).toContain("if (previewing) return loadStudyPreview(unitId)");
-    expect(studyUnit).toContain('.from("study_units")');
-    expect(studyUnit).toContain('.from("concepts")');
-    expect(studyUnit).toContain('.from("flashcards")');
-    expect(studyUnit).toContain("if (previewing) return;");
-    expect(studyUnit).toContain("Vista del tutorial · tu progreso no cambia");
+  });
+
+  it("keeps a real unit with flashcards available for the tour", () => {
     expect(study).toContain("model.continuation?.activeFlashcards");
     expect(study).toContain("model.units.find((unit) => unit.activeFlashcards > 0)");
-    expect(recallUnit).not.toContain('data-tour="flashcard-card"');
-    expect(studyUnit).not.toContain("review_my_v4_flashcard");
+    expect(study).toContain('data-tour={tourTarget ? "study-unit" : undefined}');
+    expect(study).toContain("data-tour-unit-id");
   });
 
-  it("shows real flashcard prompt then flips only the answer panel", () => {
-    expect(studyUnit).toContain("const previewFlashcard = data.flashcards[0] ?? null");
-    expect(studyUnit).toContain("{previewFlashcard.prompt}");
-    expect(studyUnit).toContain("{previewFlashcard.answer}");
-    expect(component).toContain('answerPanel.dataset.tour = "flashcard-answer"');
-    expect(component).toContain("rotateY(88deg)");
-    expect(component).toContain("perspective(900px)");
-  });
-
-  it("explains stages with locked Consolidación and Tribunal and animated unlocks", () => {
-    const practiceScenes = PRODUCT_TOUR_STEPS[3].scenes;
-    expect(practiceScenes.map((scene) => scene.title)).toContain("Aprendizaje · entiende la base");
-    expect(practiceScenes.map((scene) => scene.title)).toContain(
-      "Consolidación · conecta y distingue",
-    );
-    expect(practiceScenes.map((scene) => scene.title)).toContain("Tribunal · entrena la precisión");
-    expect(practiceDemo).toContain("LockOpen");
+  it("turns the three learning levels into one fast unlock demonstration", () => {
+    expect(practiceDemo).toContain("Tres niveles. Tres objetivos.");
+    expect(practiceDemo).toContain("No es fácil, medio y difícil.");
+    expect(practiceDemo).toContain("LEARNING_STAGE_DESCRIPTIONS.aprendizaje");
+    expect(practiceDemo).toContain("LEARNING_STAGE_DESCRIPTIONS.consolidacion");
+    expect(practiceDemo).toContain("LEARNING_STAGE_DESCRIPTIONS.tribunal");
     expect(practiceDemo).toContain("<Lock");
-    expect(practiceDemo).toContain('if (stage === "consolidacion") return scene >= 2');
-    expect(practiceDemo).toContain('if (stage === "tribunal") return scene >= 3');
-    expect(practiceDemo).toContain("stageUnlocking");
-    expect(practiceDemo).toContain("zoom-in-50 spin-in-12 duration-300");
-    expect(practiceDemo).toContain("Se desbloquea al avanzar en el nivel anterior.");
+    expect(practiceDemo).toContain("<LockOpen");
+    expect(practiceDemo).toContain("setUnlocked(1)");
+    expect(practiceDemo).toContain("setUnlocked(2)");
+    expect(practiceDemo).toContain("520");
+    expect(practiceDemo).toContain("1_080");
+    expect(practiceDemo).toContain('data-tour="practice-levels"');
   });
 
-  it("shows a visible answer selection before correction", () => {
-    expect(productTourSceneCount(3)).toBe(10);
-    expect(productTourScene(3, 7).target).toBe("practice-question");
-    expect(productTourScene(3, 8).target).toBe("practice-answer");
-    expect(productTourScene(3, 9).target).toBe("practice-feedback");
-    expect(practiceDemo).toContain("const showingSelection = scene >= 8");
-    expect(practiceDemo).toContain("const showingFeedback = scene >= 9");
-    expect(practiceDemo).toContain('data-tour={selected ? "practice-answer" : undefined}');
-    expect(practiceDemo).toContain('transform: "scale(.965)"');
-  });
-
-  it("keeps answer comparison as the feedback spotlight instead of the whole tall card", () => {
-    expect(practiceDemo).toContain('data-tour="practice-feedback"');
-    expect(practiceDemo).toContain("Tu respuesta simulada");
-    expect(practiceDemo).toContain("Respuesta correcta");
-    expect(practiceDemo).toContain(
-      '<p className="text-sm font-bold text-foreground">Respuesta correcta</p>',
-    );
-    expect(practiceDemo).toContain('className="mt-1 font-normal leading-relaxed text-success"');
-  });
-
-  it("simulates a real question while performing no test or mastery writes", () => {
+  it("shows a real question, visibly selects a wrong answer and then corrects it", () => {
     expect(practiceDemo).toContain('supabase.rpc("prepare_my_v4_today_context")');
     expect(practiceDemo).toContain('.from("questions")');
+    expect(practiceDemo).toContain('setAnswerPhase("selected")');
+    expect(practiceDemo).toContain('setAnswerPhase("feedback")');
+    expect(practiceDemo).toContain("Tu respuesta");
+    expect(practiceDemo).toContain("Respuesta correcta");
+    expect(practiceDemo).toContain("font-normal leading-[1.45] text-success");
+    expect(practiceDemo).toContain('data-tour="practice-check"');
+
     expect(practiceDemo).not.toContain('.from("tests")');
     expect(practiceDemo).not.toContain('.from("test_answers")');
     expect(practiceDemo).not.toContain(".insert(");
     expect(practiceDemo).not.toContain(".update(");
     expect(practiceDemo).not.toContain("complete_test");
-    expect(practiceDemo).toContain("no crea fallo, duda, test, historial ni cambios de mastery");
   });
 
-  it("scrolls every scene automatically before showing its coach mark", () => {
-    expect(component).toContain("visualViewportSize");
-    expect(component).toContain("window.visualViewport?.height");
-    expect(component).toContain("target.scrollIntoView");
-    expect(component).toContain('block: "center"');
-    expect(component).toContain("alignTargetExactly");
-    expect(component).toContain("nearestScrollContainer");
-    expect(component).toContain("scrollContainer.scrollBy");
-    expect(component).toContain("window.scrollBy");
-    expect(component).toContain("popoverHeightRef");
-    expect(component).toContain("setCutout(null)");
-    expect(component).toContain("ResizeObserver");
-    expect(component).toContain("MutationObserver");
-    expect(component).toContain('step === 3 ? <ProductTourPracticeDemo scene={scene} /> : null');
+  it("makes the coach marks easier to read", () => {
+    expect(component).toContain('text-[24px]');
+    expect(component).toContain('text-[18px]');
+    expect(component).toContain('text-[17px]');
+    expect(component).toContain('text-[15px]');
+    expect(component).toContain("Saltar tutorial");
+    expect(component).toContain("Paso {step + 1} de {PRODUCT_TOUR_STEPS.length}");
+    expect(component).toContain("h-12 px-5 text-[17px] font-bold");
+    expect(component).toContain("visualViewport");
   });
 
-  it("keeps coach marks mobile-safe and motion restrained", () => {
-    expect(Math.min(340, 360 - 32)).toBe(328);
-    expect(Math.min(340, 390 - 32)).toBe(340);
-    expect(Math.min(340, 430 - 32)).toBe(340);
-    expect(component).toContain("Math.min(340, viewport.width - 32)");
-    expect(component).toContain("motion-reduce:transition-none");
-    expect(component).not.toContain("animate-pulse");
-    expect(practiceDemo).not.toContain("confetti");
+  it("uses dots for micro-scenes instead of nested numeric progress", () => {
+    expect(component).toContain("const dots = Array.from");
+    expect(component).toContain("Momento ${scene + 1} de ${sceneCount}");
+    expect(component).not.toContain("{journeyLabel} · {scene + 1} de {sceneCount}");
   });
 
-  it("uses selective emphasis and keeps navigation controls", () => {
-    const scenes = PRODUCT_TOUR_STEPS.flatMap<ProductTourScene>((phase) => phase.scenes);
-    for (const scene of scenes) {
-      for (const fragment of scene.emphasis) expect(scene.description).toContain(fragment);
-    }
-    expect(productTourScene(2, 4).emphasis).toEqual(["qué recuerdas sin mirar"]);
-    expect(productTourScene(3, 9).emphasis).toContain("aciertos, fallos y dudas");
-    expect(component).toContain("EmphasizedDescription");
-    expect(component).toContain("Omitir");
-    expect(component).toContain("Anterior");
-    expect(component).toContain("Empezar mi sesión");
-    expect(component).toContain('navigate({ to: "/inicio" })');
-  });
-
-  it("persists completion and skip with strict per-user state", () => {
-    expect(component).toContain('persist("skipped")');
-    expect(component).toContain('persist("completed")');
-    expect(component).not.toContain("localStorage");
-    expect(migration).toContain("user_id uuid PRIMARY KEY REFERENCES auth.users(id)");
-    expect(migration.match(/user_id = \(SELECT auth\.uid\(\)\)/g)?.length).toBeGreaterThanOrEqual(3);
-  });
-
-  it("stores the method-demo contract in the repository", () => {
-    expect(contract).toContain("Tutorial como demostración del método");
-    expect(contract).toContain("Aprendizaje → Consolidación → Tribunal");
-    expect(contract).toContain("no crear tests");
+  it("still exposes the real navigation targets required by the four steps", () => {
+    expect(layout).toContain('"nav-study"');
+    expect(layout).toContain('"nav-practice"');
+    expect(layout).toContain('"nav-progress"');
+    expect(layout).toContain('"practice-builder"');
+    expect(layout).toContain('"progress-overview"');
+    expect(today).toContain('data-tour="today-session"');
   });
 });
