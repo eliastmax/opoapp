@@ -142,7 +142,8 @@ function StudyUnitPage() {
     }
   }
 
-  if (isLoading) return <CenteredLoading text={previewing ? "Preparando una unidad de ejemplo…" : "Abriendo la unidad…"} />;
+  if (isLoading)
+    return <CenteredLoading text={previewing ? "Preparando una unidad de ejemplo…" : "Abriendo la unidad…"} />;
   if (error || !data)
     return (
       <Card className="mt-10 p-6 text-center">
@@ -197,7 +198,7 @@ function StudyUnitPage() {
 
       <Card
         data-tour="study-summary"
-        className="border-primary/15 bg-gradient-to-br from-card to-primary/6 p-5"
+        className="scroll-mt-24 border-primary/15 bg-gradient-to-br from-card to-primary/6 p-5"
       >
         <div className="flex items-center gap-2 text-primary">
           <BookOpen className="h-5 w-5" />
@@ -209,7 +210,13 @@ function StudyUnitPage() {
       </Card>
 
       {keys.length > 0 && (
-        <StudySection icon={KeyRound} title="Claves de examen" items={keys} tone="primary" />
+        <StudySection
+          icon={KeyRound}
+          title="Claves de examen"
+          items={keys}
+          tone="primary"
+          tourTarget={previewing ? "study-keys" : undefined}
+        />
       )}
 
       <section>
@@ -239,6 +246,25 @@ function StudyUnitPage() {
           ))}
         </div>
       </section>
+
+      {confusions.length > 0 && (
+        <StudySection
+          icon={Lightbulb}
+          title="No lo confundas"
+          items={confusions}
+          tone="warning"
+          tourTarget={previewing ? "study-confusions" : undefined}
+        />
+      )}
+      {traps.length > 0 && (
+        <StudySection
+          icon={ShieldAlert}
+          title="Trampas frecuentes"
+          items={traps}
+          tone="danger"
+          tourTarget={previewing ? "study-traps" : undefined}
+        />
+      )}
 
       {previewing && previewFlashcard && (
         <section data-tour="flashcard-preview" className="scroll-mt-24">
@@ -270,12 +296,6 @@ function StudyUnitPage() {
         </section>
       )}
 
-      {confusions.length > 0 && (
-        <StudySection icon={Lightbulb} title="No lo confundas" items={confusions} tone="warning" />
-      )}
-      {traps.length > 0 && (
-        <StudySection icon={ShieldAlert} title="Trampas frecuentes" items={traps} tone="danger" />
-      )}
       {mnemonics.length > 0 && (
         <StudySection
           icon={CheckCircle2}
@@ -312,11 +332,13 @@ function StudySection({
   title,
   items,
   tone,
+  tourTarget,
 }: {
   icon: React.ElementType;
   title: string;
   items: string[];
   tone: "primary" | "warning" | "danger" | "success";
+  tourTarget?: string;
 }) {
   const styles = {
     primary: "bg-primary/10 text-primary",
@@ -325,7 +347,7 @@ function StudySection({
     success: "bg-success/10 text-success",
   }[tone];
   return (
-    <Card className="p-4">
+    <Card data-tour={tourTarget} className="scroll-mt-24 p-4">
       <div className="flex items-center gap-2">
         <span className={`rounded-lg p-2 ${styles}`}>
           <Icon className="h-4 w-4" />
