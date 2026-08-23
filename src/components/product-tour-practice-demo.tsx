@@ -140,8 +140,8 @@ export function ProductTourPracticeDemo({ scene }: { scene: number }) {
 
     setUnlocked(previousUnlock);
     setUnlocking(targetUnlock);
-    const openTimer = window.setTimeout(() => setUnlocked(targetUnlock), 720);
-    const endTimer = window.setTimeout(() => setUnlocking(null), 1_550);
+    const openTimer = window.setTimeout(() => setUnlocked(targetUnlock), 360);
+    const endTimer = window.setTimeout(() => setUnlocking(null), 900);
     return () => {
       window.clearTimeout(openTimer);
       window.clearTimeout(endTimer);
@@ -196,24 +196,24 @@ function LevelsPreview({
     {
       key: "aprendizaje",
       title: LEARNING_STAGE_LABELS.aprendizaje,
-      description: "Entiende la base",
-      detail: "Base, reglas y conceptos esenciales. Empiezas aquí.",
+      description: "Entiende la base del examen",
+      detail: "Reglas y conceptos esenciales para responder con criterio, no por descarte.",
       locked: false,
       index: 0,
     },
     {
       key: "consolidacion",
       title: LEARNING_STAGE_LABELS.consolidacion,
-      description: "Domina relaciones y excepciones",
-      detail: "Se abre cuando tu base ya es estable.",
+      description: "Distingue relaciones y excepciones",
+      detail: "Aprendes a separar conceptos parecidos y a aplicar la norma cuando la pregunta se complica.",
       locked: unlocked < 1,
       index: 1,
     },
     {
       key: "tribunal",
       title: LEARNING_STAGE_LABELS.tribunal,
-      description: "Entrena los matices del examen",
-      detail: "Se abre después de consolidar con seguridad.",
+      description: "Entrena al nivel del examen",
+      detail: "Preguntas más complejas basadas en exámenes oficiales para practicar matices y distractores.",
       locked: unlocked < 2,
       index: 2,
     },
@@ -227,30 +227,37 @@ function LevelsPreview({
             <Layers3 className="h-5 w-5" aria-hidden="true" />
           </span>
           <div>
-            <p className="text-[17px] font-bold">Tres niveles. Tres objetivos.</p>
+            <p className="text-[17px] font-bold">Tres niveles. Cada uno cumple una función.</p>
             <p className="mt-0.5 text-[14px] leading-[1.35] text-muted-foreground">
-              Avanzas cuando tu práctica demuestra seguridad.
+              No son grados de dificultad. Cada nivel entrena una fase distinta de tu preparación.
             </p>
           </div>
         </div>
 
         <style>{`
-          @keyframes tour-lock-shake {
-            0%, 100% { transform: rotate(0) scale(1); }
-            20% { transform: rotate(-12deg) scale(1.08); }
-            40% { transform: rotate(11deg) scale(1.08); }
-            60% { transform: rotate(-8deg) scale(1.06); }
-            80% { transform: rotate(6deg) scale(1.03); }
+          @keyframes tour-lock-release {
+            0%, 28% { transform: rotate(0) scale(1); opacity: 1; }
+            68% { transform: rotate(-10deg) scale(1.07); opacity: 1; }
+            100% { transform: rotate(-14deg) scale(.92); opacity: .72; }
           }
-          @keyframes tour-unlock-pop {
-            0% { transform: scale(.45) rotate(28deg); opacity: 0; }
-            58% { transform: scale(1.28) rotate(-8deg); opacity: 1; }
+          @keyframes tour-unlock-open {
+            0% { transform: scale(.72) rotate(16deg); opacity: 0; }
+            62% { transform: scale(1.12) rotate(-4deg); opacity: 1; }
             100% { transform: scale(1) rotate(0); opacity: 1; }
           }
-          @keyframes tour-stage-glow {
+          @keyframes tour-stage-activate {
             0% { box-shadow: 0 0 0 0 rgb(14 116 214 / 0); }
-            55% { box-shadow: 0 0 0 5px rgb(14 116 214 / .13); }
+            48% { box-shadow: 0 0 0 5px rgb(14 116 214 / .15); }
             100% { box-shadow: 0 0 0 0 rgb(14 116 214 / 0); }
+          }
+          @keyframes tour-unlock-sweep {
+            0% { transform: translateX(-120%); opacity: 0; }
+            20% { opacity: 1; }
+            100% { transform: translateX(120%); opacity: 0; }
+          }
+          @keyframes tour-check-arrive {
+            0% { transform: scale(.72); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
           }
         `}</style>
 
@@ -269,10 +276,18 @@ function LevelsPreview({
                   active
                     ? "scale-[1.01] border-primary bg-primary/8"
                     : "border-border/80 bg-background/70",
-                  justUnlocked && "[animation:tour-stage-glow_700ms_ease-out]",
+                  justUnlocked && "[animation:tour-stage-activate_620ms_ease-out]",
                 )}
               >
-                <div className="flex items-center gap-3">
+                {justUnlocked && !reduceMotion && (
+                  <span
+                    className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl"
+                    aria-hidden="true"
+                  >
+                    <span className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-primary/12 to-transparent [animation:tour-unlock-sweep_520ms_ease-out_both]" />
+                  </span>
+                )}
+                <div className="relative flex items-center gap-3">
                   <span
                     className={cn(
                       "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors duration-300",
@@ -287,7 +302,7 @@ function LevelsPreview({
                         style={{
                           animation:
                             isUnlocking && !reduceMotion
-                              ? "tour-lock-shake 620ms ease-in-out both"
+                              ? "tour-lock-release 360ms ease-out both"
                               : undefined,
                         }}
                         aria-label={`${stage.title} bloqueado`}
@@ -298,13 +313,19 @@ function LevelsPreview({
                         style={{
                           animation:
                             justUnlocked && !reduceMotion
-                              ? "tour-unlock-pop 520ms cubic-bezier(.2,.9,.25,1.25) both"
+                              ? "tour-unlock-open 320ms cubic-bezier(.2,.85,.25,1.15) both"
                               : undefined,
                         }}
                         aria-label={`${stage.title} desbloqueándose`}
                       />
                     ) : (
-                      <Check className="h-5 w-5" aria-label={`${stage.title} disponible`} />
+                      <Check
+                        className={cn(
+                          "h-5 w-5",
+                          active && "motion-safe:[animation:tour-check-arrive_260ms_ease-out_both]",
+                        )}
+                        aria-label={`${stage.title} disponible`}
+                      />
                     )}
                   </span>
                   <div className="min-w-0 flex-1">
@@ -317,15 +338,19 @@ function LevelsPreview({
                       )}
                       {advancedUnlocked && (
                         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">
-                          {isUnlocking ? "Desbloqueado" : "Disponible"}
+                          {isUnlocking ? "Nivel disponible" : "Disponible"}
                         </span>
                       )}
                     </div>
-                    <p className="mt-0.5 text-[15px] font-semibold text-primary">{stage.description}</p>
+                    <p className="mt-0.5 text-[15px] font-semibold text-primary">
+                      {stage.description}
+                    </p>
                   </div>
                 </div>
                 {active && (
-                  <p className="mt-2 text-[14px] leading-[1.35] text-muted-foreground">{stage.detail}</p>
+                  <p className="relative mt-2 text-[14px] leading-[1.35] text-muted-foreground">
+                    {stage.detail}
+                  </p>
                 )}
               </div>
             );
@@ -406,7 +431,9 @@ function QuestionPreview({
           <div data-tour="tour-study-practice-question" className="space-y-2.5">
             <Card className="border-primary/15 bg-gradient-to-br from-card to-primary/5 p-3.5">
               <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-primary">Pregunta</p>
-              <h2 className="mt-1.5 text-[16px] font-semibold leading-[1.35]">{question.pregunta}</h2>
+              <h2 className="mt-1.5 text-[16px] font-semibold leading-[1.35]">
+                {question.pregunta}
+              </h2>
             </Card>
 
             <div className="space-y-1.5">
@@ -432,7 +459,9 @@ function QuestionPreview({
                         {letter}
                       </span>
                       <span className="flex-1 text-[14px] leading-[1.3]">{text}</span>
-                      {selected && <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />}
+                      {selected && (
+                        <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                      )}
                     </div>
                   </div>
                 );

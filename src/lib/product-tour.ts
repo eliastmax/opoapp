@@ -69,23 +69,23 @@ export const PRODUCT_TOUR_STEPS = [
       {
         route: "/crear",
         target: "tour-study-practice-aprendizaje",
-        title: "Aprendizaje · construye la base",
-        description: "Reglas y conceptos esenciales. Aquí construyes una base segura.",
-        emphasis: ["base segura"],
+        title: "Aprendizaje · Construye la base",
+        description: "Entiende reglas y conceptos clave. Así respondes con criterio, no por memoria.",
+        emphasis: ["con criterio"],
       },
       {
         route: "/crear",
         target: "tour-study-practice-consolidacion",
-        title: "Consolidación · conecta y distingue",
-        description: "Con la base estable, desbloqueas relaciones, excepciones y aplicación.",
-        emphasis: ["desbloqueas"],
+        title: "Consolidación · Domina lo que confunde",
+        description: "Trabaja relaciones y excepciones: donde empiezan muchos fallos de examen.",
+        emphasis: ["fallos de examen"],
       },
       {
         route: "/crear",
         target: "tour-study-practice-tribunal",
-        title: "Tribunal · afina para el examen",
-        description: "Después entrenas casos, matices y distractores que exigen más precisión.",
-        emphasis: ["más precisión"],
+        title: "Tribunal · Prepárate para el examen",
+        description: "Preguntas complejas basadas en exámenes oficiales para entrenar al nivel real.",
+        emphasis: ["exámenes oficiales"],
       },
       {
         route: "/crear",
@@ -118,7 +118,7 @@ export const PRODUCT_TOUR_STEPS = [
     final: false,
   },
   {
-    journeyLabel: "Hoy",
+    journeyLabel: "“Hoy”",
     scenes: [
       {
         route: "/inicio",

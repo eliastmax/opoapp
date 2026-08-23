@@ -81,7 +81,7 @@ describe("short product tour v2", () => {
       "Estudia",
       "Practica",
       "Progreso",
-      "Hoy",
+      "“Hoy”",
     ]);
 
     const scenes = PRODUCT_TOUR_STEPS.flatMap<ProductTourScene>((phase) => phase.scenes);
@@ -109,6 +109,7 @@ describe("short product tour v2", () => {
     expect(todayScenes).toHaveLength(1);
     expect(PRODUCT_TOUR_STEPS[3].final).toBe(true);
     expect(PRODUCT_TOUR_STEPS[3].scenes[0].route).toBe("/inicio");
+    expect(productTourJourneyLabel(3)).toBe("“Hoy”");
     expect(PRODUCT_TOUR_STEPS[3].scenes[0].title).toContain("¿qué hago hoy?");
     expect(component).toContain('\"Empezar mi sesión\"');
   });
@@ -122,8 +123,12 @@ describe("short product tour v2", () => {
     }
     expect(productTourScene(0, 1).title).toBe("Entiende lo importante");
     expect(productTourScene(0, 2).title).toBe("No caigas en las trampas");
-    expect(productTourScene(1, 2).title).toContain("Consolidación");
-    expect(productTourScene(1, 3).title).toContain("Tribunal");
+    expect(productTourScene(1, 1).title).toBe("Aprendizaje · Construye la base");
+    expect(productTourScene(1, 2).title).toBe("Consolidación · Domina lo que confunde");
+    expect(productTourScene(1, 3).title).toBe("Tribunal · Prepárate para el examen");
+    expect(productTourScene(1, 1).description).toContain("con criterio");
+    expect(productTourScene(1, 2).description).toContain("fallos de examen");
+    expect(productTourScene(1, 3).description).toContain("exámenes oficiales");
     expect(productTourScene(2, 0).title).toBe("Tus fallos sirven para algo");
   });
 
@@ -192,25 +197,37 @@ describe("short product tour v2", () => {
     expect(productTourScene(1, 1).target).toBe("tour-study-practice-aprendizaje");
     expect(productTourScene(1, 2).target).toBe("tour-study-practice-consolidacion");
     expect(productTourScene(1, 3).target).toBe("tour-study-practice-tribunal");
+    expect(practiceDemo).toContain("Tres niveles. Cada uno cumple una función.");
+    expect(practiceDemo).toContain("No son grados de dificultad.");
+    expect(practiceDemo).toContain("Entiende la base del examen");
+    expect(practiceDemo).toContain("Distingue relaciones y excepciones");
+    expect(practiceDemo).toContain("Entrena al nivel del examen");
+    expect(practiceDemo).toContain("exámenes oficiales");
   });
 
-  it("makes each advanced-stage unlock run lock to open lock to final check", () => {
-    expect(practiceDemo).toContain("const targetUnlock = scene - 1");
-    expect(practiceDemo).toContain("setUnlocked(previousUnlock)");
-    expect(practiceDemo).toContain("setUnlocking(targetUnlock)");
-    expect(practiceDemo).toContain("setUnlocked(targetUnlock)");
-    expect(practiceDemo).toContain("<Lock");
-    expect(practiceDemo).toContain("<LockOpen");
-    expect(practiceDemo).toContain(") : isUnlocking ? (");
-    expect(practiceDemo).toContain("tour-lock-shake");
-    expect(practiceDemo).toContain("tour-unlock-pop");
-    expect(practiceDemo).toContain("tour-stage-glow");
-    expect(practiceDemo).toContain("Desbloqueando…");
-    expect(practiceDemo).toContain('{isUnlocking ? "Desbloqueado" : "Disponible"}');
-    expect(practiceDemo).toContain("disponible");
-    expect(practiceDemo).toContain("720");
-    expect(practiceDemo).toContain("1_550");
-  });
+  it(
+    "makes each advanced-stage unlock run lock to open lock to activation sweep to final check",
+    () => {
+      expect(practiceDemo).toContain("const targetUnlock = scene - 1");
+      expect(practiceDemo).toContain("setUnlocked(previousUnlock)");
+      expect(practiceDemo).toContain("setUnlocking(targetUnlock)");
+      expect(practiceDemo).toContain("setUnlocked(targetUnlock)");
+      expect(practiceDemo).toContain("<Lock");
+      expect(practiceDemo).toContain("<LockOpen");
+      expect(practiceDemo).toContain(") : isUnlocking ? (");
+      expect(practiceDemo).toContain("tour-lock-release");
+      expect(practiceDemo).toContain("tour-unlock-open");
+      expect(practiceDemo).toContain("tour-stage-activate");
+      expect(practiceDemo).toContain("tour-unlock-sweep");
+      expect(practiceDemo).toContain("tour-check-arrive");
+      expect(practiceDemo).toContain("Desbloqueando…");
+      expect(practiceDemo).toContain('{isUnlocking ? "Nivel disponible" : "Disponible"}');
+      expect(practiceDemo).toContain("disponible");
+      expect(practiceDemo).toContain("360");
+      expect(practiceDemo).toContain("900");
+      expect(practiceDemo).toContain("prefersReducedMotion");
+    },
+  );
 
   it("chooses a compact real question and separates selection from correction", () => {
     expect(productTourScene(1, 4).target).toBe("tour-study-practice-question");
