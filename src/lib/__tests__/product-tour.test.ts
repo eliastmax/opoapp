@@ -90,7 +90,7 @@ describe("first-run spotlight tour", () => {
   it("keeps six top-level moments while making Study and Practice rich guided demonstrations", () => {
     expect(PRODUCT_TOUR_STEPS).toHaveLength(6);
     expect(PRODUCT_TOUR_STEPS.map((_, index) => productTourSceneCount(index))).toEqual([
-      1, 1, 1, 6, 9, 1,
+      1, 1, 1, 6, 10, 2,
     ]);
     expect(productTourJourneyLabel(3)).toBe("Dentro de una unidad");
     expect(productTourJourneyLabel(4)).toBe("Crear un test");
@@ -117,8 +117,10 @@ describe("first-run spotlight tour", () => {
       "practice-format",
       "practice-start",
       "practice-question",
+      "practice-answer",
       "practice-feedback",
       "progress-overview",
+      "today-session",
     ]);
 
     expect(today).toContain('data-tour="today-session"');
@@ -132,7 +134,7 @@ describe("first-run spotlight tour", () => {
     expect(studyUnit).toContain('data-tour="flashcard-preview"');
   });
 
-  it("teaches the valuable Study layers and skips optional missing sections instead of stalling", () => {
+  it("teaches Study in the same downward order as the rendered preview", () => {
     const studyScenes = PRODUCT_TOUR_STEPS[3].scenes;
     expect(studyScenes.map((scene) => scene.title)).toEqual([
       "Aquí es donde estudias",
@@ -148,9 +150,15 @@ describe("first-run spotlight tour", () => {
     expect(studyScenes[4].description).toBe(
       "Las flashcards te piden la respuesta antes de mostrarla para que compruebes qué recuerdas sin mirar.",
     );
-    expect(component).toContain('findStudyCard("Claves de examen")');
-    expect(component).toContain('findStudyCard("No lo confundas")');
-    expect(component).toContain('findStudyCard("Trampas frecuentes")');
+    expect(studyUnit).toContain('tourTarget={previewing ? "study-keys" : undefined}');
+    expect(studyUnit).toContain('tourTarget={previewing ? "study-confusions" : undefined}');
+    expect(studyUnit).toContain('tourTarget={previewing ? "study-traps" : undefined}');
+    expect(studyUnit.indexOf('title="No lo confundas"')).toBeLessThan(
+      studyUnit.indexOf('data-tour="flashcard-preview"'),
+    );
+    expect(studyUnit.indexOf('title="Trampas frecuentes"')).toBeLessThan(
+      studyUnit.indexOf('data-tour="flashcard-preview"'),
+    );
     expect(component).toContain("OPTIONAL_STUDY_TARGETS");
     expect(component).toContain("optionalStudyTarget ? 1_200 : 6_000");
     expect(component).toContain("goNext();");
@@ -205,6 +213,19 @@ describe("first-run spotlight tour", () => {
     expect(practiceDemo).toContain("practice-level-mezcladas");
   });
 
+  it("shows the simulated option selection before correction", () => {
+    expect(productTourSceneCount(4)).toBe(10);
+    expect(productTourScene(4, 7).target).toBe("practice-question");
+    expect(productTourScene(4, 8).target).toBe("practice-answer");
+    expect(productTourScene(4, 9).target).toBe("practice-feedback");
+    expect(practiceDemo).toContain("const showingSelection = scene >= 8");
+    expect(practiceDemo).toContain("const showingFeedback = scene >= 9");
+    expect(practiceDemo).toContain('data-tour={selected ? "practice-answer" : undefined}');
+    expect(practiceDemo).toContain('transform: "scale(.965)"');
+    expect(practiceDemo).toContain('selected && "bg-primary text-primary-foreground"');
+    expect(practiceDemo).toContain('chosenWrong && "bg-destructive text-destructive-foreground"');
+  });
+
   it("simulates test creation with a real question but performs no learning writes", () => {
     expect(practiceDemo).toContain('supabase.rpc("prepare_my_v4_today_context")');
     expect(practiceDemo).toContain('.from("questions")');
@@ -212,6 +233,7 @@ describe("first-run spotlight tour", () => {
     expect(practiceDemo).toContain("practice-format");
     expect(practiceDemo).toContain("practice-start");
     expect(practiceDemo).toContain("practice-question");
+    expect(practiceDemo).toContain("practice-answer");
     expect(practiceDemo).toContain("practice-feedback");
     expect(practiceDemo).toContain("Tu respuesta simulada");
     expect(practiceDemo).toContain("Respuesta correcta");
@@ -225,14 +247,38 @@ describe("first-run spotlight tour", () => {
     expect(practiceDemo).not.toContain("review_my_v4_flashcard");
   });
 
-  it("uses selective emphasis and never returns to Today as a duplicate teaching step", () => {
+  it("makes correction labels stronger than the answer text", () => {
+    expect(practiceDemo).toContain(
+      '<p className="text-sm font-bold text-foreground">Respuesta correcta</p>',
+    );
+    expect(practiceDemo).toContain('className="mt-1 font-normal leading-relaxed text-success"');
+  });
+
+  it("starts with orientation and closes the loop only after the user understands the product", () => {
     const scenes = PRODUCT_TOUR_STEPS.flatMap<ProductTourScene>((phase) => phase.scenes);
-    expect(scenes.filter((scene) => scene.target === "today-session")).toHaveLength(1);
+    const todayScenes = scenes.filter((scene) => scene.target === "today-session");
+    expect(todayScenes).toHaveLength(2);
+    expect(PRODUCT_TOUR_STEPS[0].scenes[0].title).toBe("Este es tu punto de partida");
+    expect(PRODUCT_TOUR_STEPS[5].scenes[0].title).toBe(
+      "Aquí ves cómo evoluciona tu preparación",
+    );
+    expect(PRODUCT_TOUR_STEPS[5].scenes[0].route).toBe("/progreso");
+    expect(PRODUCT_TOUR_STEPS[5].scenes[1].route).toBe("/inicio");
+    expect(PRODUCT_TOUR_STEPS[5].scenes[1].title).toBe(
+      "Ahora sí: siempre sabrás qué hacer después",
+    );
+    expect(PRODUCT_TOUR_STEPS[5].scenes[1].description).toContain(
+      "OpoTest te propone el siguiente paso",
+    );
+  });
+
+  it("uses selective emphasis in every coach mark", () => {
+    const scenes = PRODUCT_TOUR_STEPS.flatMap<ProductTourScene>((phase) => phase.scenes);
     for (const scene of scenes) {
       for (const fragment of scene.emphasis) expect(scene.description).toContain(fragment);
     }
     expect(productTourScene(3, 4).emphasis).toEqual(["qué recuerdas sin mirar"]);
-    expect(productTourScene(4, 8).emphasis).toEqual(["aciertos, fallos y dudas"]);
+    expect(productTourScene(4, 9).emphasis).toContain("aciertos, fallos y dudas");
     expect(component).toContain("EmphasizedDescription");
     expect(component).toContain("font-semibold text-foreground");
   });
@@ -243,17 +289,20 @@ describe("first-run spotlight tour", () => {
     expect(component).toContain("{step + 1} de {PRODUCT_TOUR_STEPS.length}");
   });
 
-  it("repositions every target before revealing the coach mark, including fixed demo surfaces", () => {
-    expect(component).toContain("getBoundingClientRect");
+  it("reserves real popover space and corrects scroll before revealing each target", () => {
+    expect(component).toContain("tourContentWindow");
+    expect(component).toContain("tourSpotlightRect");
     expect(component).toContain("scrollTourTargetIntoView");
     expect(component).toContain("nearestScrollContainer");
     expect(component).toContain("scrollContainer.scrollBy");
     expect(component).toContain("window.scrollBy");
     expect(component).toContain('targetName.startsWith("nav-")');
     expect(component).toContain('route === "study-preview" ? 84 : 16');
-    expect(component).toContain("Math.max(popoverHeight, 220)");
+    expect(component).toContain("Math.max(popoverHeight, 300)");
+    expect(component).toContain("useState(380)");
+    expect(component).toContain("correctionTimer");
+    expect(component).toContain("popoverHeight, true");
     expect(component).toContain("setCutout(null)");
-    expect(component).toContain("prefersReducedMotion() ? 0 : 260");
     expect(component).toContain("ResizeObserver");
     expect(component).toContain("MutationObserver");
   });
