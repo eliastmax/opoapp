@@ -203,16 +203,18 @@ export const PRODUCT_TOUR_STEPS = [
 export type ProductTourCompletionKind = "completed" | "skipped";
 
 export function productTourScene(step: number, scene = 0): ProductTourScene {
-  const phase = PRODUCT_TOUR_STEPS[step] ?? PRODUCT_TOUR_STEPS[0];
+  const phase: ProductTourStep = PRODUCT_TOUR_STEPS[step] ?? PRODUCT_TOUR_STEPS[0];
   return phase.scenes[scene] ?? phase.scenes[0];
 }
 
 export function productTourSceneCount(step: number) {
-  return PRODUCT_TOUR_STEPS[step]?.scenes.length ?? 1;
+  const phase: ProductTourStep | undefined = PRODUCT_TOUR_STEPS[step];
+  return phase?.scenes.length ?? 1;
 }
 
 export function productTourJourneyLabel(step: number) {
-  return PRODUCT_TOUR_STEPS[step]?.journeyLabel ?? null;
+  const phase: ProductTourStep | undefined = PRODUCT_TOUR_STEPS[step];
+  return phase?.journeyLabel ?? null;
 }
 
 export function productTourPath(route: ProductTourRoute, unitId: string | null) {
