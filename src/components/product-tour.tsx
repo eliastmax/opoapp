@@ -14,6 +14,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { ProductTourPracticeDemo } from "@/components/product-tour-practice-demo";
+import { ProductTourStudyDemo } from "@/components/product-tour-study-demo";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { postAuthRoute } from "@/lib/post-auth-route";
@@ -25,225 +26,55 @@ import {
   productTourScene,
   productTourSceneCount,
   shouldOpenProductTour,
+  spotlightRect,
   type ProductTourCompletionKind,
   type ProductTourRoute,
 } from "@/lib/product-tour";
 
 const ProductTourContext = createContext<{ replay: () => void } | null>(null);
 const queryKey = (userId: string) => ["product-tour", userId] as const;
-const OPTIONAL_STUDY_TARGETS = new Set(["study-keys", "study-confusions", "study-traps"]);
 
 function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-function visualViewportSize() {
-  return {
-    width: window.visualViewport?.width ?? window.innerWidth,
-    height: window.visualViewport?.height ?? window.innerHeight,
-  };
+function viewportHeight() {
+  return window.visualViewport?.height ?? window.innerHeight;
 }
 
-function nearestScrollContainer(target: HTMLElement): HTMLElement | null {
-  let current = target.parentElement;
-  while (current && current !== document.body) {
-    const style = window.getComputedStyle(current);
-    const scrollable =
-      /(auto|scroll)/.test(style.overflowY) && current.scrollHeight > current.clientHeight;
-    if (scrollable) return current;
-    current = current.parentElement;
-  }
-  return null;
+function isDemoTarget(targetName: string) {
+  return targetName.startsWith("tour-study-") || targetName === "practice-levels" || targetName === "practice-check";
 }
 
-function targetTopInset(route: ProductTourRoute, targetName: string) {
-  if (route === "study-preview") return 86;
-  if (targetName.startsWith("practice-question") || targetName === "practice-answer" || targetName === "practice-feedback") {
-    return 74;
-  }
-  return 16;
-}
-
-function alignTargetExactly(
-  target: HTMLElement,
-  targetName: string,
-  route: ProductTourRoute,
-  popoverHeight: number,
-) {
-  if (targetName.startsWith("nav-")) return;
-
-  const viewport = visualViewportSize();
+function focusRect(target: HTMLElement, targetName: string) {
   const rect = target.getBoundingClientRect();
-  const topInset = targetTopInset(route, targetName);
-  const bottomInset = 16;
-  const gap = 16;
-  const coachHeight = Math.min(Math.max(popoverHeight, 250), Math.max(250, viewport.height * 0.48));
-  const targetHeight = Math.min(rect.height, viewport.height - topInset - bottomInset);
-  const canPlaceCoachBelow =
-    topInset + targetHeight + gap + coachHeight <= viewport.height - bottomInset;
-  const canPlaceCoachAbove =
-    topInset + coachHeight + gap + targetHeight <= viewport.height - bottomInset;
-  const preferCoachAbove = targetName === "practice-feedback" || targetName === "flashcard-answer";
+  if (isDemoTarget(targetName)) return spotlightRect(rect, 7);
 
-  let desiredTop = topInset;
-  if ((preferCoachAbove || !canPlaceCoachBelow) && canPlaceCoachAbove) {
-    desiredTop = topInset + coachHeight + gap;
-  }
+  const maxHeight = Math.min(320, viewportHeight() * 0.42);
+  if (rect.height <= maxHeight) return spotlightRect(rect, 8);
 
-  const delta = rect.top - desiredTop;
-  if (Math.abs(delta) < 3) return;
-
-  const scrollContainer = nearestScrollContainer(target);
-  if (scrollContainer) {
-    scrollContainer.scrollBy({ top: delta, behavior: "auto" });
-  } else {
-    window.scrollBy({ top: delta, behavior: "auto" });
-  }
+  return spotlightRect(
+    {
+      top: rect.top,
+      left: rect.left,
+      right: rect.right,
+      bottom: Math.min(rect.bottom, rect.top + maxHeight),
+    },
+    8,
+  );
 }
 
-function beginTargetScroll(target: HTMLElement, targetName: string) {
-  if (targetName.startsWith("nav-")) return;
+function bringRealTargetIntoView(target: HTMLElement, targetName: string) {
+  if (isDemoTarget(targetName) || targetName.startsWith("nav-")) return;
+  const rect = target.getBoundingClientRect();
+  const vh = viewportHeight();
+  const safeTop = 76;
+  const safeBottom = vh - 250;
+  if (rect.top >= safeTop && Math.min(rect.bottom, rect.top + 220) <= safeBottom) return;
   target.scrollIntoView({
+    behavior: prefersReducedMotion() ? "auto" : "smooth",
     block: "center",
     inline: "nearest",
-    behavior: prefersReducedMotion() ? "auto" : "smooth",
-  });
-}
-
-function spotlightForTarget(target: HTMLElement) {
-  const viewport = visualViewportSize();
-  const rect = target.getBoundingClientRect();
-  return {
-    top: Math.max(6, rect.top - 8),
-    left: Math.max(6, rect.left - 8),
-    right: Math.min(viewport.width - 6, rect.right + 8),
-    bottom: Math.min(viewport.height - 6, rect.bottom + 8),
-  };
-}
-
-function findExactText(text: string) {
-  return [...document.querySelectorAll<HTMLElement>("h1,h2,h3,p,span")].find(
-    (element) => element.textContent?.trim() === text,
-  );
-}
-
-function setTransientTourTarget(element: HTMLElement, targetName: string) {
-  if (!element.dataset.tourTransient) {
-    element.dataset.tourTransient = "true";
-    element.dataset.tourOriginal = element.dataset.tour ?? "";
-  }
-  element.dataset.tour = targetName;
-}
-
-function clearTransientTourTargets() {
-  document.querySelectorAll<HTMLElement>('[data-tour-transient="true"]').forEach((element) => {
-    const original = element.dataset.tourOriginal;
-    if (original) element.dataset.tour = original;
-    else delete element.dataset.tour;
-    delete element.dataset.tourOriginal;
-    delete element.dataset.tourTransient;
-  });
-}
-
-function findStudyCard(title: string) {
-  const heading = findExactText(title);
-  return heading?.parentElement?.parentElement instanceof HTMLElement
-    ? heading.parentElement.parentElement
-    : null;
-}
-
-function findFlashcardSection() {
-  const existing = document.querySelector<HTMLElement>('[data-tour="flashcard-preview"]');
-  if (existing) return existing.closest("section") as HTMLElement | null;
-  const heading = findExactText("Después, recuérdalo");
-  return heading?.parentElement?.parentElement instanceof HTMLElement
-    ? heading.parentElement.parentElement
-    : null;
-}
-
-function setFlashcardAnswerVisible(visible: boolean) {
-  const section = findFlashcardSection();
-  if (!section) return;
-  const answerLabel = [...section.querySelectorAll<HTMLElement>("p")].find(
-    (element) => element.textContent?.trim() === "Respuesta",
-  );
-  const answerPanel = answerLabel?.parentElement;
-  if (!(answerPanel instanceof HTMLElement)) return;
-  answerPanel.dataset.tourFlashcardAnswer = "true";
-  if (visible) answerPanel.dataset.tour = "flashcard-answer";
-  else if (answerPanel.dataset.tour === "flashcard-answer") delete answerPanel.dataset.tour;
-  answerPanel.style.transition = prefersReducedMotion()
-    ? "none"
-    : "opacity 180ms ease, transform 320ms ease";
-  answerPanel.style.transformOrigin = "center";
-  answerPanel.style.opacity = visible ? "1" : "0";
-  answerPanel.style.visibility = visible ? "visible" : "hidden";
-  answerPanel.style.transform = visible ? "rotateY(0deg) scale(1)" : "rotateY(88deg) scale(.985)";
-
-  if (visible && !prefersReducedMotion()) {
-    answerPanel.animate(
-      [
-        { transform: "perspective(900px) rotateY(88deg) scale(.985)" },
-        { transform: "perspective(900px) rotateY(-5deg) scale(1.01)" },
-        { transform: "perspective(900px) rotateY(0deg) scale(1)" },
-      ],
-      { duration: 360, easing: "cubic-bezier(.2,.75,.25,1)" },
-    );
-  }
-}
-
-function restoreFlashcardVisual() {
-  document.querySelectorAll<HTMLElement>('[data-tour-flashcard-answer="true"]').forEach((panel) => {
-    panel.style.removeProperty("transition");
-    panel.style.removeProperty("transform-origin");
-    panel.style.removeProperty("opacity");
-    panel.style.removeProperty("visibility");
-    panel.style.removeProperty("transform");
-    if (panel.dataset.tour === "flashcard-answer") delete panel.dataset.tour;
-    delete panel.dataset.tourFlashcardAnswer;
-  });
-}
-
-function prepareStudySceneTarget(targetName: string) {
-  if (targetName === "study-keys") {
-    const card = findStudyCard("Claves de examen");
-    if (card) setTransientTourTarget(card, targetName);
-    return;
-  }
-  if (targetName === "study-confusions") {
-    const card = findStudyCard("No lo confundas");
-    if (card) setTransientTourTarget(card, targetName);
-    return;
-  }
-  if (targetName === "study-traps") {
-    const card = findStudyCard("Trampas frecuentes");
-    if (card) setTransientTourTarget(card, targetName);
-    return;
-  }
-  if (targetName === "flashcard-preview") {
-    setFlashcardAnswerVisible(false);
-    return;
-  }
-  if (targetName === "flashcard-answer") {
-    setFlashcardAnswerVisible(true);
-  }
-}
-
-function preparePracticeSceneTarget(targetName: string) {
-  if (targetName !== "practice-question") return;
-  const wrapper = document.querySelector<HTMLElement>('[data-tour="practice-question"]');
-  const questionCard = wrapper?.querySelector<HTMLElement>("[data-tour-question-card]");
-  if (questionCard) {
-    wrapper?.removeAttribute("data-tour");
-    wrapper?.setAttribute("data-tour-question-shell", "true");
-    setTransientTourTarget(questionCard, targetName);
-  }
-}
-
-function restorePracticeSceneTargets() {
-  document.querySelectorAll<HTMLElement>('[data-tour-question-shell="true"]').forEach((wrapper) => {
-    wrapper.dataset.tour = "practice-question";
-    delete wrapper.dataset.tourQuestionShell;
   });
 }
 
@@ -267,13 +98,14 @@ function EmphasizedDescription({
     if (start < cursor) continue;
     if (start > cursor) parts.push(description.slice(cursor, start));
     parts.push(
-      <span key={`${fragment}-${start}`} className="font-semibold text-foreground">
+      <span key={`${fragment}-${start}`} className="font-bold text-foreground">
         {fragment}
       </span>,
     );
     cursor = start + fragment.length;
   }
   if (cursor < description.length) parts.push(description.slice(cursor));
+
   return <>{parts}</>;
 }
 
@@ -292,6 +124,7 @@ export function ProductTourProvider({ user, children }: { user: User; children: 
   const [tourSessionActive, setTourSessionActive] = useState(false);
   const [step, setStep] = useState(0);
   const [dismissedForSession, setDismissedForSession] = useState(false);
+
   const state = useQuery({
     queryKey: queryKey(user.id),
     retry: 1,
@@ -305,11 +138,13 @@ export function ProductTourProvider({ user, children }: { user: User; children: 
       return result.data;
     },
   });
+
   const preparation = useQuery({
     queryKey: ["product-tour-preparation", user.id],
     enabled: pathname !== "/preparacion",
     queryFn: async () => (await postAuthRoute(user.id)) === "/inicio",
   });
+
   const eligibleToStart = shouldOpenProductTour({
     loading: state.isLoading || preparation.isLoading,
     error: state.isError || preparation.isError,
@@ -324,12 +159,14 @@ export function ProductTourProvider({ user, children }: { user: User; children: 
   }, [eligibleToStart]);
 
   const open = replaying || tourSessionActive;
+
   const closeSafely = useCallback(() => {
     setDismissedForSession(true);
     setReplaying(false);
     setTourSessionActive(false);
     setStep(0);
   }, []);
+
   const persist = useCallback(
     async (kind: ProductTourCompletionKind) => {
       closeSafely();
@@ -349,11 +186,13 @@ export function ProductTourProvider({ user, children }: { user: User; children: 
     },
     [closeSafely, queryClient, user.id],
   );
+
   const replay = useCallback(() => {
     setStep(0);
     setReplaying(true);
-    void navigate({ to: "/inicio" });
+    void navigate({ to: "/estudio" });
   }, [navigate]);
+
   const navigateTourRoute = useCallback(
     (route: ProductTourRoute, unitId: string | null) => {
       if (route !== "study-preview") {
@@ -372,6 +211,7 @@ export function ProductTourProvider({ user, children }: { user: User; children: 
     },
     [navigate],
   );
+
   const contextValue = useMemo(() => ({ replay }), [replay]);
 
   return (
@@ -414,23 +254,21 @@ function SpotlightTour({
 }) {
   const [scene, setScene] = useState(0);
   const [tourUnitId, setTourUnitId] = useState<string | null>(null);
-  const item = productTourScene(step, scene);
-  const popoverRef = useRef<HTMLDivElement>(null);
-  const stepTimerRef = useRef<number | null>(null);
-  const popoverHeightRef = useRef(320);
+  const [studyAnswerVisible, setStudyAnswerVisible] = useState(false);
   const [cutout, setCutout] = useState<Cutout | null>(null);
-  const [popoverHeight, setPopoverHeight] = useState(320);
+  const [popoverHeight, setPopoverHeight] = useState(220);
   const [popoverVisible, setPopoverVisible] = useState(false);
   const [routeTransition, setRouteTransition] = useState(false);
   const [targetAccent, setTargetAccent] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const stepTimerRef = useRef<number | null>(null);
+
+  const item = productTourScene(step, scene);
   const expectedPath = productTourPath(item.route, tourUnitId);
   const sceneCount = productTourSceneCount(step);
   const journeyLabel = productTourJourneyLabel(step);
   const finalScene = PRODUCT_TOUR_STEPS[step].final && scene === sceneCount - 1;
-
-  useEffect(() => {
-    popoverHeightRef.current = popoverHeight;
-  }, [popoverHeight]);
+  const flashcardNeedsReveal = item.target === "tour-study-flashcard" && !studyAnswerVisible;
 
   const queuePosition = useCallback(
     (nextStep: number, nextScene: number) => {
@@ -440,8 +278,7 @@ function SpotlightTour({
       setPopoverVisible(false);
       setTargetAccent(false);
       setCutout(null);
-      clearTransientTourTargets();
-      restorePracticeSceneTargets();
+      setStudyAnswerVisible(false);
       if (currentPath !== nextPath) setRouteTransition(true);
       if (stepTimerRef.current !== null) window.clearTimeout(stepTimerRef.current);
       stepTimerRef.current = window.setTimeout(
@@ -456,14 +293,22 @@ function SpotlightTour({
   );
 
   const goNext = useCallback(() => {
+    if (flashcardNeedsReveal) {
+      setStudyAnswerVisible(true);
+      return;
+    }
     if (scene + 1 < sceneCount) {
       queuePosition(step, scene + 1);
       return;
     }
     if (step + 1 < PRODUCT_TOUR_STEPS.length) queuePosition(step + 1, 0);
-  }, [queuePosition, scene, sceneCount, step]);
+  }, [flashcardNeedsReveal, queuePosition, scene, sceneCount, step]);
 
   const goPrevious = useCallback(() => {
+    if (item.target === "tour-study-flashcard" && studyAnswerVisible) {
+      setStudyAnswerVisible(false);
+      return;
+    }
     if (scene > 0) {
       queuePosition(step, scene - 1);
       return;
@@ -471,14 +316,11 @@ function SpotlightTour({
     if (step <= 0) return;
     const previousStep = step - 1;
     queuePosition(previousStep, productTourSceneCount(previousStep) - 1);
-  }, [queuePosition, scene, step]);
+  }, [item.target, queuePosition, scene, step, studyAnswerVisible]);
 
   useEffect(
     () => () => {
       if (stepTimerRef.current !== null) window.clearTimeout(stepTimerRef.current);
-      clearTransientTourTargets();
-      restorePracticeSceneTargets();
-      restoreFlashcardVisual();
     },
     [],
   );
@@ -490,142 +332,128 @@ function SpotlightTour({
       setRouteTransition(true);
       onNavigate(item.route, tourUnitId);
     }
-  }, [expectedPath, item.route, item.target, onNavigate, pathname, scene, step, tourUnitId]);
+  }, [expectedPath, item.route, onNavigate, pathname, tourUnitId]);
 
   useLayoutEffect(() => {
     if (!expectedPath || pathname !== expectedPath) return;
-    clearTransientTourTargets();
-    restorePracticeSceneTargets();
-    if (item.route === "study-preview") prepareStudySceneTarget(item.target);
-    if (item.route === "/crear") preparePracticeSceneTarget(item.target);
 
     let cancelled = false;
-    let targetObserver: MutationObserver | undefined;
-    let resizeObserver: ResizeObserver | undefined;
-    let targetTimeout = 0;
-    let settleTimer = 0;
+    let frame = 0;
     let revealTimer = 0;
     let accentTimer = 0;
-    let attachedTarget: HTMLElement | null = null;
-
-    const measure = () => {
-      if (!attachedTarget || cancelled) return;
-      setCutout(spotlightForTarget(attachedTarget));
-    };
+    let targetTimeout = 0;
+    let mutationObserver: MutationObserver | null = null;
+    let cleanupTarget: (() => void) | null = null;
 
     const reveal = () => {
-      if (cancelled) return;
-      setRouteTransition(false);
-      setPopoverVisible(true);
-      if (prefersReducedMotion()) return;
-      setTargetAccent(true);
-      window.clearTimeout(accentTimer);
-      accentTimer = window.setTimeout(() => {
-        if (!cancelled) setTargetAccent(false);
-      }, 240);
+      window.clearTimeout(revealTimer);
+      revealTimer = window.setTimeout(
+        () => {
+          if (cancelled) return;
+          setRouteTransition(false);
+          setPopoverVisible(true);
+          if (!prefersReducedMotion()) {
+            setTargetAccent(true);
+            window.clearTimeout(accentTimer);
+            accentTimer = window.setTimeout(() => {
+              if (!cancelled) setTargetAccent(false);
+            }, 220);
+          }
+        },
+        prefersReducedMotion() ? 0 : isDemoTarget(item.target) ? 100 : 320,
+      );
     };
 
     const attachTarget = (target: HTMLElement) => {
-      if (cancelled || attachedTarget === target) return;
-      attachedTarget = target;
+      if (cancelled) return;
       const discoveredUnitId = target.dataset.tourUnitId;
       if (discoveredUnitId) setTourUnitId(discoveredUnitId);
-      targetObserver?.disconnect();
+
+      mutationObserver?.disconnect();
       window.clearTimeout(targetTimeout);
-      setPopoverVisible(false);
-      setCutout(null);
+      cleanupTarget?.();
+      bringRealTargetIntoView(target, item.target);
 
-      beginTargetScroll(target, item.target);
-      window.clearTimeout(settleTimer);
-      settleTimer = window.setTimeout(
-        () => {
-          if (cancelled) return;
-          alignTargetExactly(target, item.target, item.route, popoverHeightRef.current);
-          window.requestAnimationFrame(() => {
-            if (cancelled) return;
-            measure();
-            window.clearTimeout(revealTimer);
-            revealTimer = window.setTimeout(reveal, prefersReducedMotion() ? 0 : 80);
-          });
-        },
-        prefersReducedMotion() ? 0 : 320,
-      );
+      const update = () => {
+        if (cancelled) return;
+        setCutout(focusRect(target, item.target));
+      };
 
-      window.addEventListener("resize", measure);
-      window.addEventListener("orientationchange", measure);
-      window.addEventListener("scroll", measure, true);
-      window.visualViewport?.addEventListener("resize", measure);
-      resizeObserver = new ResizeObserver(measure);
+      const settle = () => {
+        frame = window.requestAnimationFrame(() => {
+          update();
+          reveal();
+        });
+      };
+
+      if (isDemoTarget(item.target) || prefersReducedMotion()) settle();
+      else window.setTimeout(settle, 260);
+
+      const resizeObserver = new ResizeObserver(update);
       resizeObserver.observe(target);
+      window.addEventListener("resize", update);
+      window.visualViewport?.addEventListener("resize", update);
+      window.addEventListener("scroll", update, true);
+
+      cleanupTarget = () => {
+        resizeObserver.disconnect();
+        window.removeEventListener("resize", update);
+        window.visualViewport?.removeEventListener("resize", update);
+        window.removeEventListener("scroll", update, true);
+      };
     };
 
     const findTarget = () => {
-      if (item.route === "study-preview") prepareStudySceneTarget(item.target);
-      if (item.route === "/crear") preparePracticeSceneTarget(item.target);
       const target = document.querySelector<HTMLElement>(`[data-tour="${item.target}"]`);
       if (target) attachTarget(target);
     };
 
     findTarget();
+
     if (!document.querySelector(`[data-tour="${item.target}"]`)) {
-      targetObserver = new MutationObserver(findTarget);
-      targetObserver.observe(document.body, { childList: true, subtree: true, attributes: true });
-      const optionalStudyTarget =
-        item.route === "study-preview" && OPTIONAL_STUDY_TARGETS.has(item.target);
-      targetTimeout = window.setTimeout(
-        () => {
-          if (cancelled) return;
-          const target = document.querySelector<HTMLElement>(`[data-tour="${item.target}"]`);
-          if (target) {
-            attachTarget(target);
-            return;
-          }
-          if (optionalStudyTarget) {
-            goNext();
-            return;
-          }
-          const fallbackSelector =
-            item.route === "/estudio"
-              ? '[data-tour="nav-study"]'
-              : item.route === "/crear"
-                ? '[data-tour="nav-practice"]'
-                : item.route === "/progreso"
-                  ? '[data-tour="nav-progress"]'
-                  : item.route === "/inicio"
-                    ? '[data-tour="today-session"]'
-                    : null;
-          const fallback = fallbackSelector
-            ? document.querySelector<HTMLElement>(fallbackSelector)
-            : null;
-          if (fallback) attachTarget(fallback);
-          else goNext();
-        },
-        optionalStudyTarget ? 1_200 : 6_000,
-      );
+      mutationObserver = new MutationObserver(findTarget);
+      mutationObserver.observe(document.body, { childList: true, subtree: true, attributes: true });
+      targetTimeout = window.setTimeout(() => {
+        if (cancelled) return;
+        const target = document.querySelector<HTMLElement>(`[data-tour="${item.target}"]`);
+        if (target) {
+          attachTarget(target);
+          return;
+        }
+        const fallbackSelector =
+          item.route === "/estudio"
+            ? '[data-tour="nav-study"]'
+            : item.route === "/crear"
+              ? '[data-tour="nav-practice"]'
+              : item.route === "/progreso"
+                ? '[data-tour="nav-progress"]'
+                : item.route === "/inicio"
+                  ? '[data-tour="today-session"]'
+                  : null;
+        const fallback = fallbackSelector
+          ? document.querySelector<HTMLElement>(fallbackSelector)
+          : null;
+        if (fallback) attachTarget(fallback);
+        else goNext();
+      }, 5_000);
     }
 
     return () => {
       cancelled = true;
-      window.clearTimeout(targetTimeout);
-      window.clearTimeout(settleTimer);
+      window.cancelAnimationFrame(frame);
       window.clearTimeout(revealTimer);
       window.clearTimeout(accentTimer);
-      targetObserver?.disconnect();
-      resizeObserver?.disconnect();
-      window.removeEventListener("resize", measure);
-      window.removeEventListener("orientationchange", measure);
-      window.removeEventListener("scroll", measure, true);
-      window.visualViewport?.removeEventListener("resize", measure);
-      clearTransientTourTargets();
-      restorePracticeSceneTargets();
+      window.clearTimeout(targetTimeout);
+      mutationObserver?.disconnect();
+      cleanupTarget?.();
     };
   }, [expectedPath, goNext, item.route, item.target, pathname]);
 
   useLayoutEffect(() => {
     if (!popoverRef.current) return;
-    const nextHeight = popoverRef.current.getBoundingClientRect().height;
-    if (Math.abs(nextHeight - popoverHeight) > 2) setPopoverHeight(nextHeight);
-  }, [cutout, popoverHeight, scene, step]);
+    const height = popoverRef.current.getBoundingClientRect().height;
+    if (height > 0) setPopoverHeight(height);
+  }, [cutout, popoverVisible, scene, step, studyAnswerVisible]);
 
   useEffect(() => {
     const shell = document.querySelector<HTMLElement>("[data-app-shell]");
@@ -659,45 +487,47 @@ function SpotlightTour({
       popoverRef.current?.querySelector<HTMLElement>("[data-tour-primary]")?.focus();
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [popoverVisible, scene, step]);
+  }, [popoverVisible, scene, step, studyAnswerVisible]);
 
-  const practiceDemo = step === 3 ? <ProductTourPracticeDemo scene={scene} /> : null;
+  const studyDemo =
+    step === 0 && scene > 0 ? (
+      <ProductTourStudyDemo unitId={tourUnitId} scene={scene} answerVisible={studyAnswerVisible} />
+    ) : null;
+  const practiceDemo = step === 1 && scene > 0 ? <ProductTourPracticeDemo scene={scene} /> : null;
 
-  if (!cutout) {
+  if (!cutout)
     return (
       <>
+        {studyDemo}
         {practiceDemo}
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60" role="status">
-          <span className="rounded-full bg-card p-3 text-primary shadow-lg">
-            <Loader2 className="h-5 w-5 animate-spin motion-reduce:animate-none" />
+          <span className="rounded-full bg-card p-4 text-primary shadow-lg">
+            <Loader2 className="h-6 w-6 animate-spin motion-reduce:animate-none" />
             <span className="sr-only">Preparando el siguiente paso del tutorial</span>
           </span>
         </div>
       </>
     );
-  }
 
-  const viewport = visualViewportSize();
-  const width = Math.min(340, viewport.width - 32);
-  const roomBelow = viewport.height - cutout.bottom;
-  const roomAbove = cutout.top;
-  const placeBelow = roomBelow >= popoverHeight + 18 || roomBelow >= roomAbove;
-  const top = placeBelow
-    ? Math.min(cutout.bottom + 14, viewport.height - popoverHeight - 16)
-    : Math.max(16, cutout.top - popoverHeight - 14);
+  const vw = window.innerWidth;
+  const vh = viewportHeight();
+  const width = Math.min(360, vw - 24);
+  const belowSpace = vh - cutout.bottom - 16;
+  const aboveSpace = cutout.top - 16;
+  const placeBelow = belowSpace >= popoverHeight || belowSpace >= aboveSpace;
+  const unclampedTop = placeBelow ? cutout.bottom + 12 : cutout.top - popoverHeight - 12;
+  const top = Math.max(12, Math.min(unclampedTop, vh - popoverHeight - 12));
   const left = Math.max(
-    16,
-    Math.min(cutout.left + (cutout.right - cutout.left - width) / 2, viewport.width - width - 16),
+    12,
+    Math.min(cutout.left + (cutout.right - cutout.left - width) / 2, vw - width - 12),
   );
-  const popoverOffset = placeBelow ? 8 : -8;
+  const dots = Array.from({ length: sceneCount }, (_, index) => index);
 
   return (
     <>
+      {studyDemo}
       {practiceDemo}
-      <div
-        aria-live="polite"
-        aria-label={`Tutorial de OpoTest, paso ${step + 1} de ${PRODUCT_TOUR_STEPS.length}`}
-      >
+      <div aria-live="polite" aria-label={`Tutorial de OpoTest, paso ${step + 1} de ${PRODUCT_TOUR_STEPS.length}`}>
         <div
           className="pointer-events-none fixed z-[60] rounded-[1.15rem] border border-white/75 transition-[top,left,width,height,box-shadow] duration-200 ease-out motion-reduce:transition-none"
           style={{
@@ -706,7 +536,7 @@ function SpotlightTour({
             width: cutout.right - cutout.left,
             height: cutout.bottom - cutout.top,
             boxShadow: targetAccent
-              ? "0 0 0 9999px rgb(0 0 0 / 0.68), 0 0 0 2px rgb(125 211 252 / 0.20), 0 0 18px rgb(125 211 252 / 0.22)"
+              ? "0 0 0 9999px rgb(0 0 0 / 0.68), 0 0 0 2px rgb(125 211 252 / 0.22), 0 0 18px rgb(125 211 252 / 0.24)"
               : "0 0 0 9999px rgb(0 0 0 / 0.68), 0 0 0 1px rgb(125 211 252 / 0.14), 0 0 10px rgb(125 211 252 / 0.12)",
           }}
           aria-hidden="true"
@@ -723,62 +553,61 @@ function SpotlightTour({
           aria-hidden={!popoverVisible}
           aria-labelledby="tour-title"
           aria-describedby="tour-description"
-          className="fixed z-[70] rounded-2xl border border-border/80 bg-card p-4 text-card-foreground shadow-[0_20px_55px_-18px_rgb(0_0_0/0.55)] transition-[opacity,transform] ease-out min-[390px]:p-[18px] motion-reduce:transition-none"
+          className="fixed z-[70] rounded-3xl border border-border/80 bg-card p-5 text-card-foreground shadow-[0_24px_60px_-20px_rgb(0_0_0/0.58)] transition-[opacity,transform] ease-out motion-reduce:transition-none"
           style={{
             top,
             left,
             width,
             opacity: popoverVisible ? 1 : 0,
-            transform: popoverVisible
-              ? "translateY(0) scale(1)"
-              : `translateY(${popoverOffset}px) scale(0.98)`,
-            transitionDuration: prefersReducedMotion() ? "0ms" : popoverVisible ? "210ms" : "120ms",
+            transform: popoverVisible ? "translateY(0) scale(1)" : "translateY(8px) scale(.985)",
+            transitionDuration: prefersReducedMotion() ? "0ms" : popoverVisible ? "190ms" : "110ms",
             pointerEvents: popoverVisible ? "auto" : "none",
           }}
         >
-          <span
-            aria-hidden="true"
-            className={`pointer-events-none absolute left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-card ${
-              placeBelow
-                ? "-top-1.5 border-l border-t border-border/80"
-                : "-bottom-1.5 border-b border-r border-border/80"
-            }`}
-          />
           <div className="flex items-start justify-between gap-3">
             <div>
-              <span className="block text-[13px] font-medium leading-none text-muted-foreground">
-                {step + 1} de {PRODUCT_TOUR_STEPS.length}
+              <span className="block text-[15px] font-bold text-muted-foreground">
+                Paso {step + 1} de {PRODUCT_TOUR_STEPS.length}
               </span>
-              {journeyLabel && sceneCount > 1 && (
-                <span className="mt-1.5 block text-[11px] font-semibold text-primary">
-                  {journeyLabel} · {scene + 1} de {sceneCount}
-                </span>
-              )}
+              <div className="mt-2 flex items-center gap-2">
+                <span className="text-[15px] font-bold text-primary">{journeyLabel}</span>
+                {sceneCount > 1 && (
+                  <span className="flex items-center gap-1.5" aria-label={`Momento ${scene + 1} de ${sceneCount}`}>
+                    {dots.map((dot) => (
+                      <span
+                        key={dot}
+                        className={`h-2 w-2 rounded-full transition-colors ${
+                          dot <= scene ? "bg-primary" : "bg-muted-foreground/25"
+                        }`}
+                      />
+                    ))}
+                  </span>
+                )}
+              </div>
             </div>
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-2 text-[13px] font-medium text-muted-foreground"
+              className="h-10 px-2.5 text-[15px] font-semibold text-muted-foreground"
               onClick={onSkip}
               tabIndex={popoverVisible ? 0 : -1}
             >
-              Omitir
+              Saltar tutorial
             </Button>
           </div>
-          <h2 id="tour-title" className="mt-3 text-[19px] font-semibold leading-[1.2] min-[390px]:text-xl">
+
+          <h2 id="tour-title" className="mt-4 text-[24px] font-bold leading-[1.18] tracking-tight">
             {item.title}
           </h2>
-          <p id="tour-description" className="mt-2 text-base leading-[1.45] text-muted-foreground">
+          <p id="tour-description" className="mt-3 text-[18px] leading-[1.48] text-muted-foreground">
             <EmphasizedDescription description={item.description} emphasis={item.emphasis} />
           </p>
-          <div
-            className={`mt-5 flex items-center gap-2 ${step > 0 || scene > 0 ? "justify-between" : "justify-end"}`}
-          >
+
+          <div className={`mt-6 flex items-center gap-3 ${step > 0 || scene > 0 ? "justify-between" : "justify-end"}`}>
             {(step > 0 || scene > 0) && (
               <Button
                 variant="ghost"
-                size="sm"
-                className="h-10 px-2.5 text-[15px] font-semibold text-muted-foreground"
+                className="h-12 px-3 text-[17px] font-bold text-muted-foreground"
                 onClick={goPrevious}
                 aria-label="Paso anterior"
                 tabIndex={popoverVisible ? 0 : -1}
@@ -788,12 +617,11 @@ function SpotlightTour({
             )}
             <Button
               data-tour-primary
-              size="sm"
-              className="h-10 px-4 text-[15px] font-semibold"
+              className="h-12 px-5 text-[17px] font-bold"
               onClick={() => (finalScene ? onFinish() : goNext())}
               tabIndex={popoverVisible ? 0 : -1}
             >
-              {finalScene ? "Empezar mi sesión" : "Siguiente"}
+              {finalScene ? "Empezar mi sesión" : flashcardNeedsReveal ? "Ver respuesta" : "Siguiente"}
             </Button>
           </div>
         </div>
