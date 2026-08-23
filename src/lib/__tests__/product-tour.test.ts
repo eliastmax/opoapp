@@ -193,24 +193,31 @@ describe("short product tour v2", () => {
     expect(practiceDemo).not.toContain("complete_test");
   });
 
-  it("keeps desktop demo content physically out of the coach-mark rail", () => {
+  it("keeps desktop demo content and its spotlight in the same reserved rail geometry", () => {
     expect(component).toContain("function reserveDesktopDemoRail");
-    expect(component).toContain('window.innerWidth < 900');
-    expect(component).toContain('stage.style.transform = "translateX(-210px)"');
+    expect(component).toContain("const coachWidth = window.innerWidth < 1000 ? 320 : 360");
+    expect(component).toContain("const requiredShift = Math.max(0, stageRect.right - railLeft)");
+    expect(component).toContain("const availableShift = Math.max(0, stageRect.left - 16)");
+    expect(component).toContain('stage.style.transition = "none"');
+    expect(component).not.toContain('translateX(-210px)');
     expect(component).toContain("const restoreDemoRail = reserveDesktopDemoRail(target, item.target)");
     expect(component).toContain("restoreDemoRail();");
     expect(component).toContain("desktopDemoRail ? 24");
     expect(component).toContain("right = desktopDemoRail ? 24");
   });
 
-  it("keeps demo sheets and the final Today action inside the viewport", () => {
+  it("keeps narrow real targets and the final Today action inside the viewport", () => {
     expect(component).toContain("const mobileDemoSheet = demo && vw < 900");
-    expect(component).toContain("const finalMobile = finalScene && vw < 700");
-    expect(component).toContain("const finalMobileTop");
+    expect(component).toContain("const narrowRealTarget = !demo && vw < 700");
+    expect(component).toContain("const compactFinal = finalScene && (vw < 960 || vh < 760)");
+    expect(component).toContain("const compactPopover = narrowRealTarget || compactFinal");
+    expect(component).toContain("const fullWidthFinal = finalScene && vw < 700");
+    expect(component).toContain("const realTargetMaxHeight = compactPopover");
+    expect(component).toContain("new ResizeObserver(measure)");
     expect(component).toContain('overflowY: "auto"');
-    expect(component).toContain("maxHeight");
-    expect(component).toContain('finalMobile ? "p-4" : "p-5"');
-    expect(component).toContain('finalMobile ? "h-11 px-4 text-[15px]"');
+    expect(component).toContain('compactPopover ? "p-4" : "p-5"');
+    expect(component).toContain('compactPopover ? "h-11 px-4 text-[15px]"');
+    expect(component).not.toContain("const finalMobileTop");
   });
 
   it("makes the coach marks easier to read", () => {

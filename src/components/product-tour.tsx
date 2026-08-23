@@ -89,8 +89,17 @@ function reserveDesktopDemoRail(target: HTMLElement, targetName: string) {
 
   const previousTransform = stage.style.transform;
   const previousTransition = stage.style.transition;
-  stage.style.transform = "translateX(-210px)";
-  stage.style.transition = prefersReducedMotion() ? "none" : "transform 180ms ease-out";
+  const stageRect = stage.getBoundingClientRect();
+  const coachWidth = window.innerWidth < 1000 ? 320 : 360;
+  const railLeft = window.innerWidth - coachWidth - 48;
+  const requiredShift = Math.max(0, stageRect.right - railLeft);
+  const availableShift = Math.max(0, stageRect.left - 16);
+  const shift = Math.min(requiredShift, availableShift);
+
+  // The spotlight is measured on the next frame. A transform transition would leave
+  // the cutout behind while the demo keeps moving, so reserve the rail atomically.
+  stage.style.transition = "none";
+  stage.style.transform = shift > 0 ? `translateX(-${Math.ceil(shift)}px)` : previousTransform;
 
   return () => {
     stage.style.transform = previousTransform;
@@ -472,10 +481,21 @@ function SpotlightTour({
   }, [expectedPath, goNext, item.route, item.target, pathname]);
 
   useLayoutEffect(() => {
-    if (!popoverRef.current) return;
-    const height = popoverRef.current.getBoundingClientRect().height;
-    if (height > 0) setPopoverHeight(height);
-  }, [cutout, popoverVisible, scene, step, studyAnswerVisible]);
+    const node = popoverRef.current;
+    if (!node) return;
+    const measure = () => {
+      const height = node.getBoundingClientRect().height;
+      if (height > 0) setPopoverHeight(height);
+    };
+    measure();
+    const resizeObserver = new ResizeObserver(measure);
+    resizeObserver.observe(node);
+    window.visualViewport?.addEventListener("resize", measure);
+    return () => {
+      resizeObserver.disconnect();
+      window.visualViewport?.removeEventListener("resize", measure);
+    };
+  }, [cutout]);
 
   useEffect(() => {
     const shell = document.querySelector<HTMLElement>("[data-app-shell]");
@@ -533,11 +553,14 @@ function SpotlightTour({
 
   const vw = window.innerWidth;
   const vh = viewportHeight();
-  const width = Math.min(360, vw - 24);
+  const width = Math.min(vw >= 900 && vw < 1000 ? 320 : 360, vw - 24);
   const demo = isDemoTarget(item.target);
   const desktopDemoRail = demo && vw >= 900;
   const mobileDemoSheet = demo && vw < 900;
-  const finalMobile = finalScene && vw < 700;
+  const narrowRealTarget = !demo && vw < 700;
+  const compactFinal = finalScene && (vw < 960 || vh < 760);
+  const compactPopover = narrowRealTarget || compactFinal;
+  const fullWidthFinal = finalScene && vw < 700;
 
   const belowSpace = vh - cutout.bottom - 16;
   const aboveSpace = cutout.top - 16;
@@ -549,19 +572,20 @@ function SpotlightTour({
     Math.min(cutout.left + (cutout.right - cutout.left - width) / 2, vw - width - 12),
   );
 
-  const finalMobileTop = Math.min(cutout.bottom + 8, Math.max(12, vh - 272));
-  const top = desktopDemoRail ? 24 : mobileDemoSheet ? undefined : finalMobile ? finalMobileTop : normalTop;
+  const top = desktopDemoRail ? 24 : mobileDemoSheet ? undefined : normalTop;
   const bottom = mobileDemoSheet ? 12 : undefined;
-  const left = desktopDemoRail ? undefined : finalMobile ? 12 : normalLeft;
+  const left = desktopDemoRail ? undefined : fullWidthFinal ? 12 : normalLeft;
   const right = desktopDemoRail ? 24 : undefined;
-  const popoverWidth = finalMobile ? vw - 24 : width;
+  const popoverWidth = fullWidthFinal ? vw - 24 : width;
+  const chosenRealTargetSpace = Math.max(0, (placeBelow ? belowSpace : aboveSpace) - 4);
+  const realTargetMaxHeight = compactPopover
+    ? Math.max(180, Math.min(vh - 24, chosenRealTargetSpace))
+    : vh - 24;
   const maxHeight = desktopDemoRail
     ? vh - 48
     : mobileDemoSheet
       ? Math.max(220, Math.min(vh * 0.43, 360))
-      : finalMobile
-        ? Math.max(220, vh - finalMobileTop - 12)
-        : vh - 24;
+      : realTargetMaxHeight;
   const dots = Array.from({ length: sceneCount }, (_, index) => index);
 
   return (
@@ -594,7 +618,7 @@ function SpotlightTour({
           aria-hidden={!popoverVisible}
           aria-labelledby="tour-title"
           aria-describedby="tour-description"
-          className={`fixed z-[70] rounded-3xl border border-border/80 bg-card text-card-foreground shadow-[0_24px_60px_-20px_rgb(0_0_0/0.58)] transition-[opacity,transform] ease-out motion-reduce:transition-none ${finalMobile ? "p-4" : "p-5"}`}
+          className={`fixed z-[70] rounded-3xl border border-border/80 bg-card text-card-foreground shadow-[0_24px_60px_-20px_rgb(0_0_0/0.58)] transition-[opacity,transform] ease-out motion-reduce:transition-none ${compactPopover ? "p-4" : "p-5"}`}
           style={{
             top,
             bottom,
@@ -609,13 +633,38 @@ function SpotlightTour({
             pointerEvents: popoverVisible ? "auto" : "none",
           }}
         >
-          {finalMobile ? (
-            <div className="flex items-center gap-2 text-[14px] font-bold">
-              <span className="text-muted-foreground">
-                Paso {step + 1} de {PRODUCT_TOUR_STEPS.length}
-              </span>
-              <span aria-hidden="true" className="text-muted-foreground/50">·</span>
-              <span className="text-primary">{journeyLabel}</span>
+          {compactPopover ? (
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2 text-[14px] font-bold">
+                <span className="shrink-0 text-muted-foreground">
+                  Paso {step + 1} de {PRODUCT_TOUR_STEPS.length}
+                </span>
+                <span aria-hidden="true" className="text-muted-foreground/50">·</span>
+                <span className="shrink-0 text-primary">{journeyLabel}</span>
+                {sceneCount > 1 && (
+                  <span className="flex items-center gap-1" aria-label={`Momento ${scene + 1} de ${sceneCount}`}>
+                    {dots.map((dot) => (
+                      <span
+                        key={dot}
+                        className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                          dot <= scene ? "bg-primary" : "bg-muted-foreground/25"
+                        }`}
+                      />
+                    ))}
+                  </span>
+                )}
+              </div>
+              {!finalScene && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 shrink-0 px-2 text-[14px] font-semibold text-muted-foreground"
+                  onClick={onSkip}
+                  tabIndex={popoverVisible ? 0 : -1}
+                >
+                  Saltar
+                </Button>
+              )}
             </div>
           ) : (
             <div className="flex items-start justify-between gap-3">
@@ -653,22 +702,22 @@ function SpotlightTour({
 
           <h2
             id="tour-title"
-            className={`${finalMobile ? "mt-3 text-[22px] leading-[1.16]" : "mt-4 text-[24px] leading-[1.18]"} font-bold tracking-tight`}
+            className={`${compactPopover ? "mt-3 text-[21px] leading-[1.18]" : "mt-4 text-[24px] leading-[1.18]"} font-bold tracking-tight`}
           >
             {item.title}
           </h2>
           <p
             id="tour-description"
-            className={`${finalMobile ? "mt-2 text-[16px] leading-[1.42]" : "mt-3 text-[18px] leading-[1.48]"} text-muted-foreground`}
+            className={`${compactPopover ? "mt-2 text-[16px] leading-[1.42]" : "mt-3 text-[18px] leading-[1.48]"} text-muted-foreground`}
           >
             <EmphasizedDescription description={item.description} emphasis={item.emphasis} />
           </p>
 
-          <div className={`${finalMobile ? "mt-4" : "mt-6"} flex items-center gap-3 ${step > 0 || scene > 0 ? "justify-between" : "justify-end"}`}>
+          <div className={`${compactPopover ? "mt-4" : "mt-6"} flex items-center gap-3 ${step > 0 || scene > 0 ? "justify-between" : "justify-end"}`}>
             {(step > 0 || scene > 0) && (
               <Button
                 variant="ghost"
-                className={`${finalMobile ? "h-11 px-2 text-[15px]" : "h-12 px-3 text-[17px]"} font-bold text-muted-foreground`}
+                className={`${compactPopover ? "h-11 px-2 text-[15px]" : "h-12 px-3 text-[17px]"} font-bold text-muted-foreground`}
                 onClick={goPrevious}
                 aria-label="Paso anterior"
                 tabIndex={popoverVisible ? 0 : -1}
@@ -678,7 +727,7 @@ function SpotlightTour({
             )}
             <Button
               data-tour-primary
-              className={`${finalMobile ? "h-11 px-4 text-[15px]" : "h-12 px-5 text-[17px]"} font-bold`}
+              className={`${compactPopover ? "h-11 px-4 text-[15px]" : "h-12 px-5 text-[17px]"} font-bold`}
               onClick={() => (finalScene ? onFinish() : goNext())}
               tabIndex={popoverVisible ? 0 : -1}
             >
