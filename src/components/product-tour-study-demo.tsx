@@ -78,13 +78,13 @@ function targetForScene(scene: number) {
 
 function DemoShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-[50] overflow-y-auto bg-background">
+    <div className="fixed inset-0 z-[50] overflow-hidden bg-background">
       <style>{`
         @media (max-width: 899px) {
           [role="dialog"][aria-labelledby="tour-title"] {
             top: auto !important;
             bottom: 12px !important;
-            max-height: 43dvh !important;
+            max-height: 42dvh !important;
             overflow-y: auto !important;
           }
         }
@@ -98,12 +98,12 @@ function DemoShell({ children }: { children: React.ReactNode }) {
           }
         }
       `}</style>
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-lg flex-col px-4 pb-[48dvh] pt-[calc(env(safe-area-inset-top,0px)+1rem)] min-[900px]:pb-8">
-        <div className="flex items-center justify-center gap-2 text-[15px] font-semibold text-muted-foreground">
+      <div className="mx-auto flex h-[56dvh] w-full max-w-lg flex-col px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] min-[900px]:h-full min-[900px]:min-h-[100dvh] min-[900px]:pb-8">
+        <div className="flex shrink-0 items-center justify-center gap-2 text-[14px] font-semibold text-muted-foreground">
           <span className="h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
           Vista del tutorial · tu progreso no cambia
         </div>
-        <div className="mt-4 flex-1">{children}</div>
+        <div className="mt-3 flex min-h-0 flex-1 items-center justify-center">{children}</div>
       </div>
     </div>
   );
@@ -131,7 +131,7 @@ export function ProductTourStudyDemo({
   if (!unitId || query.isLoading) {
     return (
       <DemoShell>
-        <Card data-tour={target} className="mt-8 flex min-h-56 items-center justify-center p-6">
+        <Card data-tour={target} className="flex min-h-48 w-full items-center justify-center p-6">
           <div className="text-center">
             <Loader2 className="mx-auto h-7 w-7 animate-spin text-primary motion-reduce:animate-none" />
             <p className="mt-3 text-lg font-semibold">Preparando una unidad real…</p>
@@ -144,7 +144,7 @@ export function ProductTourStudyDemo({
   if (query.error || !query.data) {
     return (
       <DemoShell>
-        <Card data-tour={target} className="mt-8 p-6 text-center">
+        <Card data-tour={target} className="w-full p-6 text-center">
           <p className="text-lg font-semibold">Esta vista no ha podido cargarse.</p>
           <p className="mt-2 text-base text-muted-foreground">El tutorial puede continuar sin cambiar tu progreso.</p>
         </Card>
@@ -155,98 +155,74 @@ export function ProductTourStudyDemo({
   const data = query.data;
 
   if (scene === 1) {
+    const firstKey = data.keys[0] ?? null;
     return (
       <DemoShell>
-        <div data-tour="tour-study-understand" className="space-y-2.5">
-          <Card className="border-primary/15 bg-gradient-to-br from-card to-primary/5 p-5">
-            <div className="flex items-center gap-2 text-primary">
-              <BookOpen className="h-5 w-5" aria-hidden="true" />
-              <span className="text-[15px] font-bold uppercase tracking-[0.08em]">Idea central</span>
-            </div>
-            <p className="mt-3 text-[17px] leading-[1.55] text-foreground/90">{excerpt(data.summary)}</p>
-            {data.summary.trim().length > 120 && (
-              <p className="mt-2 text-[15px] font-medium text-muted-foreground">
-                Al estudiar verás el resumen completo.
-              </p>
-            )}
-          </Card>
-          {data.keys.length > 0 && (
-            <Card className="p-5">
-              <div className="flex items-center gap-2">
-                <span className="rounded-xl bg-primary/10 p-2 text-primary">
-                  <KeyRound className="h-5 w-5" aria-hidden="true" />
-                </span>
-                <h2 className="text-lg font-bold">Claves de examen</h2>
-              </div>
-              <ul className="mt-3 space-y-2.5">
-                {data.keys.slice(0, 1).map((key, index) => (
-                  <li key={`${key}-${index}`} className="flex gap-2.5 text-[16px] leading-[1.45]">
-                    <span className="mt-2.5 h-2 w-2 shrink-0 rounded-full bg-primary/70" />
-                    <span>{key}</span>
-                  </li>
-                ))}
-              </ul>
-            </Card>
+        <Card
+          data-tour="tour-study-understand"
+          className="w-full border-primary/15 bg-gradient-to-br from-card to-primary/5 p-4"
+        >
+          <div className="flex items-center gap-2 text-primary">
+            <BookOpen className="h-5 w-5" aria-hidden="true" />
+            <span className="text-[14px] font-bold uppercase tracking-[0.08em]">Idea central</span>
+          </div>
+          <p className="mt-2.5 text-[16px] leading-[1.45] text-foreground/90">{excerpt(data.summary, 105)}</p>
+          {data.summary.trim().length > 105 && (
+            <p className="mt-1.5 text-[13px] font-medium text-muted-foreground">
+              Al estudiar verás el resumen completo.
+            </p>
           )}
-        </div>
+          {firstKey && (
+            <div className="mt-3 border-t border-border/70 pt-3">
+              <div className="flex items-center gap-2">
+                <span className="rounded-lg bg-primary/10 p-1.5 text-primary">
+                  <KeyRound className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <p className="text-[15px] font-bold">Clave de examen</p>
+              </div>
+              <p className="mt-2 text-[15px] leading-[1.4]">{excerpt(firstKey, 92)}</p>
+            </div>
+          )}
+        </Card>
       </DemoShell>
     );
   }
 
   if (scene === 2) {
-    const confusions = data.confusions.slice(0, 1);
-    const traps = data.traps.slice(0, 1);
+    const confusion = data.confusions[0] ?? null;
+    const trap = data.traps[0] ?? null;
     return (
       <DemoShell>
-        <div data-tour="tour-study-traps" className="space-y-2.5">
-          {confusions.length > 0 && (
-            <Card className="p-5">
+        <Card data-tour="tour-study-traps" className="w-full space-y-3 p-4">
+          {confusion && (
+            <div>
               <div className="flex items-center gap-2">
-                <span className="rounded-xl bg-warning/15 p-2 text-warning-foreground">
-                  <Lightbulb className="h-5 w-5" aria-hidden="true" />
+                <span className="rounded-lg bg-warning/15 p-1.5 text-warning-foreground">
+                  <Lightbulb className="h-4 w-4" aria-hidden="true" />
                 </span>
-                <h2 className="text-lg font-bold">No lo confundas</h2>
+                <p className="text-[15px] font-bold">No lo confundas</p>
               </div>
-              <ul className="mt-3 space-y-2.5">
-                {confusions.map((item, index) => (
-                  <li key={`${item}-${index}`} className="flex gap-2.5 text-[16px] leading-[1.45]">
-                    <span className="mt-2.5 h-2 w-2 shrink-0 rounded-full bg-warning" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </Card>
+              <p className="mt-2 text-[15px] leading-[1.4]">{excerpt(confusion, 105)}</p>
+            </div>
           )}
-          {traps.length > 0 && (
-            <Card className="p-5">
+          {trap && (
+            <div className={confusion ? "border-t border-border/70 pt-3" : undefined}>
               <div className="flex items-center gap-2">
-                <span className="rounded-xl bg-destructive/10 p-2 text-destructive">
-                  <ShieldAlert className="h-5 w-5" aria-hidden="true" />
+                <span className="rounded-lg bg-destructive/10 p-1.5 text-destructive">
+                  <ShieldAlert className="h-4 w-4" aria-hidden="true" />
                 </span>
-                <h2 className="text-lg font-bold">Trampas frecuentes</h2>
+                <p className="text-[15px] font-bold">Trampa frecuente</p>
               </div>
-              <ul className="mt-3 space-y-2.5">
-                {traps.map((item, index) => (
-                  <li key={`${item}-${index}`} className="flex gap-2.5 text-[16px] leading-[1.45]">
-                    <span className="mt-2.5 h-2 w-2 shrink-0 rounded-full bg-destructive/70" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </Card>
+              <p className="mt-2 text-[15px] leading-[1.4]">{excerpt(trap, 105)}</p>
+            </div>
           )}
-          {(data.confusions.length > confusions.length || data.traps.length > traps.length) && (
-            <p className="px-1 text-[15px] font-medium leading-[1.4] text-muted-foreground">
-              Dentro de la unidad encontrarás más avisos cuando los haya.
-            </p>
-          )}
-          {confusions.length === 0 && traps.length === 0 && (
-            <Card className="p-6 text-center">
+          {!confusion && !trap && (
+            <div className="py-3 text-center">
               <ShieldAlert className="mx-auto h-7 w-7 text-primary" aria-hidden="true" />
               <p className="mt-3 text-lg font-semibold">Esta unidad no tiene avisos marcados.</p>
-            </Card>
+            </div>
           )}
-        </div>
+        </Card>
       </DemoShell>
     );
   }
@@ -255,49 +231,59 @@ export function ProductTourStudyDemo({
 
   return (
     <DemoShell>
-      <Card className="border-primary/15 bg-gradient-to-br from-card to-primary/5 p-5">
-        <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <Brain className="h-5 w-5" aria-hidden="true" />
-          </span>
-          <div className="min-w-0">
-            <p className="text-[15px] font-bold uppercase tracking-[0.08em] text-primary">Flashcard</p>
-            {data.flashcard?.conceptTitle && (
-              <p className="truncate text-[15px] font-semibold text-muted-foreground">
-                {data.flashcard.conceptTitle}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {data.flashcard ? (
-          showingAnswer ? (
-            <>
-              <p className="mt-4 text-center text-[15px] font-semibold leading-[1.4] text-muted-foreground">
-                {excerpt(data.flashcard.prompt, 90)}
-              </p>
-              <div
-                data-tour="tour-study-flashcard-answer"
-                className="mt-4 rounded-2xl border border-primary/15 bg-background/80 p-4 animate-in fade-in-0 zoom-in-95 duration-250 motion-reduce:animate-none"
-              >
-                <p className="text-[15px] font-bold uppercase tracking-[0.08em] text-primary">Respuesta</p>
-                <p className="mt-2 text-[17px] leading-[1.5]">{data.flashcard.answer}</p>
+      {data.flashcard ? (
+        showingAnswer ? (
+          <div className="w-full">
+            <p className="mb-2 text-center text-[13px] font-semibold text-muted-foreground">
+              {excerpt(data.flashcard.prompt, 78)}
+            </p>
+            <Card
+              data-tour="tour-study-flashcard-answer"
+              className="w-full border-primary/15 bg-gradient-to-br from-card to-primary/5 p-4 animate-in fade-in-0 zoom-in-95 duration-250 motion-reduce:animate-none"
+            >
+              <div className="flex items-center gap-2 text-primary">
+                <Brain className="h-5 w-5" aria-hidden="true" />
+                <p className="text-[14px] font-bold uppercase tracking-[0.08em]">Respuesta</p>
               </div>
-            </>
-          ) : (
-            <div data-tour="tour-study-flashcard-question" className="pt-1">
-              <p className="mt-5 text-center text-[21px] font-bold leading-[1.4]">{data.flashcard.prompt}</p>
-              <p className="mt-5 text-center text-[16px] font-semibold text-muted-foreground">
-                Piensa la respuesta antes de verla.
-              </p>
-            </div>
-          )
-        ) : (
-          <div data-tour={target}>
-            <p className="mt-5 text-lg font-semibold">No hay una flashcard disponible para esta vista.</p>
+              <p className="mt-3 text-[17px] leading-[1.45]">{excerpt(data.flashcard.answer, 145)}</p>
+              {data.flashcard.answer.trim().length > 145 && (
+                <p className="mt-2 text-[13px] font-medium text-muted-foreground">
+                  Al estudiar verás la respuesta completa.
+                </p>
+              )}
+            </Card>
           </div>
-        )}
-      </Card>
+        ) : (
+          <Card
+            data-tour="tour-study-flashcard-question"
+            className="w-full border-primary/15 bg-gradient-to-br from-card to-primary/5 p-4"
+          >
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Brain className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[14px] font-bold uppercase tracking-[0.08em] text-primary">Flashcard</p>
+                {data.flashcard.conceptTitle && (
+                  <p className="truncate text-[13px] font-semibold text-muted-foreground">
+                    {data.flashcard.conceptTitle}
+                  </p>
+                )}
+              </div>
+            </div>
+            <p className="mt-4 text-center text-[20px] font-bold leading-[1.35]">
+              {excerpt(data.flashcard.prompt, 135)}
+            </p>
+            <p className="mt-3 text-center text-[15px] font-semibold text-muted-foreground">
+              Piensa la respuesta antes de verla.
+            </p>
+          </Card>
+        )
+      ) : (
+        <Card data-tour={target} className="w-full p-6 text-center">
+          <p className="text-lg font-semibold">No hay una flashcard disponible para esta vista.</p>
+        </Card>
+      )}
     </DemoShell>
   );
 }
