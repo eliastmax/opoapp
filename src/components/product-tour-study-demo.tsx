@@ -13,7 +13,7 @@ type StudyPreview = {
   flashcard: { prompt: string; answer: string; conceptTitle: string | null } | null;
 };
 
-function excerpt(text: string, max = 280) {
+function excerpt(text: string, max = 160) {
   const clean = text.trim().replace(/\s+/g, " ");
   if (clean.length <= max) return clean;
   const slice = clean.slice(0, max);
@@ -72,7 +72,7 @@ async function loadStudyPreview(unitId: string): Promise<StudyPreview> {
 function DemoShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-[50] overflow-hidden bg-background">
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-4 pb-8 pt-[calc(env(safe-area-inset-top,0px)+1rem)]">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-lg flex-col px-4 pb-8 pt-[calc(env(safe-area-inset-top,0px)+1rem)]">
         <div className="flex items-center justify-center gap-2 text-[15px] font-semibold text-muted-foreground">
           <span className="h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
           Vista del tutorial · tu progreso no cambia
@@ -148,14 +148,14 @@ export function ProductTourStudyDemo({
   if (scene === 1) {
     return (
       <DemoShell>
-        <div data-tour="tour-study-understand" className="space-y-3">
+        <div data-tour="tour-study-understand" className="space-y-2.5">
           <Card className="border-primary/15 bg-gradient-to-br from-card to-primary/5 p-5">
             <div className="flex items-center gap-2 text-primary">
               <BookOpen className="h-5 w-5" aria-hidden="true" />
               <span className="text-[15px] font-bold uppercase tracking-[0.08em]">Idea central</span>
             </div>
             <p className="mt-3 text-[17px] leading-[1.55] text-foreground/90">{excerpt(data.summary)}</p>
-            {data.summary.trim().length > 280 && (
+            {data.summary.trim().length > 160 && (
               <p className="mt-2 text-[15px] font-medium text-muted-foreground">
                 Al estudiar verás el resumen completo.
               </p>
@@ -170,7 +170,7 @@ export function ProductTourStudyDemo({
                 <h2 className="text-lg font-bold">Claves de examen</h2>
               </div>
               <ul className="mt-3 space-y-2.5">
-                {data.keys.slice(0, 3).map((key, index) => (
+                {data.keys.slice(0, 2).map((key, index) => (
                   <li key={`${key}-${index}`} className="flex gap-2.5 text-[16px] leading-[1.45]">
                     <span className="mt-2.5 h-2 w-2 shrink-0 rounded-full bg-primary/70" />
                     <span>{key}</span>
@@ -185,11 +185,11 @@ export function ProductTourStudyDemo({
   }
 
   if (scene === 2) {
-    const confusions = data.confusions.slice(0, 2);
-    const traps = data.traps.slice(0, 2);
+    const confusions = data.confusions.slice(0, 1);
+    const traps = data.traps.slice(0, 1);
     return (
       <DemoShell>
-        <div data-tour="tour-study-traps" className="space-y-3">
+        <div data-tour="tour-study-traps" className="space-y-2.5">
           {confusions.length > 0 && (
             <Card className="p-5">
               <div className="flex items-center gap-2">
@@ -225,6 +225,11 @@ export function ProductTourStudyDemo({
                 ))}
               </ul>
             </Card>
+          )}
+          {(data.confusions.length > confusions.length || data.traps.length > traps.length) && (
+            <p className="px-1 text-[15px] font-medium leading-[1.4] text-muted-foreground">
+              Dentro de la unidad encontrarás más avisos cuando los haya.
+            </p>
           )}
           {confusions.length === 0 && traps.length === 0 && (
             <Card className="p-6 text-center">
