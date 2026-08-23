@@ -21,6 +21,10 @@ function excerpt(text: string, max = 120) {
   return `${slice.slice(0, stop > max * 0.55 ? stop + 1 : max).trim()}…`;
 }
 
+function flashcardCompactness(flashcard: { prompt: string; answer: string }) {
+  return flashcard.answer.trim().length * 1.35 + flashcard.prompt.trim().length;
+}
+
 async function loadStudyPreview(unitId: string): Promise<StudyPreview> {
   const unitResult = await supabase
     .from("study_units")
@@ -48,11 +52,13 @@ async function loadStudyPreview(unitId: string): Promise<StudyPreview> {
           .in("concept_id", conceptIds)
           .eq("active", true)
           .order("position", { ascending: true })
-          .limit(1)
+          .limit(12)
       : { data: [], error: null };
   if (flashcardsResult.error) throw flashcardsResult.error;
 
-  const flashcard = flashcardsResult.data?.[0] ?? null;
+  const flashcard = [...(flashcardsResult.data ?? [])].sort(
+    (a, b) => flashcardCompactness(a) - flashcardCompactness(b),
+  )[0] ?? null;
   const conceptTitle = flashcard
     ? concepts.find((concept) => concept.id === flashcard.concept_id)?.title ?? null
     : null;
@@ -232,53 +238,62 @@ export function ProductTourStudyDemo({
   return (
     <DemoShell>
       {data.flashcard ? (
-        showingAnswer ? (
-          <div className="w-full">
-            <p className="mb-2 text-center text-[13px] font-semibold text-muted-foreground">
-              {excerpt(data.flashcard.prompt, 78)}
-            </p>
+        <div className="w-full [perspective:1200px]">
+          <div
+            className={`grid w-full [transform-style:preserve-3d] transition-transform duration-300 ease-out motion-reduce:transition-none ${
+              showingAnswer ? "[transform:rotateY(180deg)]" : ""
+            }`}
+          >
+            <Card
+              data-tour="tour-study-flashcard-question"
+              className="[grid-area:1/1] w-full [backface-visibility:hidden] border-primary/15 bg-gradient-to-br from-card to-primary/5 p-4"
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Brain className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[14px] font-bold uppercase tracking-[0.08em] text-primary">Flashcard</p>
+                  {data.flashcard.conceptTitle && (
+                    <p className="truncate text-[13px] font-semibold text-muted-foreground">
+                      {data.flashcard.conceptTitle}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <p className="mt-4 text-center text-[20px] font-bold leading-[1.35]">
+                {excerpt(data.flashcard.prompt, 135)}
+              </p>
+              <p className="mt-3 text-center text-[15px] font-semibold text-muted-foreground">
+                Piensa la respuesta antes de verla.
+              </p>
+            </Card>
+
             <Card
               data-tour="tour-study-flashcard-answer"
-              className="w-full border-primary/15 bg-gradient-to-br from-card to-primary/5 p-4 animate-in fade-in-0 zoom-in-95 duration-250 motion-reduce:animate-none"
+              className="[grid-area:1/1] w-full [backface-visibility:hidden] [transform:rotateY(180deg)] border-primary/15 bg-gradient-to-br from-card to-primary/5 p-4"
             >
               <div className="flex items-center gap-2 text-primary">
                 <Brain className="h-5 w-5" aria-hidden="true" />
                 <p className="text-[14px] font-bold uppercase tracking-[0.08em]">Respuesta</p>
               </div>
-              <p className="mt-3 text-[17px] leading-[1.45]">{excerpt(data.flashcard.answer, 145)}</p>
-              {data.flashcard.answer.trim().length > 145 && (
-                <p className="mt-2 text-[13px] font-medium text-muted-foreground">
-                  Al estudiar verás la respuesta completa.
-                </p>
-              )}
+              <p className="mt-2 text-[12px] font-semibold leading-[1.3] text-muted-foreground">
+                {excerpt(data.flashcard.prompt, 72)}
+              </p>
+              <p
+                className={`mt-3 font-medium text-foreground ${
+                  data.flashcard.answer.trim().length > 360
+                    ? "text-[13px] leading-[1.3]"
+                    : data.flashcard.answer.trim().length > 240
+                      ? "text-[14px] leading-[1.35]"
+                      : "text-[16px] leading-[1.4]"
+                }`}
+              >
+                {data.flashcard.answer}
+              </p>
             </Card>
           </div>
-        ) : (
-          <Card
-            data-tour="tour-study-flashcard-question"
-            className="w-full border-primary/15 bg-gradient-to-br from-card to-primary/5 p-4"
-          >
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <Brain className="h-5 w-5" aria-hidden="true" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[14px] font-bold uppercase tracking-[0.08em] text-primary">Flashcard</p>
-                {data.flashcard.conceptTitle && (
-                  <p className="truncate text-[13px] font-semibold text-muted-foreground">
-                    {data.flashcard.conceptTitle}
-                  </p>
-                )}
-              </div>
-            </div>
-            <p className="mt-4 text-center text-[20px] font-bold leading-[1.35]">
-              {excerpt(data.flashcard.prompt, 135)}
-            </p>
-            <p className="mt-3 text-center text-[15px] font-semibold text-muted-foreground">
-              Piensa la respuesta antes de verla.
-            </p>
-          </Card>
-        )
+        </div>
       ) : (
         <Card data-tour={target} className="w-full p-6 text-center">
           <p className="text-lg font-semibold">No hay una flashcard disponible para esta vista.</p>
