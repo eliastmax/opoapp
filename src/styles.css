@@ -93,6 +93,89 @@
   }
 }
 
+/* Product tour layout: one deterministic rail on wide desktop, one bottom sheet everywhere else. */
+@media (min-width: 1400px) {
+  html body [role="dialog"][aria-labelledby="tour-title"] {
+    top: 24px !important;
+    right: 24px !important;
+    bottom: auto !important;
+    left: auto !important;
+    width: 360px !important;
+    max-width: 360px !important;
+    max-height: calc(100dvh - 48px) !important;
+    margin: 0 !important;
+  }
+
+  [class~="z-[50]"].fixed.inset-0 > div {
+    transform: none !important;
+  }
+}
+
+@media (max-width: 1399px) {
+  html body [role="dialog"][aria-labelledby="tour-title"] {
+    top: auto !important;
+    right: 12px !important;
+    bottom: 12px !important;
+    left: 12px !important;
+    width: auto !important;
+    max-width: 520px !important;
+    max-height: min(46dvh, 380px) !important;
+    margin-inline: auto !important;
+    overflow-y: auto !important;
+  }
+
+  [class~="z-[50]"].fixed.inset-0 {
+    overflow-y: auto !important;
+  }
+
+  [class~="z-[50]"].fixed.inset-0 > div {
+    min-height: 100dvh;
+    padding-bottom: 50dvh !important;
+    transform: none !important;
+  }
+}
+
+/* Progreso is intentionally more readable: no important information below a comfortable mobile size. */
+main:has([data-tour="progress-overview"]) h1 {
+  font-size: 2rem !important;
+  line-height: 1.15 !important;
+}
+
+main:has([data-tour="progress-overview"]) .text-base {
+  font-size: 1.125rem !important;
+  line-height: 1.45 !important;
+}
+
+main:has([data-tour="progress-overview"]) .text-sm {
+  font-size: 1rem !important;
+  line-height: 1.5 !important;
+}
+
+main:has([data-tour="progress-overview"]) .text-xs {
+  font-size: 0.875rem !important;
+  line-height: 1.45 !important;
+}
+
+main:has([data-tour="progress-overview"]) [class~="text-[11px]"] {
+  font-size: 0.8125rem !important;
+  line-height: 1.4 !important;
+}
+
+main:has([data-tour="progress-overview"]) [class~="text-[10px]"],
+main:has([data-tour="progress-overview"]) [class~="text-[9px]"] {
+  font-size: 0.75rem !important;
+  line-height: 1.35 !important;
+}
+
+main:has([data-tour="progress-overview"]) button[aria-label^="Abrir detalle del Tema"] {
+  min-height: 9rem;
+  padding: 0.75rem;
+}
+
+main:has([data-tour="progress-overview"]) button:not([aria-label^="Abrir detalle del Tema"]) {
+  min-height: 2.5rem;
+}
+
 @utility app-surface {
   border: 1px solid color-mix(in oklab, var(--color-border) 85%, transparent);
   background: color-mix(in oklab, var(--color-card) 94%, transparent);
