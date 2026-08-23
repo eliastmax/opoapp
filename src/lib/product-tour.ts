@@ -1,4 +1,4 @@
-export type ProductTourRoute = "/inicio" | "/estudio" | "study-unit" | "flashcards";
+export type ProductTourRoute = "/inicio" | "/estudio" | "study-preview";
 
 export type ProductTourScene = {
   route: ProductTourRoute;
@@ -50,7 +50,7 @@ export const PRODUCT_TOUR_STEPS = [
   {
     scenes: [
       {
-        route: "study-unit",
+        route: "study-preview",
         target: "study-summary",
         title: "Aquí es donde estudias",
         description:
@@ -58,8 +58,8 @@ export const PRODUCT_TOUR_STEPS = [
         emphasis: ["resumen, claves y conceptos"],
       },
       {
-        route: "flashcards",
-        target: "flashcard-card",
+        route: "study-preview",
+        target: "flashcard-preview",
         title: "Después, intenta recordarlo",
         description:
           "Las flashcards te piden la respuesta antes de mostrarla para que compruebes qué recuerdas sin mirar.",
@@ -108,8 +108,7 @@ export function productTourSceneCount(step: number) {
 }
 
 export function productTourPath(route: ProductTourRoute, unitId: string | null) {
-  if (route === "study-unit") return unitId ? `/estudiar/${unitId}` : null;
-  if (route === "flashcards") return unitId ? `/recordar/${unitId}` : null;
+  if (route === "study-preview") return unitId ? `/estudiar/${unitId}` : null;
   return route;
 }
 
