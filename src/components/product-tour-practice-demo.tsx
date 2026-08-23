@@ -280,7 +280,7 @@ function LevelsPreview({
                     )}
                   >
                     {stage.index === 0 ? (
-                      <Check className="h-5 w-5" aria-hidden="true" />
+                      <Check className="h-5 w-5" aria-label={`${stage.title} disponible`} />
                     ) : stage.locked ? (
                       <Lock
                         className="h-5 w-5 motion-reduce:animate-none"
@@ -292,7 +292,7 @@ function LevelsPreview({
                         }}
                         aria-label={`${stage.title} bloqueado`}
                       />
-                    ) : (
+                    ) : isUnlocking ? (
                       <LockOpen
                         className="h-5 w-5 motion-reduce:animate-none"
                         style={{
@@ -301,8 +301,10 @@ function LevelsPreview({
                               ? "tour-unlock-pop 520ms cubic-bezier(.2,.9,.25,1.25) both"
                               : undefined,
                         }}
-                        aria-label={`${stage.title} desbloqueado`}
+                        aria-label={`${stage.title} desbloqueándose`}
                       />
+                    ) : (
+                      <Check className="h-5 w-5" aria-label={`${stage.title} disponible`} />
                     )}
                   </span>
                   <div className="min-w-0 flex-1">
@@ -315,7 +317,7 @@ function LevelsPreview({
                       )}
                       {advancedUnlocked && (
                         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">
-                          Desbloqueado
+                          {isUnlocking ? "Desbloqueado" : "Disponible"}
                         </span>
                       )}
                     </div>
