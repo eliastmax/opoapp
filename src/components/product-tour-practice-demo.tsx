@@ -51,6 +51,25 @@ function optionText(question: PreviewQuestion, letter: OptionLetter) {
 function DemoShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-[50] overflow-hidden bg-background">
+      <style>{`
+        @media (max-width: 899px) {
+          [role="dialog"][aria-labelledby="tour-title"] {
+            top: auto !important;
+            bottom: 12px !important;
+            max-height: 43dvh !important;
+            overflow-y: auto !important;
+          }
+        }
+        @media (min-width: 900px) {
+          [role="dialog"][aria-labelledby="tour-title"] {
+            left: auto !important;
+            right: 24px !important;
+            top: 24px !important;
+            max-height: calc(100dvh - 48px) !important;
+            overflow-y: auto !important;
+          }
+        }
+      `}</style>
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-4 pb-8 pt-[calc(env(safe-area-inset-top,0px)+1rem)]">
         <div className="flex items-center justify-center gap-2 text-[15px] font-semibold text-muted-foreground">
           <span className="h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
