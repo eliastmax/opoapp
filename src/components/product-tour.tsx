@@ -35,6 +35,47 @@ function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
+function scrollTourTargetIntoView(
+  target: HTMLElement,
+  targetName: string,
+  route: ProductTourRoute,
+  popoverHeight: number,
+) {
+  if (targetName.startsWith("nav-")) return;
+
+  const rect = target.getBoundingClientRect();
+  const viewportHeight = window.innerHeight;
+  const topInset = route === "study-preview" ? 84 : 16;
+  const bottomInset = 16;
+  const gap = 18;
+  const reservedPopoverHeight = Math.max(popoverHeight, 220);
+  const targetHeight = Math.min(rect.height, viewportHeight - topInset - bottomInset);
+  const belowTop = topInset;
+  const aboveTop = bottomInset + reservedPopoverHeight + gap;
+  const candidates: number[] = [];
+
+  if (belowTop + targetHeight + gap + reservedPopoverHeight <= viewportHeight - bottomInset) {
+    candidates.push(belowTop);
+  }
+  if (aboveTop + targetHeight <= viewportHeight - bottomInset) {
+    candidates.push(aboveTop);
+  }
+
+  const desiredTop =
+    candidates.length > 0
+      ? candidates.reduce((best, candidate) =>
+          Math.abs(rect.top - candidate) < Math.abs(rect.top - best) ? candidate : best,
+        )
+      : topInset;
+  const delta = rect.top - desiredTop;
+  if (Math.abs(delta) < 4) return;
+
+  window.scrollBy({
+    top: delta,
+    behavior: prefersReducedMotion() ? "auto" : "smooth",
+  });
+}
+
 function EmphasizedDescription({
   description,
   emphasis,
@@ -204,7 +245,7 @@ function SpotlightTour({
   const popoverRef = useRef<HTMLDivElement>(null);
   const stepTimerRef = useRef<number | null>(null);
   const [cutout, setCutout] = useState<Cutout | null>(null);
-  const [popoverHeight, setPopoverHeight] = useState(190);
+  const [popoverHeight, setPopoverHeight] = useState(240);
   const [popoverVisible, setPopoverVisible] = useState(false);
   const [routeTransition, setRouteTransition] = useState(false);
   const [targetAccent, setTargetAccent] = useState(false);
@@ -218,6 +259,7 @@ function SpotlightTour({
       const nextPath = productTourPath(nextItem.route, tourUnitId);
       setPopoverVisible(false);
       setTargetAccent(false);
+      setCutout(null);
       if (currentPath !== nextPath) setRouteTransition(true);
       if (stepTimerRef.current !== null) window.clearTimeout(stepTimerRef.current);
       stepTimerRef.current = window.setTimeout(
@@ -292,7 +334,7 @@ function SpotlightTour({
             if (!cancelled) setTargetAccent(false);
           }, 240);
         },
-        prefersReducedMotion() ? 0 : 220,
+        prefersReducedMotion() ? 0 : 260,
       );
     };
     const attachTarget = (target: HTMLElement) => {
@@ -301,10 +343,7 @@ function SpotlightTour({
       if (discoveredUnitId) setTourUnitId(discoveredUnitId);
       targetObserver?.disconnect();
       window.clearTimeout(targetTimeout);
-      target.scrollIntoView({
-        block: item.target.startsWith("nav-") ? "nearest" : "center",
-        behavior: prefersReducedMotion() ? "auto" : "smooth",
-      });
+      scrollTourTargetIntoView(target, item.target, item.route, popoverHeight);
       const update = () => {
         setCutout(spotlightRect(target.getBoundingClientRect()));
         scheduleReveal();
@@ -357,7 +396,7 @@ function SpotlightTour({
       targetObserver?.disconnect();
       cleanup?.();
     };
-  }, [expectedPath, item.route, item.target, pathname]);
+  }, [expectedPath, item.route, item.target, pathname, popoverHeight]);
 
   useLayoutEffect(() => {
     if (popoverRef.current) setPopoverHeight(popoverRef.current.getBoundingClientRect().height);
