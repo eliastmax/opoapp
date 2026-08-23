@@ -40,6 +40,10 @@ const studyUnit = readFileSync(
   new URL("../../routes/_authenticated/estudiar.$unitId.tsx", import.meta.url),
   "utf8",
 );
+const preparationFlow = readFileSync(
+  new URL("../../components/v3/preparation-profile-flow.tsx", import.meta.url),
+  "utf8",
+);
 
 const eligibility = (overrides: Partial<Parameters<typeof shouldOpenProductTour>[0]> = {}) =>
   shouldOpenProductTour({
@@ -97,7 +101,7 @@ describe("short product tour v2", () => {
     expect(PRODUCT_TOUR_STEPS[3].final).toBe(true);
     expect(PRODUCT_TOUR_STEPS[3].scenes[0].route).toBe("/inicio");
     expect(PRODUCT_TOUR_STEPS[3].scenes[0].title).toContain("¿qué hago hoy?");
-    expect(component).toContain('"Empezar mi sesión"');
+    expect(component).toContain('\"Empezar mi sesión\"');
   });
 
   it("keeps copy short, direct and benefit-led", () => {
@@ -119,9 +123,9 @@ describe("short product tour v2", () => {
     expect(studyDemo).toContain('data-tour="tour-study-flashcard"');
     expect(studyDemo).toContain('className="fixed inset-0 z-[50] overflow-hidden bg-background"');
     expect(studyDemo).toContain("Al estudiar verás el resumen completo.");
-    expect(studyDemo).toContain("data.keys.slice(0, 3)");
-    expect(studyDemo).toContain("data.confusions.slice(0, 2)");
-    expect(studyDemo).toContain("data.traps.slice(0, 2)");
+    expect(studyDemo).toContain("data.keys.slice(0, 1)");
+    expect(studyDemo).toContain("data.confusions.slice(0, 1)");
+    expect(studyDemo).toContain("data.traps.slice(0, 1)");
     expect(component).toContain('targetName.startsWith("tour-study-")');
     expect(component).toContain("isDemoTarget(item.target)");
   });
@@ -152,16 +156,19 @@ describe("short product tour v2", () => {
 
   it("turns the three learning levels into one fast unlock demonstration", () => {
     expect(practiceDemo).toContain("Tres niveles. Tres objetivos.");
-    expect(practiceDemo).toContain("No es fácil, medio y difícil.");
-    expect(practiceDemo).toContain("LEARNING_STAGE_DESCRIPTIONS.aprendizaje");
-    expect(practiceDemo).toContain("LEARNING_STAGE_DESCRIPTIONS.consolidacion");
-    expect(practiceDemo).toContain("LEARNING_STAGE_DESCRIPTIONS.tribunal");
+    expect(practiceDemo).toContain("Empiezas por la base y avanzas cuando tu práctica demuestra seguridad.");
+    expect(practiceDemo).toContain("Base, reglas y conceptos esenciales. Empiezas aquí.");
+    expect(practiceDemo).toContain("Se desbloquea cuando tu base ya es estable.");
+    expect(practiceDemo).toContain("Se desbloquea tras consolidar con seguridad.");
     expect(practiceDemo).toContain("<Lock");
     expect(practiceDemo).toContain("<LockOpen");
     expect(practiceDemo).toContain("setUnlocked(1)");
     expect(practiceDemo).toContain("setUnlocked(2)");
-    expect(practiceDemo).toContain("520");
-    expect(practiceDemo).toContain("1_080");
+    expect(practiceDemo).toContain("setUnlocking(1)");
+    expect(practiceDemo).toContain("setUnlocking(2)");
+    expect(practiceDemo).toContain("tour-lock-release");
+    expect(practiceDemo).toContain("tour-unlock-pop");
+    expect(practiceDemo).toContain("Desbloqueado");
     expect(practiceDemo).toContain('data-tour="practice-levels"');
   });
 
@@ -191,12 +198,27 @@ describe("short product tour v2", () => {
     expect(component).toContain("Paso {step + 1} de {PRODUCT_TOUR_STEPS.length}");
     expect(component).toContain("h-12 px-5 text-[17px] font-bold");
     expect(component).toContain("visualViewport");
+    expect(studyDemo).toContain('@media (min-width: 900px)');
+    expect(studyDemo).toContain('right: 24px !important');
+    expect(studyDemo).toContain('@media (max-width: 899px)');
+    expect(studyDemo).toContain('bottom: 12px !important');
+    expect(practiceDemo).toContain('max-height: 43dvh !important');
   });
 
   it("uses dots for micro-scenes instead of nested numeric progress", () => {
     expect(component).toContain("const dots = Array.from");
     expect(component).toContain("Momento ${scene + 1} de ${sceneCount}");
     expect(component).not.toContain("{journeyLabel} · {scene + 1} de {sceneCount}");
+  });
+
+  it("keeps the initial assessment readable without exposing background-save noise", () => {
+    expect(preparationFlow).toContain('text-[16px] font-semibold text-muted-foreground');
+    expect(preparationFlow).toContain('text-[22px] font-bold leading-[1.25]');
+    expect(preparationFlow).toContain('text-[17px] leading-[1.5] text-muted-foreground');
+    expect(preparationFlow).toContain('min-h-[82px]');
+    expect(preparationFlow).toContain('text-[18px] font-bold');
+    expect(preparationFlow).toContain('text-[16px] leading-[1.4] text-muted-foreground');
+    expect(preparationFlow).not.toContain("Cambios guardados");
   });
 
   it("still exposes the real navigation targets required by the four steps", () => {
