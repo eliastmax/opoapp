@@ -1,0 +1,174 @@
+{
+  "$schema": "OpoTestV4SourceManifestV1",
+  "manifestVersion": "1.0.0",
+  "factoryVersion": "8",
+  "generatorVersion": "Factory.8-source-coverage-cross-opposition-reuse-2026-08-23",
+  "factoryPinnedMain": "1151ee5ddac8a45138f6d09d3e7cf4d35f80eff8",
+  "branchBaseMain": "1151ee5ddac8a45138f6d09d3e7cf4d35f80eff8",
+  "topicGlobal": "T03",
+  "section": "Parte General",
+  "officialTopicNumber": 3,
+  "topicTitle": "SITUACIONES ADMINISTRATIVAS, PERMISOS Y LICENCIAS: LEY 5/2001, DE 5 DE DICIEMBRE, LEY 55/2003, DE 16 DE DICIEMBRE Y ESTATUTO BÁSICO DEL EMPLEADO PÚBLICO. LEY 55/2003, DE 16 DE DICIEMBRE: DERECHOS Y DEBERES; PROMOCIÓN INTERNA; RÉGIMEN DISCIPLINARIO: FALTAS Y SANCIONES.",
+  "oppositionCode": "celador-sms",
+  "oppositionId": "00000000-0000-4000-8000-000000000002",
+  "subjectName": "Celador SMS · Parte General",
+  "topicId": "b15ca92a-ba97-483a-ac12-90087d4f01e9",
+  "status": "production-green",
+  "writePreflight": {
+    "read": "GREEN",
+    "rollbackOnlyDml": "GREEN",
+    "affectedRows": 14,
+    "postRollbackNullPerspective": 14,
+    "postCommitNullPerspective": 0,
+    "whitelistOnly": true,
+    "residue": 0
+  },
+  "sourcePolicy": {
+    "primarySource": {
+      "document": "T03_CANONICAL_CORRECTED.pdf",
+      "pages": 40,
+      "sourcePhysicalPages": "3-42",
+      "readMode": "visual-multimodal",
+      "substantiveExclusive": true,
+      "externalKnowledge": false
+    },
+    "externalSourcesUsed": []
+  },
+  "legacyAudit": {
+    "audited": 80,
+    "kept": 80,
+    "substantivelyCorrected": ["SMS-CEL-T03-0004", "SMS-CEL-T03-0044"],
+    "retired": 0
+  },
+  "reuseAudit": {
+    "candidateRows": 376,
+    "auxT12": {"audited": 120, "sourceSupported": 0, "reused": 0},
+    "auxT13": {"audited": 144, "sourceSupported": 69, "reused": 46},
+    "auxT14": {"audited": 112, "sourceSupported": 73, "reused": 61},
+    "sourceSupportedTotal": 142,
+    "finalActiveReused": 107,
+    "rejectedUnsupported": 234,
+    "rejectedRedundant": 35,
+    "auxRowsMoved": 0,
+    "auxRowsModified": 0
+  },
+  "sourceCoverage": {
+    "pagesAudited": 40,
+    "legacyQuestions": 80,
+    "reusedQuestions": 107,
+    "newQuestions": 60,
+    "finalQuestions": 247,
+    "coveragePercentage": 100,
+    "unexploitedEvaluableFacets": 0,
+    "sourceCoverageGapsRemaining": 0,
+    "sourceReviewRequiredRemaining": 0
+  },
+  "bankDepth": {
+    "priority": "BANK_DEPTH_AND_USER_EXHAUSTION_RESISTANCE",
+    "masteryConcepts": 50,
+    "minPrimaryPerConcept": 4,
+    "sourceLimitedConcepts": 2,
+    "sourceLimited": [
+      {"code": "CEL-G-T03-C06", "ceiling": 3, "reason": "La fuente ofrece tres facetas genuinamente independientes: vía general de reingreso, reingreso provisional y actualización posterior."},
+      {"code": "CEL-G-T03-C46", "ceiling": 3, "reason": "La fuente desarrolla tres facetas independientes en este bloque: indicios de criminalidad, vinculación de hechos judiciales firmes y prohibición de analogía."}
+    ],
+    "nearDuplicateInflationAllowed": false,
+    "status": "GREEN"
+  },
+  "production": {
+    "generatedBeforeQaDedup": 62,
+    "qaDeduplicatedNew": 2,
+    "finalActiveQuestions": 247,
+    "finalActiveLegacy": 80,
+    "finalActiveReused": 107,
+    "finalActiveNew": 60,
+    "answerBalance": {"A": 61, "B": 62, "C": 60, "D": 64},
+    "levelBalance": {"aprendizaje": 73, "consolidacion": 106, "tribunal": 68},
+    "documentReference": "T03_CANONICAL_CORRECTED.pdf",
+    "status": "GREEN"
+  },
+  "qa": {
+    "duplicateStems": 0,
+    "nearDuplicateMaterialRowsRemoved": 2,
+    "repeatedOptionsWithinQuestion": 0,
+    "materialRepeatedOptionSets": 0,
+    "missingPerspectiveBeforeSurgicalFix": 14,
+    "missingPerspective": 0,
+    "sourcePageErrors": 0,
+    "scopePageMismatch": 0,
+    "emptyExplanations": 0,
+    "auxiliaryCatalogLeakage": 0,
+    "nearDuplicateAudit": "GREEN_AFTER_HARDENING",
+    "status": "GREEN"
+  },
+  "perspectiveFix": {
+    "scope": "Celador T03 only",
+    "rows": 14,
+    "field": "questions.perspectiva",
+    "questionIdsPreserved": true,
+    "primaryMappingsPreserved": 247,
+    "auxT14Touched": false,
+    "status": "GREEN"
+  },
+  "masteryAndStudy": {
+    "units": 10,
+    "concepts": 50,
+    "primaryMappings": 247,
+    "unmappedQuestions": 0,
+    "multiPrimaryQuestions": 0,
+    "flashcards": 100,
+    "minFlashcardsPerConcept": 2,
+    "contractVersion": "Factory.8 SOURCE COVERAGE CLOSURE"
+  },
+  "smokes": {
+    "v4": "GREEN",
+    "v2": "GREEN",
+    "v3": "GREEN",
+    "freshUser": "GREEN",
+    "sharedCatalog": "GREEN",
+    "crossOpposition": "GREEN",
+    "scratchResidue": 0
+  },
+  "contamination": {
+    "auxQuestions": 4466,
+    "auxT14Questions": 112,
+    "auxT14NullPerspective": 19,
+    "auxT14TouchedByPerspectiveFix": false,
+    "preservedTopics": {
+      "T01": 297,
+      "T02": 469,
+      "T03": 247,
+      "T09": 65,
+      "T10": 89,
+      "T11": 214,
+      "T12": 153
+    },
+    "finalCeladorQuestions": 1534,
+    "status": "GREEN"
+  },
+  "quality": {
+    "t03QuestionQa": "GREEN",
+    "missingPerspective": 0,
+    "v4Contract": "GREEN",
+    "sharedCatalogFreshUser": "GREEN",
+    "crossOppositionIsolation": "GREEN",
+    "repositoryQualityGate": "REQUIRED_BEFORE_MERGE",
+    "repositoryCheckCommand": "bun test && tsc --noEmit && vite build"
+  },
+  "governance": {
+    "questionFacetNotMastery": true,
+    "noQuotaGeneration": true,
+    "bankDepthPriority": true,
+    "sharedCatalogByOpposition": true,
+    "personalStateByUser": true,
+    "processedTopics": ["T03"],
+    "t04ToT08Processed": false,
+    "t13Touched": false
+  },
+  "notes": [
+    "No web or external substantive knowledge was used.",
+    "The final closure challenge found no remaining independent evaluable facet supported by the 40 canonical pages.",
+    "The only database mutation in the final Quality-blocker continuation was the whitelisted perspectiva update on 14 existing Celador T03 rows; question IDs and mappings were preserved.",
+    "Auxiliar remains exactly 4,466 active questions and Auxiliar T14 was not modified."
+  ]
+}
