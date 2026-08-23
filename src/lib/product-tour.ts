@@ -63,8 +63,8 @@ export const PRODUCT_TOUR_STEPS = [
         route: "/crear",
         target: "practice-levels",
         title: "No practiques siempre igual",
-        description: "Aprendizaje, Consolidación y Tribunal entrenan cosas distintas.",
-        emphasis: ["entrenan cosas distintas"],
+        description: "Empiezas por la base. Con seguridad, se desbloquean Consolidación y luego Tribunal.",
+        emphasis: ["Con seguridad", "se desbloquean"],
       },
       {
         route: "/crear",
