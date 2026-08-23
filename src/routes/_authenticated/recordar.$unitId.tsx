@@ -140,7 +140,10 @@ function FlashcardsPage() {
       <p className="text-center text-sm text-muted-foreground">
         Intenta responder antes de dar la vuelta.
       </p>
-      <Card className="flex min-h-[20rem] flex-col justify-between border-primary/15 bg-gradient-to-br from-card to-primary/6 p-6 text-center shadow-[0_22px_50px_-35px_oklch(0.3_0.12_250/0.75)]">
+      <Card
+        data-tour="flashcard-card"
+        className="flex min-h-[20rem] flex-col justify-between border-primary/15 bg-gradient-to-br from-card to-primary/6 p-6 text-center shadow-[0_22px_50px_-35px_oklch(0.3_0.12_250/0.75)]"
+      >
         <div>
           <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             <Brain className="h-5 w-5" />
