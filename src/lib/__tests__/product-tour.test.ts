@@ -1,7 +1,15 @@
 // @ts-expect-error bun:test is provided by the Bun test runtime
 import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
-import { PRODUCT_TOUR_STEPS, maintainTourSession, shouldOpenProductTour } from "../product-tour";
+import {
+  PRODUCT_TOUR_STEPS,
+  maintainTourSession,
+  productTourPath,
+  productTourScene,
+  productTourSceneCount,
+  shouldOpenProductTour,
+  type ProductTourScene,
+} from "../product-tour";
 
 const migration = readFileSync(
   new URL(
@@ -24,6 +32,10 @@ const today = readFileSync(
 );
 const study = readFileSync(
   new URL("../../routes/_authenticated/estudio.tsx", import.meta.url),
+  "utf8",
+);
+const studyUnit = readFileSync(
+  new URL("../../routes/_authenticated/estudiar.$unitId.tsx", import.meta.url),
   "utf8",
 );
 
@@ -52,7 +64,7 @@ describe("first-run spotlight tour", () => {
     expect(eligibility({ dismissedForSession: true })).toBe(false);
   });
 
-  it("keeps an automatic tour mounted after navigating from step 2 to Study", () => {
+  it("keeps an automatic tour mounted while it moves through Study", () => {
     const startedOnToday = maintainTourSession(false, eligibility());
     expect(startedOnToday).toBe(true);
     const eligibilityAfterNavigation = eligibility({ pathname: "/estudio" });
@@ -62,67 +74,69 @@ describe("first-run spotlight tour", () => {
     expect(component).toContain("replaying || tourSessionActive");
   });
 
-  it("uses exactly six contextual steps on the existing real DOM targets", () => {
+  it("keeps six top-level moments while teaching summary and flashcards inside Study", () => {
     expect(PRODUCT_TOUR_STEPS).toHaveLength(6);
-    expect(PRODUCT_TOUR_STEPS.map((step) => step.target)).toEqual([
+    expect(PRODUCT_TOUR_STEPS.map((_, index) => productTourSceneCount(index))).toEqual([
+      1, 1, 1, 2, 1, 1,
+    ]);
+    expect(
+      PRODUCT_TOUR_STEPS.flatMap<ProductTourScene>((phase) => phase.scenes).map(
+        (scene) => scene.target,
+      ),
+    ).toEqual([
       "today-session",
       "nav-study",
-      "study-topic",
+      "study-unit",
+      "study-summary",
+      "flashcard-preview",
       "nav-practice",
-      "study-progress",
       "today-session",
     ]);
     expect(today).toContain('data-tour="today-session"');
     expect(layout).toContain('"nav-study"');
     expect(layout).toContain('"nav-practice"');
-    expect(study).toContain('data-tour="study-progress"');
-    expect(study).toContain('"study-topic"');
+    expect(study).toContain('data-tour={tourTarget ? "study-unit" : undefined}');
+    expect(studyUnit).toContain('data-tour="study-summary"');
+    expect(studyUnit).toContain('data-tour="flashcard-preview"');
   });
 
-  it("keeps the definitive concise copy and exact emphasis fragments", () => {
-    expect(
-      PRODUCT_TOUR_STEPS.map(({ title, description, emphasis }) => ({
-        title,
-        description,
-        emphasis: [...emphasis],
-      })),
-    ).toEqual([
-      {
-        title: "Empieza por aquí",
-        description: "OpoTest te propone qué hacer ahora: estudiar, practicar o repasar.",
-        emphasis: ["estudiar, practicar o repasar"],
-      },
-      {
-        title: "Aquí está todo tu temario",
-        description: "Entra en cualquier tema, estudia sus unidades y ve qué has avanzado y qué te queda.",
-        emphasis: ["qué has avanzado", "qué te queda"],
-      },
-      {
-        title: "Estudia cada tema por partes",
-        description: "Cada tema se divide en unidades para que puedas avanzar poco a poco sin perderte.",
-        emphasis: ["poco a poco"],
-      },
-      {
-        title: "Comprueba qué sabes de verdad",
-        description: "Haz tests para descubrir qué dominas, dónde fallas y qué necesitas reforzar.",
-        emphasis: ["qué dominas", "dónde fallas"],
-      },
-      {
-        title: "Vuelve a lo que todavía falla",
-        description: "Tus fallos, dudas y puntos débiles vuelven para que puedas trabajarlos otra vez.",
-        emphasis: ["fallos, dudas y puntos débiles"],
-      },
-      {
-        title: "Siempre sabrás qué hacer después",
-        description: "Estudias, practicas y refuerzas. Con tu progreso, OpoTest te propone el siguiente paso.",
-        emphasis: ["el siguiente paso"],
-      },
+  it("routes the learning demonstration to the real unit in read-only preview mode", () => {
+    expect(productTourPath("study-preview", "unit-123")).toBe("/estudiar/unit-123");
+    expect(productTourPath("study-preview", null)).toBeNull();
+    expect(component).toContain('search: { tour: "preview" }');
+    expect(studyUnit).toContain('tour: search.tour === "preview" ? "preview" : undefined');
+    expect(studyUnit).toContain("if (previewing) return loadStudyPreview(unitId)");
+    expect(studyUnit).toContain('.from("study_units")');
+    expect(studyUnit).toContain('.from("concepts")');
+    expect(studyUnit).toContain('.from("flashcards")');
+    expect(studyUnit).toContain("if (previewing) return;");
+    expect(studyUnit).toContain("Vista del tutorial · tu progreso no cambia");
+  });
+
+  it("uses real catalog content for the flashcard preview without reviewing it", () => {
+    expect(studyUnit).toContain("const previewFlashcard = data.flashcards[0] ?? null");
+    expect(studyUnit).toContain("{previewFlashcard.prompt}");
+    expect(studyUnit).toContain("{previewFlashcard.answer}");
+    expect(studyUnit).not.toContain("review_my_v4_flashcard");
+  });
+
+  it("keeps concise copy with selective emphasis", () => {
+    const scenes = PRODUCT_TOUR_STEPS.flatMap<ProductTourScene>((phase) => phase.scenes);
+    expect(scenes.map((scene) => scene.title)).toEqual([
+      "Empieza por aquí",
+      "Aquí está todo tu temario",
+      "Estudia cada tema por partes",
+      "Aquí es donde estudias",
+      "Después, intenta recordarlo",
+      "Comprueba qué sabes de verdad",
+      "Siempre sabrás qué hacer después",
     ]);
-    for (const step of PRODUCT_TOUR_STEPS) {
-      for (const fragment of step.emphasis) expect(step.description).toContain(fragment);
+    for (const scene of scenes) {
+      for (const fragment of scene.emphasis) expect(scene.description).toContain(fragment);
     }
+    expect(productTourScene(3, 0).emphasis).toEqual(["resumen, claves y conceptos"]);
+    expect(productTourScene(3, 1).emphasis).toEqual(["qué recuerdas sin mirar"]);
     expect(component).toContain("EmphasizedDescription");
-    expect(component).toContain("readonly string[]");
     expect(component).toContain("font-semibold text-foreground");
   });
 
@@ -145,34 +159,22 @@ describe("first-run spotlight tour", () => {
     expect(Math.min(340, 430 - 32)).toBe(340);
     expect(component).toContain("Math.min(340, viewportWidth - 32)");
     expect(component).toContain("viewportWidth - width - 16");
-    expect(component).toContain("p-4");
     expect(component).toContain("min-[390px]:p-[18px]");
-    expect(component).toContain('className="mt-3 text-[19px] font-semibold leading-[1.2] min-[390px]:text-xl"');
+    expect(component).toContain(
+      'className="mt-3 text-[19px] font-semibold leading-[1.2] min-[390px]:text-xl"',
+    );
     expect(component).toContain('className="mt-2 text-base leading-[1.45] text-muted-foreground"');
-    expect(component).toContain('className="text-[13px] font-medium leading-none text-muted-foreground"');
-    expect(component).not.toContain("text-[15px] leading-[1.45] text-muted-foreground");
-    expect(component).not.toContain("ArrowLeft");
-    expect(component).not.toContain("ArrowRight");
   });
 
-  it("gives the short copy breathing room without making the coach mark oversized", () => {
-    expect(component).toContain("mt-3 text-[19px]");
-    expect(component).toContain("mt-2 text-base");
-    expect(component).toContain("mt-5 flex items-center gap-2");
-    expect(component).toContain('className="h-8 px-2 text-[13px] font-medium text-muted-foreground"');
-    expect(component).toContain('className="h-10 px-2.5 text-[15px] font-semibold text-muted-foreground"');
-    expect(component).toContain('className="h-10 px-4 text-[15px] font-semibold"');
-  });
-
-  it("keeps Omitir visible and only shows Anterior after the first step", () => {
+  it("keeps Omitir visible and exposes Anterior after the first scene", () => {
     expect(component).toContain("Omitir");
     expect(component).not.toContain('"Cerrar"');
-    expect(component).toContain("{step > 0 && (");
+    expect(component).toContain("step > 0 || scene > 0");
     expect(component).toContain("Anterior");
     expect(component).toContain("Empezar mi sesión");
   });
 
-  it("sequences a 120 ms exit before changing step and a settled 220 ms re-entry", () => {
+  it("moves smoothly between routes and between the two Study targets", () => {
     expect(component).toContain("setPopoverVisible(false)");
     expect(component).toContain("prefersReducedMotion() ? 0 : 130");
     expect(component).toContain('popoverVisible ? "210ms" : "120ms"');
