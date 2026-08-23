@@ -19,24 +19,11 @@ export const PRODUCT_TOUR_STEPS = [
     scenes: [
       {
         route: "/inicio",
-        target: "today-session",
-        title: "Este es tu punto de partida",
-        description:
-          "En Hoy encontrarás tu sesión recomendada. Cuando quieras empezar, entra aquí y OpoTest te lleva directamente a lo que toca.",
-        emphasis: ["tu sesión recomendada", "lo que toca"],
-      },
-    ],
-    final: false,
-  },
-  {
-    scenes: [
-      {
-        route: "/inicio",
         target: "nav-study",
-        title: "Aquí está todo tu temario",
+        title: "Empieza conociendo tu temario",
         description:
-          "Entra en cualquier tema, estudia sus unidades y ve qué has avanzado y qué te queda.",
-        emphasis: ["qué has avanzado", "qué te queda"],
+          "Primero vamos a enseñarte dónde está todo lo que puedes estudiar y cómo se organiza para que no tengas que orientarte solo.",
+        emphasis: ["dónde está todo lo que puedes estudiar"],
       },
     ],
     final: false,
@@ -48,8 +35,8 @@ export const PRODUCT_TOUR_STEPS = [
         target: "study-unit",
         title: "Estudia cada tema por partes",
         description:
-          "Cada tema se divide en unidades para que puedas avanzar poco a poco sin perderte.",
-        emphasis: ["poco a poco"],
+          "Cada tema se divide en unidades para que puedas avanzar poco a poco, volver donde lo dejaste y no enfrentarte al tema entero de golpe.",
+        emphasis: ["avanzar poco a poco"],
       },
     ],
     final: false,
@@ -62,7 +49,7 @@ export const PRODUCT_TOUR_STEPS = [
         target: "study-summary",
         title: "Aquí es donde estudias",
         description:
-          "Cada unidad reúne un resumen, claves y conceptos para que entiendas qué necesitas aprender.",
+          "Cada unidad empieza por una idea central para que entiendas qué necesitas aprender antes de memorizar detalles.",
         emphasis: ["entiendas qué necesitas aprender"],
       },
       {
@@ -132,16 +119,16 @@ export const PRODUCT_TOUR_STEPS = [
         target: "practice-level-consolidacion",
         title: "Consolidación · conecta y distingue",
         description:
-          "Cuando la base es estable, trabajas excepciones, relaciones y situaciones donde ya no basta con reconocer la respuesta.",
-        emphasis: ["excepciones, relaciones"],
+          "Cuando la base es estable, Consolidación se desbloquea para trabajar excepciones, relaciones y situaciones donde ya no basta con reconocer la respuesta.",
+        emphasis: ["Consolidación se desbloquea"],
       },
       {
         route: "/crear",
         target: "practice-level-tribunal",
         title: "Tribunal · entrena la precisión",
         description:
-          "Casos, matices y distractores próximos te preparan para cuando varias respuestas podrían parecer correctas.",
-        emphasis: ["varias respuestas podrían parecer correctas"],
+          "Más adelante se desbloquea Tribunal: casos, matices y distractores próximos para cuando varias respuestas podrían parecer correctas.",
+        emphasis: ["se desbloquea Tribunal", "varias respuestas podrían parecer correctas"],
       },
       {
         route: "/crear",
@@ -188,7 +175,7 @@ export const PRODUCT_TOUR_STEPS = [
         target: "practice-feedback",
         title: "Un fallo también sirve para avanzar",
         description:
-          "Después ves qué elegiste, cuál era la respuesta correcta y por qué. Cuando practiques de verdad, tus aciertos, fallos y dudas ayudarán a detectar qué necesitas seguir trabajando.",
+          "Después ves qué elegiste, cuál era la respuesta correcta y por qué. Tus aciertos, fallos y dudas ayudan a detectar qué necesitas seguir trabajando.",
         emphasis: ["cuál era la respuesta correcta", "aciertos, fallos y dudas"],
       },
     ],
@@ -204,6 +191,11 @@ export const PRODUCT_TOUR_STEPS = [
           "Progreso reúne qué conocimientos están en comprobación, cuáles estás consolidando, cuáles ya retienes y qué temas necesitan atención.",
         emphasis: ["qué temas necesitan atención"],
       },
+    ],
+    final: false,
+  },
+  {
+    scenes: [
       {
         route: "/inicio",
         target: "today-session",

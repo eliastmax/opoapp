@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Brain, Check, Layers3, Loader2, Sparkles, X } from "lucide-react";
+import { Brain, Check, Layers3, Loader2, Lock, LockOpen, Sparkles, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -137,6 +137,16 @@ function BuilderPreview({ scene }: { scene: number }) {
             ? "mezcladas"
             : null;
 
+  function stageUnlocked(stage: PracticeStage) {
+    if (stage === "consolidacion") return scene >= 2;
+    if (stage === "tribunal") return scene >= 3;
+    return true;
+  }
+
+  function stageUnlocking(stage: PracticeStage) {
+    return (stage === "consolidacion" && scene === 2) || (stage === "tribunal" && scene === 3);
+  }
+
   return (
     <div className="space-y-4">
       <header className="pt-1">
@@ -164,20 +174,44 @@ function BuilderPreview({ scene }: { scene: number }) {
           {(["aprendizaje", "consolidacion", "tribunal", "mezcladas"] as PracticeStage[]).map(
             (stage) => {
               const active = highlightedStage === stage;
+              const unlocked = stageUnlocked(stage);
+              const unlocking = stageUnlocking(stage);
+              const gated = stage === "consolidacion" || stage === "tribunal";
               return (
                 <div
                   key={stage}
                   data-tour={STAGE_TOUR_TARGETS[stage]}
                   className={cn(
-                    "rounded-xl border p-3 text-left transition-[border-color,background-color,transform,box-shadow] duration-200 motion-reduce:transition-none",
+                    "rounded-xl border p-3 text-left transition-[border-color,background-color,transform,box-shadow,opacity] duration-200 motion-reduce:transition-none",
                     active
                       ? "scale-[1.015] border-primary bg-primary/10 shadow-[0_16px_36px_-28px_oklch(0.3_0.14_250/0.8)]"
                       : "border-border bg-background/80",
+                    gated && !unlocked && "bg-muted/30 opacity-70",
                   )}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-bold">{LEARNING_STAGE_LABELS[stage]}</span>
-                    {active && <Check className="h-4 w-4 text-primary" aria-hidden="true" />}
+                    {gated ? (
+                      unlocked ? (
+                        <LockOpen
+                          key={`${stage}-open`}
+                          className={cn(
+                            "h-4 w-4 text-primary",
+                            unlocking &&
+                              "animate-in zoom-in-50 spin-in-12 duration-300 motion-reduce:animate-none",
+                          )}
+                          aria-label={`${LEARNING_STAGE_LABELS[stage]} desbloqueado`}
+                        />
+                      ) : (
+                        <Lock
+                          key={`${stage}-locked`}
+                          className="h-4 w-4 text-muted-foreground"
+                          aria-label={`${LEARNING_STAGE_LABELS[stage]} bloqueado`}
+                        />
+                      )
+                    ) : active ? (
+                      <Check className="h-4 w-4 text-primary" aria-hidden="true" />
+                    ) : null}
                   </div>
                   <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
                     {LEARNING_STAGE_DESCRIPTIONS[stage]}
@@ -185,6 +219,11 @@ function BuilderPreview({ scene }: { scene: number }) {
                   <p className="mt-2 text-[11px] font-semibold leading-snug text-foreground/80">
                     {STAGE_HELP[stage]}
                   </p>
+                  {gated && !unlocked && (
+                    <p className="mt-2 text-[10px] font-semibold text-muted-foreground">
+                      Se desbloquea al avanzar en el nivel anterior.
+                    </p>
+                  )}
                 </div>
               );
             },
@@ -313,7 +352,7 @@ function QuestionPreview({
         <Progress value={10} className="mt-2 h-1.5" />
       </header>
 
-      <div data-tour="practice-question" className="space-y-3">
+      <div data-tour="practice-question" className="space-y-3 scroll-mt-20">
         <Card className="border-primary/15 bg-gradient-to-br from-card to-primary/5 p-4">
           <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Pregunta</span>
           <h2 className="mt-2 text-[1.05rem] font-semibold leading-relaxed">{question.pregunta}</h2>
@@ -360,11 +399,8 @@ function QuestionPreview({
       </div>
 
       {feedback && (
-        <Card
-          data-tour="practice-feedback"
-          className="animate-in fade-in-0 slide-in-from-bottom-1 space-y-3 border-primary/15 bg-card/95 p-4 duration-200 motion-reduce:animate-none"
-        >
-          <div className="grid gap-2 text-sm">
+        <Card className="animate-in fade-in-0 slide-in-from-bottom-1 space-y-3 border-primary/15 bg-card/95 p-4 duration-200 motion-reduce:animate-none">
+          <div data-tour="practice-feedback" className="grid scroll-mt-20 gap-2 text-sm">
             <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3">
               <p className="text-sm font-bold text-foreground">Tu respuesta simulada</p>
               <p className="mt-1 font-normal leading-relaxed text-destructive">

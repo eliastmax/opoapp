@@ -25,7 +25,6 @@ import {
   productTourScene,
   productTourSceneCount,
   shouldOpenProductTour,
-  spotlightRect,
   type ProductTourCompletionKind,
   type ProductTourRoute,
 } from "@/lib/product-tour";
@@ -36,6 +35,13 @@ const OPTIONAL_STUDY_TARGETS = new Set(["study-keys", "study-confusions", "study
 
 function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function visualViewportSize() {
+  return {
+    width: window.visualViewport?.width ?? window.innerWidth,
+    height: window.visualViewport?.height ?? window.innerHeight,
+  };
 }
 
 function nearestScrollContainer(target: HTMLElement): HTMLElement | null {
@@ -50,63 +56,69 @@ function nearestScrollContainer(target: HTMLElement): HTMLElement | null {
   return null;
 }
 
-function tourContentWindow(route: ProductTourRoute, popoverHeight: number) {
-  const top = route === "study-preview" ? 84 : 16;
-  const reservedPopoverHeight = Math.max(popoverHeight, 300);
-  const bottom = Math.max(top + 120, window.innerHeight - reservedPopoverHeight - 34);
-  return { top, bottom };
+function targetTopInset(route: ProductTourRoute, targetName: string) {
+  if (route === "study-preview") return 86;
+  if (targetName.startsWith("practice-question") || targetName === "practice-answer" || targetName === "practice-feedback") {
+    return 74;
+  }
+  return 16;
 }
 
-function scrollTourTargetIntoView(
+function alignTargetExactly(
   target: HTMLElement,
   targetName: string,
   route: ProductTourRoute,
   popoverHeight: number,
-  instant = false,
 ) {
   if (targetName.startsWith("nav-")) return;
 
+  const viewport = visualViewportSize();
   const rect = target.getBoundingClientRect();
-  const contentWindow = tourContentWindow(route, popoverHeight);
-  const availableHeight = Math.max(120, contentWindow.bottom - contentWindow.top);
-  const visibleTargetHeight = Math.min(rect.height, availableHeight);
-  const desiredTop =
-    contentWindow.top + Math.max(0, Math.min(28, (availableHeight - visibleTargetHeight) / 2));
-  const delta = rect.top - desiredTop;
-  if (Math.abs(delta) < 4) return;
+  const topInset = targetTopInset(route, targetName);
+  const bottomInset = 16;
+  const gap = 16;
+  const coachHeight = Math.min(Math.max(popoverHeight, 250), Math.max(250, viewport.height * 0.48));
+  const targetHeight = Math.min(rect.height, viewport.height - topInset - bottomInset);
+  const canPlaceCoachBelow =
+    topInset + targetHeight + gap + coachHeight <= viewport.height - bottomInset;
+  const canPlaceCoachAbove =
+    topInset + coachHeight + gap + targetHeight <= viewport.height - bottomInset;
+  const preferCoachAbove = targetName === "practice-feedback" || targetName === "flashcard-answer";
 
-  const behavior = instant || prefersReducedMotion() ? "auto" : "smooth";
+  let desiredTop = topInset;
+  if ((preferCoachAbove || !canPlaceCoachBelow) && canPlaceCoachAbove) {
+    desiredTop = topInset + coachHeight + gap;
+  }
+
+  const delta = rect.top - desiredTop;
+  if (Math.abs(delta) < 3) return;
+
   const scrollContainer = nearestScrollContainer(target);
   if (scrollContainer) {
-    scrollContainer.scrollBy({ top: delta, behavior });
-    return;
+    scrollContainer.scrollBy({ top: delta, behavior: "auto" });
+  } else {
+    window.scrollBy({ top: delta, behavior: "auto" });
   }
-  window.scrollBy({ top: delta, behavior });
 }
 
-function tourSpotlightRect(
-  target: HTMLElement,
-  targetName: string,
-  route: ProductTourRoute,
-  popoverHeight: number,
-) {
+function beginTargetScroll(target: HTMLElement, targetName: string) {
+  if (targetName.startsWith("nav-")) return;
+  target.scrollIntoView({
+    block: "center",
+    inline: "nearest",
+    behavior: prefersReducedMotion() ? "auto" : "smooth",
+  });
+}
+
+function spotlightForTarget(target: HTMLElement) {
+  const viewport = visualViewportSize();
   const rect = target.getBoundingClientRect();
-  if (targetName.startsWith("nav-")) return spotlightRect(rect);
-
-  const contentWindow = tourContentWindow(route, popoverHeight);
-  const clippedTop = Math.max(rect.top, contentWindow.top);
-  const clippedBottom = Math.min(rect.bottom, contentWindow.bottom);
-  if (clippedBottom - clippedTop < 44) return spotlightRect(rect);
-
-  return spotlightRect(
-    {
-      top: clippedTop,
-      left: rect.left,
-      right: rect.right,
-      bottom: clippedBottom,
-    },
-    8,
-  );
+  return {
+    top: Math.max(6, rect.top - 8),
+    left: Math.max(6, rect.left - 8),
+    right: Math.min(viewport.width - 6, rect.right + 8),
+    bottom: Math.min(viewport.height - 6, rect.bottom + 8),
+  };
 }
 
 function findExactText(text: string) {
@@ -142,7 +154,7 @@ function findStudyCard(title: string) {
 
 function findFlashcardSection() {
   const existing = document.querySelector<HTMLElement>('[data-tour="flashcard-preview"]');
-  if (existing) return existing;
+  if (existing) return existing.closest("section") as HTMLElement | null;
   const heading = findExactText("Después, recuérdalo");
   return heading?.parentElement?.parentElement instanceof HTMLElement
     ? heading.parentElement.parentElement
@@ -158,6 +170,8 @@ function setFlashcardAnswerVisible(visible: boolean) {
   const answerPanel = answerLabel?.parentElement;
   if (!(answerPanel instanceof HTMLElement)) return;
   answerPanel.dataset.tourFlashcardAnswer = "true";
+  if (visible) answerPanel.dataset.tour = "flashcard-answer";
+  else if (answerPanel.dataset.tour === "flashcard-answer") delete answerPanel.dataset.tour;
   answerPanel.style.transition = prefersReducedMotion()
     ? "none"
     : "opacity 180ms ease, transform 320ms ease";
@@ -167,14 +181,13 @@ function setFlashcardAnswerVisible(visible: boolean) {
   answerPanel.style.transform = visible ? "rotateY(0deg) scale(1)" : "rotateY(88deg) scale(.985)";
 
   if (visible && !prefersReducedMotion()) {
-    const card = answerPanel.parentElement;
-    card?.animate(
+    answerPanel.animate(
       [
-        { transform: "perspective(900px) rotateY(0deg)" },
-        { transform: "perspective(900px) rotateY(7deg)" },
-        { transform: "perspective(900px) rotateY(0deg)" },
+        { transform: "perspective(900px) rotateY(88deg) scale(.985)" },
+        { transform: "perspective(900px) rotateY(-5deg) scale(1.01)" },
+        { transform: "perspective(900px) rotateY(0deg) scale(1)" },
       ],
-      { duration: 340, easing: "cubic-bezier(.2,.75,.25,1)" },
+      { duration: 360, easing: "cubic-bezier(.2,.75,.25,1)" },
     );
   }
 }
@@ -186,6 +199,7 @@ function restoreFlashcardVisual() {
     panel.style.removeProperty("opacity");
     panel.style.removeProperty("visibility");
     panel.style.removeProperty("transform");
+    if (panel.dataset.tour === "flashcard-answer") delete panel.dataset.tour;
     delete panel.dataset.tourFlashcardAnswer;
   });
 }
@@ -211,10 +225,26 @@ function prepareStudySceneTarget(targetName: string) {
     return;
   }
   if (targetName === "flashcard-answer") {
-    const section = findFlashcardSection();
-    if (section) setTransientTourTarget(section, targetName);
     setFlashcardAnswerVisible(true);
   }
+}
+
+function preparePracticeSceneTarget(targetName: string) {
+  if (targetName !== "practice-question") return;
+  const wrapper = document.querySelector<HTMLElement>('[data-tour="practice-question"]');
+  const questionCard = wrapper?.querySelector<HTMLElement>("[data-tour-question-card]");
+  if (questionCard) {
+    wrapper?.removeAttribute("data-tour");
+    wrapper?.setAttribute("data-tour-question-shell", "true");
+    setTransientTourTarget(questionCard, targetName);
+  }
+}
+
+function restorePracticeSceneTargets() {
+  document.querySelectorAll<HTMLElement>('[data-tour-question-shell="true"]').forEach((wrapper) => {
+    wrapper.dataset.tour = "practice-question";
+    delete wrapper.dataset.tourQuestionShell;
+  });
 }
 
 function EmphasizedDescription({
@@ -244,7 +274,6 @@ function EmphasizedDescription({
     cursor = start + fragment.length;
   }
   if (cursor < description.length) parts.push(description.slice(cursor));
-
   return <>{parts}</>;
 }
 
@@ -388,8 +417,9 @@ function SpotlightTour({
   const item = productTourScene(step, scene);
   const popoverRef = useRef<HTMLDivElement>(null);
   const stepTimerRef = useRef<number | null>(null);
+  const popoverHeightRef = useRef(320);
   const [cutout, setCutout] = useState<Cutout | null>(null);
-  const [popoverHeight, setPopoverHeight] = useState(380);
+  const [popoverHeight, setPopoverHeight] = useState(320);
   const [popoverVisible, setPopoverVisible] = useState(false);
   const [routeTransition, setRouteTransition] = useState(false);
   const [targetAccent, setTargetAccent] = useState(false);
@@ -397,6 +427,10 @@ function SpotlightTour({
   const sceneCount = productTourSceneCount(step);
   const journeyLabel = productTourJourneyLabel(step);
   const finalScene = PRODUCT_TOUR_STEPS[step].final && scene === sceneCount - 1;
+
+  useEffect(() => {
+    popoverHeightRef.current = popoverHeight;
+  }, [popoverHeight]);
 
   const queuePosition = useCallback(
     (nextStep: number, nextScene: number) => {
@@ -407,6 +441,7 @@ function SpotlightTour({
       setTargetAccent(false);
       setCutout(null);
       clearTransientTourTargets();
+      restorePracticeSceneTargets();
       if (currentPath !== nextPath) setRouteTransition(true);
       if (stepTimerRef.current !== null) window.clearTimeout(stepTimerRef.current);
       stepTimerRef.current = window.setTimeout(
@@ -414,7 +449,7 @@ function SpotlightTour({
           if (nextStep !== step) onStep(nextStep);
           setScene(nextScene);
         },
-        prefersReducedMotion() ? 0 : 130,
+        prefersReducedMotion() ? 0 : 120,
       );
     },
     [item.route, onStep, step, tourUnitId],
@@ -442,6 +477,7 @@ function SpotlightTour({
     () => () => {
       if (stepTimerRef.current !== null) window.clearTimeout(stepTimerRef.current);
       clearTransientTourTargets();
+      restorePracticeSceneTargets();
       restoreFlashcardVisual();
     },
     [],
@@ -459,72 +495,77 @@ function SpotlightTour({
   useLayoutEffect(() => {
     if (!expectedPath || pathname !== expectedPath) return;
     clearTransientTourTargets();
+    restorePracticeSceneTargets();
     if (item.route === "study-preview") prepareStudySceneTarget(item.target);
+    if (item.route === "/crear") preparePracticeSceneTarget(item.target);
 
     let cancelled = false;
-    let frame = 0;
-    let cleanup: (() => void) | undefined;
     let targetObserver: MutationObserver | undefined;
+    let resizeObserver: ResizeObserver | undefined;
     let targetTimeout = 0;
+    let settleTimer = 0;
     let revealTimer = 0;
     let accentTimer = 0;
-    let correctionTimer = 0;
-    const scheduleReveal = () => {
-      window.clearTimeout(revealTimer);
-      revealTimer = window.setTimeout(
-        () => {
-          if (cancelled) return;
-          setRouteTransition(false);
-          setPopoverVisible(true);
-          if (prefersReducedMotion()) {
-            setTargetAccent(false);
-            return;
-          }
-          setTargetAccent(true);
-          window.clearTimeout(accentTimer);
-          accentTimer = window.setTimeout(() => {
-            if (!cancelled) setTargetAccent(false);
-          }, 240);
-        },
-        prefersReducedMotion() ? 0 : 280,
-      );
+    let attachedTarget: HTMLElement | null = null;
+
+    const measure = () => {
+      if (!attachedTarget || cancelled) return;
+      setCutout(spotlightForTarget(attachedTarget));
     };
-    const attachTarget = (target: HTMLElement) => {
+
+    const reveal = () => {
       if (cancelled) return;
+      setRouteTransition(false);
+      setPopoverVisible(true);
+      if (prefersReducedMotion()) return;
+      setTargetAccent(true);
+      window.clearTimeout(accentTimer);
+      accentTimer = window.setTimeout(() => {
+        if (!cancelled) setTargetAccent(false);
+      }, 240);
+    };
+
+    const attachTarget = (target: HTMLElement) => {
+      if (cancelled || attachedTarget === target) return;
+      attachedTarget = target;
       const discoveredUnitId = target.dataset.tourUnitId;
       if (discoveredUnitId) setTourUnitId(discoveredUnitId);
       targetObserver?.disconnect();
       window.clearTimeout(targetTimeout);
-      scrollTourTargetIntoView(target, item.target, item.route, popoverHeight);
-      window.clearTimeout(correctionTimer);
-      correctionTimer = window.setTimeout(
+      setPopoverVisible(false);
+      setCutout(null);
+
+      beginTargetScroll(target, item.target);
+      window.clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(
         () => {
-          if (!cancelled) scrollTourTargetIntoView(target, item.target, item.route, popoverHeight, true);
+          if (cancelled) return;
+          alignTargetExactly(target, item.target, item.route, popoverHeightRef.current);
+          window.requestAnimationFrame(() => {
+            if (cancelled) return;
+            measure();
+            window.clearTimeout(revealTimer);
+            revealTimer = window.setTimeout(reveal, prefersReducedMotion() ? 0 : 80);
+          });
         },
-        prefersReducedMotion() ? 0 : 300,
+        prefersReducedMotion() ? 0 : 320,
       );
-      const update = () => {
-        setCutout(tourSpotlightRect(target, item.target, item.route, popoverHeight));
-        scheduleReveal();
-      };
-      frame = window.requestAnimationFrame(update);
-      window.addEventListener("resize", update);
-      window.addEventListener("orientationchange", update);
-      window.addEventListener("scroll", update, true);
-      const observer = new ResizeObserver(update);
-      observer.observe(target);
-      cleanup = () => {
-        window.removeEventListener("resize", update);
-        window.removeEventListener("orientationchange", update);
-        window.removeEventListener("scroll", update, true);
-        observer.disconnect();
-      };
+
+      window.addEventListener("resize", measure);
+      window.addEventListener("orientationchange", measure);
+      window.addEventListener("scroll", measure, true);
+      window.visualViewport?.addEventListener("resize", measure);
+      resizeObserver = new ResizeObserver(measure);
+      resizeObserver.observe(target);
     };
+
     const findTarget = () => {
       if (item.route === "study-preview") prepareStudySceneTarget(item.target);
+      if (item.route === "/crear") preparePracticeSceneTarget(item.target);
       const target = document.querySelector<HTMLElement>(`[data-tour="${item.target}"]`);
       if (target) attachTarget(target);
     };
+
     findTarget();
     if (!document.querySelector(`[data-tour="${item.target}"]`)) {
       targetObserver = new MutationObserver(findTarget);
@@ -556,31 +597,35 @@ function SpotlightTour({
           const fallback = fallbackSelector
             ? document.querySelector<HTMLElement>(fallbackSelector)
             : null;
-          if (fallback) {
-            attachTarget(fallback);
-            return;
-          }
-          goNext();
+          if (fallback) attachTarget(fallback);
+          else goNext();
         },
         optionalStudyTarget ? 1_200 : 6_000,
       );
     }
+
     return () => {
       cancelled = true;
-      window.cancelAnimationFrame(frame);
       window.clearTimeout(targetTimeout);
+      window.clearTimeout(settleTimer);
       window.clearTimeout(revealTimer);
       window.clearTimeout(accentTimer);
-      window.clearTimeout(correctionTimer);
       targetObserver?.disconnect();
-      cleanup?.();
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("orientationchange", measure);
+      window.removeEventListener("scroll", measure, true);
+      window.visualViewport?.removeEventListener("resize", measure);
       clearTransientTourTargets();
+      restorePracticeSceneTargets();
     };
-  }, [expectedPath, goNext, item.route, item.target, pathname, popoverHeight]);
+  }, [expectedPath, goNext, item.route, item.target, pathname]);
 
   useLayoutEffect(() => {
-    if (popoverRef.current) setPopoverHeight(popoverRef.current.getBoundingClientRect().height);
-  }, [cutout, scene, step]);
+    if (!popoverRef.current) return;
+    const nextHeight = popoverRef.current.getBoundingClientRect().height;
+    if (Math.abs(nextHeight - popoverHeight) > 2) setPopoverHeight(nextHeight);
+  }, [cutout, popoverHeight, scene, step]);
 
   useEffect(() => {
     const shell = document.querySelector<HTMLElement>("[data-app-shell]");
@@ -616,16 +661,13 @@ function SpotlightTour({
     return () => window.cancelAnimationFrame(frame);
   }, [popoverVisible, scene, step]);
 
-  const practiceDemo = step === 4 ? <ProductTourPracticeDemo scene={scene} /> : null;
+  const practiceDemo = step === 3 ? <ProductTourPracticeDemo scene={scene} /> : null;
 
-  if (!cutout)
+  if (!cutout) {
     return (
       <>
         {practiceDemo}
-        <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60"
-          role="status"
-        >
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60" role="status">
           <span className="rounded-full bg-card p-3 text-primary shadow-lg">
             <Loader2 className="h-5 w-5 animate-spin motion-reduce:animate-none" />
             <span className="sr-only">Preparando el siguiente paso del tutorial</span>
@@ -633,17 +675,19 @@ function SpotlightTour({
         </div>
       </>
     );
+  }
 
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
-  const width = Math.min(340, viewportWidth - 32);
-  const placeBelow = viewportHeight - cutout.bottom >= popoverHeight + 24;
+  const viewport = visualViewportSize();
+  const width = Math.min(340, viewport.width - 32);
+  const roomBelow = viewport.height - cutout.bottom;
+  const roomAbove = cutout.top;
+  const placeBelow = roomBelow >= popoverHeight + 18 || roomBelow >= roomAbove;
   const top = placeBelow
-    ? Math.min(cutout.bottom + 14, viewportHeight - popoverHeight - 16)
+    ? Math.min(cutout.bottom + 14, viewport.height - popoverHeight - 16)
     : Math.max(16, cutout.top - popoverHeight - 14);
   const left = Math.max(
     16,
-    Math.min(cutout.left + (cutout.right - cutout.left - width) / 2, viewportWidth - width - 16),
+    Math.min(cutout.left + (cutout.right - cutout.left - width) / 2, viewport.width - width - 16),
   );
   const popoverOffset = placeBelow ? 8 : -8;
 
@@ -721,10 +765,7 @@ function SpotlightTour({
               Omitir
             </Button>
           </div>
-          <h2
-            id="tour-title"
-            className="mt-3 text-[19px] font-semibold leading-[1.2] min-[390px]:text-xl"
-          >
+          <h2 id="tour-title" className="mt-3 text-[19px] font-semibold leading-[1.2] min-[390px]:text-xl">
             {item.title}
           </h2>
           <p id="tour-description" className="mt-2 text-base leading-[1.45] text-muted-foreground">
