@@ -206,29 +206,46 @@ function ProfileEditor({
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = null;
     lastCompleteRef.current = complete;
-    setSaveState("saving");
-    try {
-      await saveProfile.mutateAsync({
-        draft: draftRef.current,
-        currentStep: progressRef.current.step,
-        currentTopicId: progressRef.current.topicId,
-        complete,
-      });
-      setSaveState("saved");
-      if (complete) {
-        toast.success("Tu perfil de preparación está listo");
-        navigate({ to: "/inicio" });
+    if (complete) setSaveState("saving");
+
+    const input = {
+      draft: draftRef.current,
+      currentStep: progressRef.current.step,
+      currentTopicId: progressRef.current.topicId,
+      complete,
+    };
+
+    let lastError: unknown = null;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        await saveProfile.mutateAsync(input);
+        if (complete) {
+          setSaveState("saved");
+          toast.success("Tu perfil de preparación está listo");
+          navigate({ to: "/inicio" });
+        } else {
+          setSaveState("idle");
+        }
+        return;
+      } catch (error) {
+        lastError = error;
+        if (attempt < 2) {
+          await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
+        }
       }
-    } catch (error) {
+    }
+
+    if (complete) {
       setSaveState("error");
-      if (complete) {
-        toast.error(error instanceof Error ? error.message : "No se pudo guardar el perfil");
-      }
+      toast.error(lastError instanceof Error ? lastError.message : "No se pudo guardar el perfil");
+    } else {
+      // Draft autosave is deliberately silent. A transient network failure should
+      // not interrupt the questionnaire with a large error banner.
+      setSaveState("idle");
     }
   }
 
   function scheduleSave() {
-    setSaveState("idle");
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => void persist(false), 650);
   }
