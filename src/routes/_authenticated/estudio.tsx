@@ -99,7 +99,12 @@ function StudyCenterPage() {
         </Card>
       ) : (
         <>
-          {model.continuation && <ContinueStudyCard unit={model.continuation} />}
+          {model.continuation && (
+            <ContinueStudyCard
+              unit={model.continuation}
+              tourUnitId={tourUnit?.id ?? model.continuation.id}
+            />
+          )}
 
           <StudyRoadmapStrip
             open={roadmapOpen}
@@ -156,7 +161,7 @@ function StudyCenterPage() {
   );
 }
 
-function ContinueStudyCard({ unit }: { unit: StudyCenterUnit }) {
+function ContinueStudyCard({ unit, tourUnitId }: { unit: StudyCenterUnit; tourUnitId: string }) {
   const action = studyUnitActionLabel(unit.status);
   const eyebrow =
     unit.status === "not_started"
@@ -168,7 +173,11 @@ function ContinueStudyCard({ unit }: { unit: StudyCenterUnit }) {
           : "Continúa estudiando";
 
   return (
-    <Card className="relative overflow-hidden border-primary/15 bg-gradient-to-br from-primary/[0.11] via-card to-card p-5 shadow-[0_22px_46px_-38px_oklch(0.3_0.14_250/0.75)]">
+    <Card
+      data-tour="study-unit"
+      data-tour-unit-id={tourUnitId}
+      className="relative scroll-mt-4 overflow-hidden border-primary/15 bg-gradient-to-br from-primary/[0.11] via-card to-card p-5 shadow-[0_22px_46px_-38px_oklch(0.3_0.14_250/0.75)]"
+    >
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -right-16 -top-20 h-40 w-40 rounded-full bg-primary/10 blur-3xl"

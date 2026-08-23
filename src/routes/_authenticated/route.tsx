@@ -36,6 +36,10 @@ function AuthLayout() {
       : pathname === "/progreso"
         ? "progress-overview"
         : null;
+  const pageTourTargetClass =
+    pathname === "/progreso"
+      ? "top-[calc(env(safe-area-inset-top,0px)+5.5rem)] h-[min(39dvh,310px)]"
+      : "top-[calc(env(safe-area-inset-top,0px)+1rem)] h-[min(48dvh,360px)]";
 
   return (
     <ProductTourProvider user={user}>
@@ -49,7 +53,7 @@ function AuthLayout() {
           {pageTourTarget && (
             <div
               data-tour={pageTourTarget}
-              className="pointer-events-none absolute inset-x-4 top-[calc(env(safe-area-inset-top,0px)+1rem)] h-[min(48dvh,360px)]"
+              className={cn("pointer-events-none absolute inset-x-4", pageTourTargetClass)}
               aria-hidden="true"
             />
           )}

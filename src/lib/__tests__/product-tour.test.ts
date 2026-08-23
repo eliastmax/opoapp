@@ -127,7 +127,7 @@ describe("short product tour v2", () => {
     expect(productTourScene(2, 0).title).toBe("Tus fallos sirven para algo");
   });
 
-  it("uses focused study targets and separates flashcard recall from its answer", () => {
+  it("uses fixed compact study targets and separates flashcard recall from its answer", () => {
     expect(studyDemo).toContain('data-tour="tour-study-understand"');
     expect(studyDemo).toContain('data-tour="tour-study-traps"');
     expect(studyDemo).toContain('data-tour="tour-study-flashcard-question"');
@@ -136,12 +136,15 @@ describe("short product tour v2", () => {
     expect(productTourScene(0, 4).target).toBe("tour-study-flashcard-answer");
     expect(productTourScene(0, 3).description).toContain("no basta");
     expect(productTourScene(0, 4).description).toContain("Después de intentarlo");
-    expect(studyDemo).toContain('className="fixed inset-0 z-[50] overflow-y-auto bg-background"');
-    expect(studyDemo).toContain("pb-[48dvh]");
+
+    expect(studyDemo).toContain('className="fixed inset-0 z-[50] overflow-hidden bg-background"');
+    expect(studyDemo).toContain("h-[56dvh]");
+    expect(studyDemo).not.toContain("pb-[48dvh]");
     expect(studyDemo).toContain("Al estudiar verás el resumen completo.");
-    expect(studyDemo).toContain("data.keys.slice(0, 1)");
-    expect(studyDemo).toContain("data.confusions.slice(0, 1)");
-    expect(studyDemo).toContain("data.traps.slice(0, 1)");
+    expect(studyDemo).toContain("Al estudiar verás la respuesta completa.");
+    expect(studyDemo).toContain("const firstKey = data.keys[0] ?? null");
+    expect(studyDemo).toContain("const confusion = data.confusions[0] ?? null");
+    expect(studyDemo).toContain("const trap = data.traps[0] ?? null");
   });
 
   it("keeps study focus mode read-only and based on real catalog content", () => {
@@ -161,9 +164,11 @@ describe("short product tour v2", () => {
     expect(studyUnit).toContain("if (previewing) return loadStudyPreview(unitId)");
   });
 
-  it("keeps a real unit with flashcards available for the tour", () => {
+  it("anchors the first study moment to a visible card while retaining a real flashcard unit", () => {
     expect(study).toContain("model.continuation?.activeFlashcards");
     expect(study).toContain("model.units.find((unit) => unit.activeFlashcards > 0)");
+    expect(study).toContain('data-tour="study-unit"');
+    expect(study).toContain("data-tour-unit-id={tourUnitId}");
     expect(study).toContain('data-tour={tourTarget ? "study-unit" : undefined}');
     expect(study).toContain("data-tour-unit-id");
   });
@@ -180,28 +185,36 @@ describe("short product tour v2", () => {
     expect(productTourScene(1, 3).target).toBe("tour-study-practice-tribunal");
   });
 
-  it("synchronizes each advanced stage unlock with the scene that highlights it", () => {
+  it("makes each advanced-stage unlock visible, animated and persistent", () => {
     expect(practiceDemo).toContain("const targetUnlock = scene - 1");
     expect(practiceDemo).toContain("setUnlocked(previousUnlock)");
     expect(practiceDemo).toContain("setUnlocking(targetUnlock)");
     expect(practiceDemo).toContain("setUnlocked(targetUnlock)");
     expect(practiceDemo).toContain("<Lock");
     expect(practiceDemo).toContain("<LockOpen");
-    expect(practiceDemo).toContain("tour-lock-release");
+    expect(practiceDemo).toContain("tour-lock-shake");
     expect(practiceDemo).toContain("tour-unlock-pop");
+    expect(practiceDemo).toContain("tour-stage-glow");
+    expect(practiceDemo).toContain("Desbloqueando…");
     expect(practiceDemo).toContain("Desbloqueado");
+    expect(practiceDemo).toContain("720");
+    expect(practiceDemo).toContain("1_550");
   });
 
-  it("separates the real question from the correction target", () => {
+  it("chooses a compact real question and separates selection from correction", () => {
     expect(productTourScene(1, 4).target).toBe("tour-study-practice-question");
     expect(productTourScene(1, 5).target).toBe("tour-study-practice-feedback");
+    expect(practiceDemo).toContain("question.pregunta.length <= 155");
+    expect(practiceDemo).toContain("option.length <= 115");
+    expect(practiceDemo).toContain("questionCompactness");
     expect(practiceDemo).toContain('data-tour="tour-study-practice-question"');
     expect(practiceDemo).toContain('data-tour="tour-study-practice-feedback"');
     expect(practiceDemo).toContain('setAnswerPhase("selected")');
     expect(practiceDemo).toContain('setAnswerPhase("feedback")');
+    expect(practiceDemo).toContain("tour-answer-tap");
     expect(practiceDemo).toContain("Tu respuesta");
     expect(practiceDemo).toContain("Respuesta correcta");
-    expect(practiceDemo).toContain("font-normal leading-[1.45] text-success");
+    expect(practiceDemo).toContain("font-normal leading-[1.35] text-success");
   });
 
   it("keeps practice demos read-only", () => {
@@ -214,11 +227,15 @@ describe("short product tour v2", () => {
     expect(practiceDemo).not.toContain("complete_test");
   });
 
-  it("keeps demo surfaces scrollable enough to position a lower target above the coach mark", () => {
-    expect(practiceDemo).toContain('className="fixed inset-0 z-[50] overflow-y-auto bg-background"');
-    expect(practiceDemo).toContain("pb-[48dvh]");
-    expect(studyDemo).toContain('className="fixed inset-0 z-[50] overflow-y-auto bg-background"');
-    expect(studyDemo).toContain("pb-[48dvh]");
+  it("keeps demo micro-scenes fixed so they never depend on user scrolling", () => {
+    expect(practiceDemo).toContain('className="fixed inset-0 z-[50] overflow-hidden bg-background"');
+    expect(studyDemo).toContain('className="fixed inset-0 z-[50] overflow-hidden bg-background"');
+    expect(practiceDemo).toContain("h-[56dvh]");
+    expect(studyDemo).toContain("h-[56dvh]");
+    expect(practiceDemo).toContain("max-height: 42dvh !important");
+    expect(studyDemo).toContain("max-height: 42dvh !important");
+    expect(practiceDemo).not.toContain("pb-[48dvh]");
+    expect(studyDemo).not.toContain("pb-[48dvh]");
     expect(component).toContain("bringRealTargetIntoView");
     expect(component).toContain('target.scrollIntoView({');
   });
@@ -250,6 +267,12 @@ describe("short product tour v2", () => {
     expect(component).not.toContain("const finalMobileTop");
   });
 
+  it("tightens the Progress spotlight instead of covering the whole upper page", () => {
+    expect(layout).toContain('pathname === "/progreso"');
+    expect(layout).toContain("+5.5rem");
+    expect(layout).toContain("h-[min(39dvh,310px)]");
+  });
+
   it("makes the coach marks easier to read", () => {
     expect(component).toContain('text-[27px]');
     expect(component).toContain('text-[25px]');
@@ -266,7 +289,7 @@ describe("short product tour v2", () => {
     expect(studyDemo).toContain('right: 24px !important');
     expect(studyDemo).toContain('@media (max-width: 899px)');
     expect(studyDemo).toContain('bottom: 12px !important');
-    expect(practiceDemo).toContain('max-height: 43dvh !important');
+    expect(practiceDemo).toContain('max-height: 42dvh !important');
   });
 
   it("uses dots for micro-scenes instead of nested numeric progress", () => {
