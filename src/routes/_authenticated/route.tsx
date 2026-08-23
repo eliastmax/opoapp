@@ -43,11 +43,18 @@ function ProgressTourTarget() {
       const marker = document.querySelector<HTMLElement>(
         '[aria-label="Distribución del conocimiento"]',
       );
-      const card = marker?.closest<HTMLElement>(".overflow-hidden") ?? null;
-      if (!main || !card) return false;
+      const knowledgeBar = marker?.closest<HTMLElement>(".overflow-hidden") ?? null;
+      const card = knowledgeBar?.parentElement?.parentElement ?? null;
+      const exactKnowledgeCard =
+        card instanceof HTMLElement &&
+        card.textContent?.includes("Conocimiento real") &&
+        card.textContent?.includes("En comprobación")
+          ? card
+          : null;
+      if (!main || !exactKnowledgeCard) return false;
 
       const mainRect = main.getBoundingClientRect();
-      const cardRect = card.getBoundingClientRect();
+      const cardRect = exactKnowledgeCard.getBoundingClientRect();
       setRect({
         top: cardRect.top - mainRect.top,
         left: cardRect.left - mainRect.left,
@@ -55,12 +62,12 @@ function ProgressTourTarget() {
         height: cardRect.height,
       });
 
-      if (card !== trackedCard) {
+      if (exactKnowledgeCard !== trackedCard) {
         resizeObserver?.disconnect();
-        trackedCard = card;
+        trackedCard = exactKnowledgeCard;
         resizeObserver = new ResizeObserver(measure);
         resizeObserver.observe(main);
-        resizeObserver.observe(card);
+        resizeObserver.observe(exactKnowledgeCard);
       }
       mutationObserver?.disconnect();
       mutationObserver = null;
