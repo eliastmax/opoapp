@@ -78,6 +78,26 @@ function bringRealTargetIntoView(target: HTMLElement, targetName: string) {
   });
 }
 
+function reserveDesktopDemoRail(target: HTMLElement, targetName: string) {
+  if (!isDemoTarget(targetName) || window.innerWidth < 900) return () => {};
+  const shell = target.closest<HTMLElement>(".fixed.inset-0");
+  if (!shell) return () => {};
+
+  let stage: HTMLElement = target;
+  while (stage.parentElement && stage.parentElement !== shell) stage = stage.parentElement;
+  if (stage.parentElement !== shell) return () => {};
+
+  const previousTransform = stage.style.transform;
+  const previousTransition = stage.style.transition;
+  stage.style.transform = "translateX(-210px)";
+  stage.style.transition = prefersReducedMotion() ? "none" : "transform 180ms ease-out";
+
+  return () => {
+    stage.style.transform = previousTransform;
+    stage.style.transition = previousTransition;
+  };
+}
+
 function EmphasizedDescription({
   description,
   emphasis,
@@ -372,6 +392,7 @@ function SpotlightTour({
       mutationObserver?.disconnect();
       window.clearTimeout(targetTimeout);
       cleanupTarget?.();
+      const restoreDemoRail = reserveDesktopDemoRail(target, item.target);
       bringRealTargetIntoView(target, item.target);
 
       const update = () => {
@@ -400,6 +421,7 @@ function SpotlightTour({
         window.removeEventListener("resize", update);
         window.visualViewport?.removeEventListener("resize", update);
         window.removeEventListener("scroll", update, true);
+        restoreDemoRail();
       };
     };
 
