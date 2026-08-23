@@ -74,7 +74,8 @@ async function loadPreviewQuestion(): Promise<PreviewQuestion | null> {
 export function ProductTourPracticeDemo({ scene }: { scene: number }) {
   const [openingQuestion, setOpeningQuestion] = useState(false);
   const showingQuestion = scene >= 7;
-  const showingFeedback = scene >= 8;
+  const showingSelection = scene >= 8;
+  const showingFeedback = scene >= 9;
   const questionQuery = useQuery({
     queryKey: ["product-tour-practice-preview-question"],
     enabled: scene > 0,
@@ -112,6 +113,7 @@ export function ProductTourPracticeDemo({ scene }: { scene: number }) {
             <QuestionPreview
               question={questionQuery.data ?? null}
               loading={questionQuery.isLoading}
+              selection={showingSelection}
               feedback={showingFeedback}
             />
           )
@@ -238,10 +240,12 @@ function DemoField({ label, value }: { label: string; value: string }) {
 function QuestionPreview({
   question,
   loading,
+  selection,
   feedback,
 }: {
   question: PreviewQuestion | null;
   loading: boolean;
+  selection: boolean;
   feedback: boolean;
 }) {
   const options = useMemo<Array<[OptionLetter, string]>>(
@@ -258,6 +262,24 @@ function QuestionPreview({
   );
   const correct = (question?.respuesta_correcta?.toUpperCase() ?? "A") as OptionLetter;
   const simulated = (["A", "B", "C", "D"] as OptionLetter[]).find((letter) => letter !== correct) ?? "A";
+
+  useEffect(() => {
+    if (!selection || feedback || !question) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const frame = window.requestAnimationFrame(() => {
+      const selectedOption = document.querySelector<HTMLElement>('[data-tour="practice-answer"]');
+      selectedOption?.animate(
+        [
+          { transform: "scale(1)" },
+          { transform: "scale(.965)" },
+          { transform: "scale(1.01)" },
+          { transform: "scale(1)" },
+        ],
+        { duration: 360, easing: "cubic-bezier(.2,.75,.25,1)" },
+      );
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [feedback, question, selection]);
 
   if (loading) {
     return (
@@ -299,31 +321,36 @@ function QuestionPreview({
 
         <div className="space-y-2" role="presentation">
           {options.map(([letter, text]) => {
-            const chosen = feedback && letter === simulated;
+            const selected = selection && !feedback && letter === simulated;
+            const chosenWrong = feedback && letter === simulated;
             const right = feedback && letter === correct;
             return (
               <div
                 key={letter}
+                data-tour={selected ? "practice-answer" : undefined}
                 className={cn(
-                  "min-h-14 w-full rounded-2xl border px-3 py-2.5 text-left transition-[border-color,background-color,transform] duration-200",
-                  chosen && "border-destructive/35 bg-destructive/8",
+                  "min-h-14 w-full rounded-2xl border px-3 py-2.5 text-left transition-[border-color,background-color,transform,box-shadow] duration-200",
+                  selected && "border-primary bg-primary/10 shadow-[0_12px_30px_-24px_oklch(0.3_0.14_250/0.8)]",
+                  chosenWrong && "border-destructive/35 bg-destructive/8",
                   right && "border-success/35 bg-success/8",
-                  !chosen && !right && "border-border/90 bg-card/90",
+                  !selected && !chosenWrong && !right && "border-border/90 bg-card/90",
                 )}
               >
                 <div className="flex items-center gap-2.5">
                   <span
                     className={cn(
-                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold",
-                      chosen && "bg-destructive text-destructive-foreground",
+                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold transition-colors duration-200",
+                      selected && "bg-primary text-primary-foreground",
+                      chosenWrong && "bg-destructive text-destructive-foreground",
                       right && "bg-success text-success-foreground",
-                      !chosen && !right && "bg-muted text-foreground",
+                      !selected && !chosenWrong && !right && "bg-muted text-foreground",
                     )}
                   >
                     {letter}
                   </span>
                   <span className="flex-1 text-[0.94rem] leading-relaxed">{text}</span>
-                  {chosen && <X className="h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />}
+                  {selected && <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />}
+                  {chosenWrong && <X className="h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />}
                   {right && <Check className="h-4 w-4 shrink-0 text-success" aria-hidden="true" />}
                 </div>
               </div>
@@ -339,12 +366,16 @@ function QuestionPreview({
         >
           <div className="grid gap-2 text-sm">
             <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Tu respuesta simulada</p>
-              <p className="mt-1 font-medium text-destructive">{simulated}. {optionText(question, simulated)}</p>
+              <p className="text-sm font-bold text-foreground">Tu respuesta simulada</p>
+              <p className="mt-1 font-normal leading-relaxed text-destructive">
+                {simulated}. {optionText(question, simulated)}
+              </p>
             </div>
             <div className="rounded-xl border border-success/20 bg-success/5 p-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Respuesta correcta</p>
-              <p className="mt-1 font-medium text-success">{correct}. {optionText(question, correct)}</p>
+              <p className="text-sm font-bold text-foreground">Respuesta correcta</p>
+              <p className="mt-1 font-normal leading-relaxed text-success">
+                {correct}. {optionText(question, correct)}
+              </p>
             </div>
           </div>
           {question.explicacion && (
