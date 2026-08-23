@@ -48,11 +48,18 @@ function StudyCenterPage() {
     },
   });
   const model = useMemo(() => buildStudyCenterModel(data), [data]);
+  const tourUnit = useMemo(
+    () =>
+      (model.continuation?.activeFlashcards ?? 0) > 0
+        ? model.continuation
+        : (model.units.find((unit) => unit.activeFlashcards > 0) ?? model.continuation),
+    [model.continuation, model.units],
+  );
 
   useEffect(() => {
-    if (!model.continuation) return;
-    setOpenTopicId((current) => current ?? model.continuation?.topicId ?? null);
-  }, [model.continuation]);
+    if (!tourUnit) return;
+    setOpenTopicId((current) => current ?? tourUnit.topicId);
+  }, [tourUnit]);
 
   return (
     <div className="space-y-5 pb-2">
@@ -94,7 +101,10 @@ function StudyCenterPage() {
         <>
           {model.continuation && <ContinueStudyCard unit={model.continuation} />}
 
-          <StudyRoadmapStrip open={roadmapOpen} onToggle={() => setRoadmapOpen((value) => !value)} />
+          <StudyRoadmapStrip
+            open={roadmapOpen}
+            onToggle={() => setRoadmapOpen((value) => !value)}
+          />
           {roadmapOpen && (
             <section
               id="hoja-de-ruta"
@@ -123,7 +133,9 @@ function StudyCenterPage() {
                   {model.topics.length} temas · {model.units.length} unidades
                 </p>
               </div>
-              <span className="text-xs font-medium text-muted-foreground">Toca un tema para abrirlo</span>
+              <span className="text-xs font-medium text-muted-foreground">
+                Toca un tema para abrirlo
+              </span>
             </div>
 
             {model.topics.map((topic) => (
@@ -131,8 +143,10 @@ function StudyCenterPage() {
                 key={topic.id}
                 topic={topic}
                 open={openTopicId === topic.id}
-                onToggle={() => setOpenTopicId((current) => (current === topic.id ? null : topic.id))}
-                tourUnitId={model.continuation?.id ?? null}
+                onToggle={() =>
+                  setOpenTopicId((current) => (current === topic.id ? null : topic.id))
+                }
+                tourUnitId={tourUnit?.id ?? null}
               />
             ))}
           </section>
@@ -155,7 +169,10 @@ function ContinueStudyCard({ unit }: { unit: StudyCenterUnit }) {
 
   return (
     <Card className="relative overflow-hidden border-primary/15 bg-gradient-to-br from-primary/[0.11] via-card to-card p-5 shadow-[0_22px_46px_-38px_oklch(0.3_0.14_250/0.75)]">
-      <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-16 -top-20 h-40 w-40 rounded-full bg-primary/10 blur-3xl"
+      />
       <div className="relative">
         <div className="flex items-center gap-3">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-primary ring-1 ring-primary/10">
@@ -166,14 +183,20 @@ function ContinueStudyCard({ unit }: { unit: StudyCenterUnit }) {
             )}
           </span>
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-primary">{eyebrow}</p>
-            <p className="mt-0.5 text-xs font-medium text-muted-foreground">Tema {unit.topicNumber}</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-primary">
+              {eyebrow}
+            </p>
+            <p className="mt-0.5 text-xs font-medium text-muted-foreground">
+              Tema {unit.topicNumber}
+            </p>
           </div>
         </div>
 
         <h2 className="mt-4 text-xl font-bold leading-snug tracking-tight">{unit.title}</h2>
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs font-medium text-muted-foreground">
-          <span>{unit.totalConcepts} {unit.totalConcepts === 1 ? "concepto" : "conceptos"}</span>
+          <span>
+            {unit.totalConcepts} {unit.totalConcepts === 1 ? "concepto" : "conceptos"}
+          </span>
           <span className="inline-flex items-center gap-1">
             <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />≈ {unit.estimatedMinutes} min
           </span>
@@ -183,7 +206,9 @@ function ContinueStudyCard({ unit }: { unit: StudyCenterUnit }) {
         {unit.workedConcepts > 0 && (
           <div className="mt-4">
             <div className="mb-1.5 flex items-center justify-between gap-3 text-[11px] font-semibold text-muted-foreground">
-              <span>{unit.workedConcepts} de {unit.totalConcepts} conceptos trabajados</span>
+              <span>
+                {unit.workedConcepts} de {unit.totalConcepts} conceptos trabajados
+              </span>
               <span>{Math.round(unit.progress)}%</span>
             </div>
             <Progress value={unit.progress} className="h-1.5" />
@@ -221,7 +246,9 @@ function StudyRoadmapStrip({ open, onToggle }: { open: boolean; onToggle: () => 
           <CalendarDays className="h-4 w-4" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-primary">Esta semana</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-primary">
+            Esta semana
+          </p>
           <p className="mt-0.5 text-sm font-semibold">
             {roadmap.isLoading
               ? "Preparando tu ruta…"
@@ -233,7 +260,9 @@ function StudyRoadmapStrip({ open, onToggle }: { open: boolean; onToggle: () => 
             Ajustada a tus días y a tu ritmo para repartir el trabajo sin planificar cada jornada.
           </p>
         </div>
-        <span className="shrink-0 text-xs font-semibold text-primary">{open ? "Ocultar" : "Ver ruta"}</span>
+        <span className="shrink-0 text-xs font-semibold text-primary">
+          {open ? "Ocultar" : "Ver ruta"}
+        </span>
         <ChevronDown
           className={`h-4 w-4 shrink-0 text-primary transition-transform duration-200 ${open ? "rotate-180" : ""}`}
           aria-hidden="true"
@@ -271,13 +300,19 @@ function TopicCard({
       >
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-primary">Tema {topic.number}</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-primary">
+              Tema {topic.number}
+            </p>
             <h3 className="mt-1 line-clamp-2 text-[15px] font-bold leading-snug" title={topic.name}>
               {topic.name}
             </h3>
             <div className="mt-2 flex items-center justify-between gap-3">
               <p className="text-xs text-muted-foreground">{topicMeta}</p>
-              {topic.progress > 0 && <span className="text-[11px] font-semibold text-muted-foreground">{Math.round(topic.progress)}%</span>}
+              {topic.progress > 0 && (
+                <span className="text-[11px] font-semibold text-muted-foreground">
+                  {Math.round(topic.progress)}%
+                </span>
+              )}
             </div>
             <Progress value={topic.progress} className="mt-2 h-1" />
           </div>
@@ -345,9 +380,13 @@ function UnitLink({ unit, tourTarget }: { unit: StudyCenterUnit; tourTarget: boo
           <h4 className="text-sm font-bold leading-snug">{unit.title}</h4>
           <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
             <span className={`font-semibold ${statusClass}`}>{status}</span>
-            <span aria-hidden="true" className="text-border">·</span>
+            <span aria-hidden="true" className="text-border">
+              ·
+            </span>
             <span className="text-muted-foreground">{detail}</span>
-            <span aria-hidden="true" className="text-border">·</span>
+            <span aria-hidden="true" className="text-border">
+              ·
+            </span>
             <span className="text-muted-foreground">≈ {unit.estimatedMinutes} min</span>
           </div>
           {unit.workedConcepts > 0 && <Progress value={unit.progress} className="mt-2.5 h-1" />}
@@ -361,7 +400,11 @@ function UnitLink({ unit, tourTarget }: { unit: StudyCenterUnit; tourTarget: boo
               <span />
             )}
             <span className="inline-flex items-center gap-1 text-xs font-bold text-primary">
-              {action} <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+              {action}{" "}
+              <ArrowRight
+                className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5"
+                aria-hidden="true"
+              />
             </span>
           </div>
         </div>

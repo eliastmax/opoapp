@@ -48,7 +48,9 @@ function latestEvidence(concepts: V4TodayContextRow[]) {
 
 function toUnit(concepts: V4TodayContextRow[]): StudyCenterUnit {
   const row = concepts[0];
-  const uniqueConcepts = [...new Map(concepts.map((concept) => [concept.concept_id, concept])).values()];
+  const uniqueConcepts = [
+    ...new Map(concepts.map((concept) => [concept.concept_id, concept])).values(),
+  ];
   const workedConcepts = uniqueConcepts.filter((concept) => concept.state !== "unseen").length;
   const completed = uniqueConcepts.every((concept) => concept.unit_completed);
   const needsAttention = uniqueConcepts.some((concept) => concept.needs_attention);
@@ -72,7 +74,10 @@ function toUnit(concepts: V4TodayContextRow[]): StudyCenterUnit {
     concepts: uniqueConcepts,
     totalConcepts: uniqueConcepts.length,
     workedConcepts,
-    activeFlashcards: Math.max(...uniqueConcepts.map((concept) => concept.active_flashcards ?? 0), 0),
+    activeFlashcards: uniqueConcepts.reduce(
+      (sum, concept) => sum + (concept.active_flashcards ?? 0),
+      0,
+    ),
     progress: uniqueConcepts.length > 0 ? (workedConcepts / uniqueConcepts.length) * 100 : 0,
     completed,
     needsAttention,
@@ -126,7 +131,9 @@ export function buildStudyCenterModel(rows: V4TodayContextRow[]): StudyCenterMod
   const topics = [...topicsById.values()]
     .map((topic) => {
       const completedUnits = topic.units.filter((unit) => unit.completed).length;
-      const workedUnits = topic.units.filter((unit) => unit.workedConcepts > 0 || unit.completed).length;
+      const workedUnits = topic.units.filter(
+        (unit) => unit.workedConcepts > 0 || unit.completed,
+      ).length;
       const totalConcepts = topic.units.reduce((sum, unit) => sum + unit.totalConcepts, 0);
       const workedConcepts = topic.units.reduce((sum, unit) => sum + unit.workedConcepts, 0);
       return {

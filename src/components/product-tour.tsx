@@ -13,12 +13,14 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
+import { ProductTourPracticeDemo } from "@/components/product-tour-practice-demo";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { postAuthRoute } from "@/lib/post-auth-route";
 import {
   PRODUCT_TOUR_STEPS,
   maintainTourSession,
+  productTourJourneyLabel,
   productTourPath,
   productTourScene,
   productTourSceneCount,
@@ -30,9 +32,22 @@ import {
 
 const ProductTourContext = createContext<{ replay: () => void } | null>(null);
 const queryKey = (userId: string) => ["product-tour", userId] as const;
+const OPTIONAL_STUDY_TARGETS = new Set(["study-keys", "study-confusions", "study-traps"]);
 
 function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function nearestScrollContainer(target: HTMLElement): HTMLElement | null {
+  let current = target.parentElement;
+  while (current && current !== document.body) {
+    const style = window.getComputedStyle(current);
+    const scrollable =
+      /(auto|scroll)/.test(style.overflowY) && current.scrollHeight > current.clientHeight;
+    if (scrollable) return current;
+    current = current.parentElement;
+  }
+  return null;
 }
 
 function scrollTourTargetIntoView(
@@ -70,10 +85,121 @@ function scrollTourTargetIntoView(
   const delta = rect.top - desiredTop;
   if (Math.abs(delta) < 4) return;
 
-  window.scrollBy({
-    top: delta,
-    behavior: prefersReducedMotion() ? "auto" : "smooth",
+  const behavior = prefersReducedMotion() ? "auto" : "smooth";
+  const scrollContainer = nearestScrollContainer(target);
+  if (scrollContainer) {
+    scrollContainer.scrollBy({ top: delta, behavior });
+    return;
+  }
+  window.scrollBy({ top: delta, behavior });
+}
+
+function findExactText(text: string) {
+  return [...document.querySelectorAll<HTMLElement>("h1,h2,h3,p,span")].find(
+    (element) => element.textContent?.trim() === text,
+  );
+}
+
+function setTransientTourTarget(element: HTMLElement, targetName: string) {
+  if (!element.dataset.tourTransient) {
+    element.dataset.tourTransient = "true";
+    element.dataset.tourOriginal = element.dataset.tour ?? "";
+  }
+  element.dataset.tour = targetName;
+}
+
+function clearTransientTourTargets() {
+  document.querySelectorAll<HTMLElement>('[data-tour-transient="true"]').forEach((element) => {
+    const original = element.dataset.tourOriginal;
+    if (original) element.dataset.tour = original;
+    else delete element.dataset.tour;
+    delete element.dataset.tourOriginal;
+    delete element.dataset.tourTransient;
   });
+}
+
+function findStudyCard(title: string) {
+  const heading = findExactText(title);
+  return heading?.parentElement?.parentElement instanceof HTMLElement
+    ? heading.parentElement.parentElement
+    : null;
+}
+
+function findFlashcardSection() {
+  const existing = document.querySelector<HTMLElement>('[data-tour="flashcard-preview"]');
+  if (existing) return existing;
+  const heading = findExactText("Después, recuérdalo");
+  return heading?.parentElement?.parentElement instanceof HTMLElement
+    ? heading.parentElement.parentElement
+    : null;
+}
+
+function setFlashcardAnswerVisible(visible: boolean) {
+  const section = findFlashcardSection();
+  if (!section) return;
+  const answerLabel = [...section.querySelectorAll<HTMLElement>("p")].find(
+    (element) => element.textContent?.trim() === "Respuesta",
+  );
+  const answerPanel = answerLabel?.parentElement;
+  if (!(answerPanel instanceof HTMLElement)) return;
+  answerPanel.dataset.tourFlashcardAnswer = "true";
+  answerPanel.style.transition = prefersReducedMotion()
+    ? "none"
+    : "opacity 180ms ease, transform 320ms ease";
+  answerPanel.style.transformOrigin = "center";
+  answerPanel.style.opacity = visible ? "1" : "0";
+  answerPanel.style.visibility = visible ? "visible" : "hidden";
+  answerPanel.style.transform = visible ? "rotateY(0deg) scale(1)" : "rotateY(88deg) scale(.985)";
+
+  if (visible && !prefersReducedMotion()) {
+    const card = answerPanel.parentElement;
+    card?.animate(
+      [
+        { transform: "perspective(900px) rotateY(0deg)" },
+        { transform: "perspective(900px) rotateY(7deg)" },
+        { transform: "perspective(900px) rotateY(0deg)" },
+      ],
+      { duration: 340, easing: "cubic-bezier(.2,.75,.25,1)" },
+    );
+  }
+}
+
+function restoreFlashcardVisual() {
+  document.querySelectorAll<HTMLElement>('[data-tour-flashcard-answer="true"]').forEach((panel) => {
+    panel.style.removeProperty("transition");
+    panel.style.removeProperty("transform-origin");
+    panel.style.removeProperty("opacity");
+    panel.style.removeProperty("visibility");
+    panel.style.removeProperty("transform");
+    delete panel.dataset.tourFlashcardAnswer;
+  });
+}
+
+function prepareStudySceneTarget(targetName: string) {
+  if (targetName === "study-keys") {
+    const card = findStudyCard("Claves de examen");
+    if (card) setTransientTourTarget(card, targetName);
+    return;
+  }
+  if (targetName === "study-confusions") {
+    const card = findStudyCard("No lo confundas");
+    if (card) setTransientTourTarget(card, targetName);
+    return;
+  }
+  if (targetName === "study-traps") {
+    const card = findStudyCard("Trampas frecuentes");
+    if (card) setTransientTourTarget(card, targetName);
+    return;
+  }
+  if (targetName === "flashcard-preview") {
+    setFlashcardAnswerVisible(false);
+    return;
+  }
+  if (targetName === "flashcard-answer") {
+    const section = findFlashcardSection();
+    if (section) setTransientTourTarget(section, targetName);
+    setFlashcardAnswerVisible(true);
+  }
 }
 
 function EmphasizedDescription({
@@ -148,9 +274,11 @@ export function ProductTourProvider({ user, children }: { user: User; children: 
     preparationCompleted: preparation.data === true,
     pathname,
   });
+
   useEffect(() => {
     setTourSessionActive((current) => maintainTourSession(current, eligibleToStart));
   }, [eligibleToStart]);
+
   const open = replaying || tourSessionActive;
   const closeSafely = useCallback(() => {
     setDismissedForSession(true);
@@ -201,6 +329,7 @@ export function ProductTourProvider({ user, children }: { user: User; children: 
     [navigate],
   );
   const contextValue = useMemo(() => ({ replay }), [replay]);
+
   return (
     <ProductTourContext.Provider value={contextValue}>
       {children}
@@ -250,7 +379,9 @@ function SpotlightTour({
   const [routeTransition, setRouteTransition] = useState(false);
   const [targetAccent, setTargetAccent] = useState(false);
   const expectedPath = productTourPath(item.route, tourUnitId);
-  const finalScene = PRODUCT_TOUR_STEPS[step].final && scene === productTourSceneCount(step) - 1;
+  const sceneCount = productTourSceneCount(step);
+  const journeyLabel = productTourJourneyLabel(step);
+  const finalScene = PRODUCT_TOUR_STEPS[step].final && scene === sceneCount - 1;
 
   const queuePosition = useCallback(
     (nextStep: number, nextScene: number) => {
@@ -260,6 +391,7 @@ function SpotlightTour({
       setPopoverVisible(false);
       setTargetAccent(false);
       setCutout(null);
+      clearTransientTourTargets();
       if (currentPath !== nextPath) setRouteTransition(true);
       if (stepTimerRef.current !== null) window.clearTimeout(stepTimerRef.current);
       stepTimerRef.current = window.setTimeout(
@@ -274,13 +406,12 @@ function SpotlightTour({
   );
 
   const goNext = useCallback(() => {
-    const scenes = productTourSceneCount(step);
-    if (scene + 1 < scenes) {
+    if (scene + 1 < sceneCount) {
       queuePosition(step, scene + 1);
       return;
     }
     if (step + 1 < PRODUCT_TOUR_STEPS.length) queuePosition(step + 1, 0);
-  }, [queuePosition, scene, step]);
+  }, [queuePosition, scene, sceneCount, step]);
 
   const goPrevious = useCallback(() => {
     if (scene > 0) {
@@ -295,6 +426,8 @@ function SpotlightTour({
   useEffect(
     () => () => {
       if (stepTimerRef.current !== null) window.clearTimeout(stepTimerRef.current);
+      clearTransientTourTargets();
+      restoreFlashcardVisual();
     },
     [],
   );
@@ -310,6 +443,9 @@ function SpotlightTour({
 
   useLayoutEffect(() => {
     if (!expectedPath || pathname !== expectedPath) return;
+    clearTransientTourTargets();
+    if (item.route === "study-preview") prepareStudySceneTarget(item.target);
+
     let cancelled = false;
     let frame = 0;
     let cleanup: (() => void) | undefined;
@@ -362,30 +498,49 @@ function SpotlightTour({
       };
     };
     const findTarget = () => {
+      if (item.route === "study-preview") prepareStudySceneTarget(item.target);
       const target = document.querySelector<HTMLElement>(`[data-tour="${item.target}"]`);
       if (target) attachTarget(target);
     };
     findTarget();
     if (!document.querySelector(`[data-tour="${item.target}"]`)) {
       targetObserver = new MutationObserver(findTarget);
-      targetObserver.observe(document.body, { childList: true, subtree: true });
-      targetTimeout = window.setTimeout(() => {
-        if (cancelled) return;
-        const fallbackSelector =
-          item.route === "/estudio"
-            ? '[data-tour="nav-study"]'
-            : item.route === "/crear"
-              ? '[data-tour="nav-practice"]'
-              : item.route === "/progreso"
-                ? '[data-tour="nav-progress"]'
-                : item.route === "/inicio"
-                  ? '[data-tour="today-session"]'
-                  : null;
-        const fallback = fallbackSelector
-          ? document.querySelector<HTMLElement>(fallbackSelector)
-          : null;
-        if (fallback) attachTarget(fallback);
-      }, 12_000);
+      targetObserver.observe(document.body, { childList: true, subtree: true, attributes: true });
+      const optionalStudyTarget =
+        item.route === "study-preview" && OPTIONAL_STUDY_TARGETS.has(item.target);
+      targetTimeout = window.setTimeout(
+        () => {
+          if (cancelled) return;
+          const target = document.querySelector<HTMLElement>(`[data-tour="${item.target}"]`);
+          if (target) {
+            attachTarget(target);
+            return;
+          }
+          if (optionalStudyTarget) {
+            goNext();
+            return;
+          }
+          const fallbackSelector =
+            item.route === "/estudio"
+              ? '[data-tour="nav-study"]'
+              : item.route === "/crear"
+                ? '[data-tour="nav-practice"]'
+                : item.route === "/progreso"
+                  ? '[data-tour="nav-progress"]'
+                  : item.route === "/inicio"
+                    ? '[data-tour="today-session"]'
+                    : null;
+          const fallback = fallbackSelector
+            ? document.querySelector<HTMLElement>(fallbackSelector)
+            : null;
+          if (fallback) {
+            attachTarget(fallback);
+            return;
+          }
+          goNext();
+        },
+        optionalStudyTarget ? 1_200 : 6_000,
+      );
     }
     return () => {
       cancelled = true;
@@ -395,12 +550,14 @@ function SpotlightTour({
       window.clearTimeout(accentTimer);
       targetObserver?.disconnect();
       cleanup?.();
+      clearTransientTourTargets();
     };
-  }, [expectedPath, item.route, item.target, pathname, popoverHeight]);
+  }, [expectedPath, goNext, item.route, item.target, pathname, popoverHeight]);
 
   useLayoutEffect(() => {
     if (popoverRef.current) setPopoverHeight(popoverRef.current.getBoundingClientRect().height);
   }, [cutout, scene, step]);
+
   useEffect(() => {
     const shell = document.querySelector<HTMLElement>("[data-app-shell]");
     shell?.setAttribute("inert", "");
@@ -426,6 +583,7 @@ function SpotlightTour({
       document.removeEventListener("keydown", onKey);
     };
   }, [onSkip, popoverVisible]);
+
   useEffect(() => {
     if (!popoverVisible) return;
     const frame = window.requestAnimationFrame(() => {
@@ -434,18 +592,24 @@ function SpotlightTour({
     return () => window.cancelAnimationFrame(frame);
   }, [popoverVisible, scene, step]);
 
+  const practiceDemo = step === 4 ? <ProductTourPracticeDemo scene={scene} /> : null;
+
   if (!cutout)
     return (
-      <div
-        className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60"
-        role="status"
-      >
-        <span className="rounded-full bg-card p-3 text-primary shadow-lg">
-          <Loader2 className="h-5 w-5 animate-spin motion-reduce:animate-none" />
-          <span className="sr-only">Preparando el siguiente paso del tutorial</span>
-        </span>
-      </div>
+      <>
+        {practiceDemo}
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60"
+          role="status"
+        >
+          <span className="rounded-full bg-card p-3 text-primary shadow-lg">
+            <Loader2 className="h-5 w-5 animate-spin motion-reduce:animate-none" />
+            <span className="sr-only">Preparando el siguiente paso del tutorial</span>
+          </span>
+        </div>
+      </>
     );
+
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
   const width = Math.min(340, viewportWidth - 32);
@@ -458,106 +622,117 @@ function SpotlightTour({
     Math.min(cutout.left + (cutout.right - cutout.left - width) / 2, viewportWidth - width - 16),
   );
   const popoverOffset = placeBelow ? 8 : -8;
+
   return (
-    <div
-      aria-live="polite"
-      aria-label={`Tutorial de OpoTest, paso ${step + 1} de ${PRODUCT_TOUR_STEPS.length}`}
-    >
+    <>
+      {practiceDemo}
       <div
-        className="pointer-events-none fixed z-[60] rounded-[1.15rem] border border-white/75 transition-[top,left,width,height,box-shadow] duration-200 ease-out motion-reduce:transition-none"
-        style={{
-          top: cutout.top,
-          left: cutout.left,
-          width: cutout.right - cutout.left,
-          height: cutout.bottom - cutout.top,
-          boxShadow: targetAccent
-            ? "0 0 0 9999px rgb(0 0 0 / 0.68), 0 0 0 2px rgb(125 211 252 / 0.20), 0 0 18px rgb(125 211 252 / 0.22)"
-            : "0 0 0 9999px rgb(0 0 0 / 0.68), 0 0 0 1px rgb(125 211 252 / 0.14), 0 0 10px rgb(125 211 252 / 0.12)",
-        }}
-        aria-hidden="true"
-      />
-      <div
-        className="pointer-events-none fixed inset-0 z-[62] bg-black/68 transition-opacity duration-150 ease-out motion-reduce:transition-none"
-        style={{ opacity: routeTransition ? 1 : 0 }}
-        aria-hidden="true"
-      />
-      <div
-        ref={popoverRef}
-        role="dialog"
-        aria-modal="true"
-        aria-hidden={!popoverVisible}
-        aria-labelledby="tour-title"
-        aria-describedby="tour-description"
-        className="fixed z-[70] rounded-2xl border border-border/80 bg-card p-4 text-card-foreground shadow-[0_20px_55px_-18px_rgb(0_0_0/0.55)] transition-[opacity,transform] ease-out min-[390px]:p-[18px] motion-reduce:transition-none"
-        style={{
-          top,
-          left,
-          width,
-          opacity: popoverVisible ? 1 : 0,
-          transform: popoverVisible
-            ? "translateY(0) scale(1)"
-            : `translateY(${popoverOffset}px) scale(0.98)`,
-          transitionDuration: prefersReducedMotion() ? "0ms" : popoverVisible ? "210ms" : "120ms",
-          pointerEvents: popoverVisible ? "auto" : "none",
-        }}
+        aria-live="polite"
+        aria-label={`Tutorial de OpoTest, paso ${step + 1} de ${PRODUCT_TOUR_STEPS.length}`}
       >
-        <span
-          aria-hidden="true"
-          className={`pointer-events-none absolute left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-card ${
-            placeBelow
-              ? "-top-1.5 border-l border-t border-border/80"
-              : "-bottom-1.5 border-b border-r border-border/80"
-          }`}
-        />
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-[13px] font-medium leading-none text-muted-foreground">
-            {step + 1} de {PRODUCT_TOUR_STEPS.length}
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2 text-[13px] font-medium text-muted-foreground"
-            onClick={onSkip}
-            tabIndex={popoverVisible ? 0 : -1}
-          >
-            Omitir
-          </Button>
-        </div>
-        <h2
-          id="tour-title"
-          className="mt-3 text-[19px] font-semibold leading-[1.2] min-[390px]:text-xl"
-        >
-          {item.title}
-        </h2>
-        <p id="tour-description" className="mt-2 text-base leading-[1.45] text-muted-foreground">
-          <EmphasizedDescription description={item.description} emphasis={item.emphasis} />
-        </p>
         <div
-          className={`mt-5 flex items-center gap-2 ${step > 0 || scene > 0 ? "justify-between" : "justify-end"}`}
+          className="pointer-events-none fixed z-[60] rounded-[1.15rem] border border-white/75 transition-[top,left,width,height,box-shadow] duration-200 ease-out motion-reduce:transition-none"
+          style={{
+            top: cutout.top,
+            left: cutout.left,
+            width: cutout.right - cutout.left,
+            height: cutout.bottom - cutout.top,
+            boxShadow: targetAccent
+              ? "0 0 0 9999px rgb(0 0 0 / 0.68), 0 0 0 2px rgb(125 211 252 / 0.20), 0 0 18px rgb(125 211 252 / 0.22)"
+              : "0 0 0 9999px rgb(0 0 0 / 0.68), 0 0 0 1px rgb(125 211 252 / 0.14), 0 0 10px rgb(125 211 252 / 0.12)",
+          }}
+          aria-hidden="true"
+        />
+        <div
+          className="pointer-events-none fixed inset-0 z-[62] bg-black/68 transition-opacity duration-150 ease-out motion-reduce:transition-none"
+          style={{ opacity: routeTransition ? 1 : 0 }}
+          aria-hidden="true"
+        />
+        <div
+          ref={popoverRef}
+          role="dialog"
+          aria-modal="true"
+          aria-hidden={!popoverVisible}
+          aria-labelledby="tour-title"
+          aria-describedby="tour-description"
+          className="fixed z-[70] rounded-2xl border border-border/80 bg-card p-4 text-card-foreground shadow-[0_20px_55px_-18px_rgb(0_0_0/0.55)] transition-[opacity,transform] ease-out min-[390px]:p-[18px] motion-reduce:transition-none"
+          style={{
+            top,
+            left,
+            width,
+            opacity: popoverVisible ? 1 : 0,
+            transform: popoverVisible
+              ? "translateY(0) scale(1)"
+              : `translateY(${popoverOffset}px) scale(0.98)`,
+            transitionDuration: prefersReducedMotion() ? "0ms" : popoverVisible ? "210ms" : "120ms",
+            pointerEvents: popoverVisible ? "auto" : "none",
+          }}
         >
-          {(step > 0 || scene > 0) && (
+          <span
+            aria-hidden="true"
+            className={`pointer-events-none absolute left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-card ${
+              placeBelow
+                ? "-top-1.5 border-l border-t border-border/80"
+                : "-bottom-1.5 border-b border-r border-border/80"
+            }`}
+          />
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <span className="block text-[13px] font-medium leading-none text-muted-foreground">
+                {step + 1} de {PRODUCT_TOUR_STEPS.length}
+              </span>
+              {journeyLabel && sceneCount > 1 && (
+                <span className="mt-1.5 block text-[11px] font-semibold text-primary">
+                  {journeyLabel} · {scene + 1} de {sceneCount}
+                </span>
+              )}
+            </div>
             <Button
               variant="ghost"
               size="sm"
-              className="h-10 px-2.5 text-[15px] font-semibold text-muted-foreground"
-              onClick={goPrevious}
-              aria-label="Paso anterior"
+              className="h-8 px-2 text-[13px] font-medium text-muted-foreground"
+              onClick={onSkip}
               tabIndex={popoverVisible ? 0 : -1}
             >
-              Anterior
+              Omitir
             </Button>
-          )}
-          <Button
-            data-tour-primary
-            size="sm"
-            className="h-10 px-4 text-[15px] font-semibold"
-            onClick={() => (finalScene ? onFinish() : goNext())}
-            tabIndex={popoverVisible ? 0 : -1}
+          </div>
+          <h2
+            id="tour-title"
+            className="mt-3 text-[19px] font-semibold leading-[1.2] min-[390px]:text-xl"
           >
-            {finalScene ? "Empezar mi sesión" : "Siguiente"}
-          </Button>
+            {item.title}
+          </h2>
+          <p id="tour-description" className="mt-2 text-base leading-[1.45] text-muted-foreground">
+            <EmphasizedDescription description={item.description} emphasis={item.emphasis} />
+          </p>
+          <div
+            className={`mt-5 flex items-center gap-2 ${step > 0 || scene > 0 ? "justify-between" : "justify-end"}`}
+          >
+            {(step > 0 || scene > 0) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-10 px-2.5 text-[15px] font-semibold text-muted-foreground"
+                onClick={goPrevious}
+                aria-label="Paso anterior"
+                tabIndex={popoverVisible ? 0 : -1}
+              >
+                Anterior
+              </Button>
+            )}
+            <Button
+              data-tour-primary
+              size="sm"
+              className="h-10 px-4 text-[15px] font-semibold"
+              onClick={() => (finalScene ? onFinish() : goNext())}
+              tabIndex={popoverVisible ? 0 : -1}
+            >
+              {finalScene ? "Empezar mi sesión" : "Siguiente"}
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
