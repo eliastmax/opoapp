@@ -512,15 +512,34 @@ function SpotlightTour({
   const vw = window.innerWidth;
   const vh = viewportHeight();
   const width = Math.min(360, vw - 24);
+  const demo = isDemoTarget(item.target);
+  const desktopDemoRail = demo && vw >= 900;
+  const mobileDemoSheet = demo && vw < 900;
+  const finalMobile = finalScene && vw < 700;
+
   const belowSpace = vh - cutout.bottom - 16;
   const aboveSpace = cutout.top - 16;
   const placeBelow = belowSpace >= popoverHeight || belowSpace >= aboveSpace;
   const unclampedTop = placeBelow ? cutout.bottom + 12 : cutout.top - popoverHeight - 12;
-  const top = Math.max(12, Math.min(unclampedTop, vh - popoverHeight - 12));
-  const left = Math.max(
+  const normalTop = Math.max(12, Math.min(unclampedTop, vh - popoverHeight - 12));
+  const normalLeft = Math.max(
     12,
     Math.min(cutout.left + (cutout.right - cutout.left - width) / 2, vw - width - 12),
   );
+
+  const finalMobileTop = Math.min(cutout.bottom + 8, Math.max(12, vh - 272));
+  const top = desktopDemoRail ? 24 : mobileDemoSheet ? undefined : finalMobile ? finalMobileTop : normalTop;
+  const bottom = mobileDemoSheet ? 12 : undefined;
+  const left = desktopDemoRail ? undefined : finalMobile ? 12 : normalLeft;
+  const right = desktopDemoRail ? 24 : undefined;
+  const popoverWidth = finalMobile ? vw - 24 : width;
+  const maxHeight = desktopDemoRail
+    ? vh - 48
+    : mobileDemoSheet
+      ? Math.max(220, Math.min(vh * 0.43, 360))
+      : finalMobile
+        ? Math.max(220, vh - finalMobileTop - 12)
+        : vh - 24;
   const dots = Array.from({ length: sceneCount }, (_, index) => index);
 
   return (
@@ -553,61 +572,81 @@ function SpotlightTour({
           aria-hidden={!popoverVisible}
           aria-labelledby="tour-title"
           aria-describedby="tour-description"
-          className="fixed z-[70] rounded-3xl border border-border/80 bg-card p-5 text-card-foreground shadow-[0_24px_60px_-20px_rgb(0_0_0/0.58)] transition-[opacity,transform] ease-out motion-reduce:transition-none"
+          className={`fixed z-[70] rounded-3xl border border-border/80 bg-card text-card-foreground shadow-[0_24px_60px_-20px_rgb(0_0_0/0.58)] transition-[opacity,transform] ease-out motion-reduce:transition-none ${finalMobile ? "p-4" : "p-5"}`}
           style={{
             top,
+            bottom,
             left,
-            width,
+            right,
+            width: popoverWidth,
+            maxHeight,
+            overflowY: "auto",
             opacity: popoverVisible ? 1 : 0,
             transform: popoverVisible ? "translateY(0) scale(1)" : "translateY(8px) scale(.985)",
             transitionDuration: prefersReducedMotion() ? "0ms" : popoverVisible ? "190ms" : "110ms",
             pointerEvents: popoverVisible ? "auto" : "none",
           }}
         >
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <span className="block text-[15px] font-bold text-muted-foreground">
+          {finalMobile ? (
+            <div className="flex items-center gap-2 text-[14px] font-bold">
+              <span className="text-muted-foreground">
                 Paso {step + 1} de {PRODUCT_TOUR_STEPS.length}
               </span>
-              <div className="mt-2 flex items-center gap-2">
-                <span className="text-[15px] font-bold text-primary">{journeyLabel}</span>
-                {sceneCount > 1 && (
-                  <span className="flex items-center gap-1.5" aria-label={`Momento ${scene + 1} de ${sceneCount}`}>
-                    {dots.map((dot) => (
-                      <span
-                        key={dot}
-                        className={`h-2 w-2 rounded-full transition-colors ${
-                          dot <= scene ? "bg-primary" : "bg-muted-foreground/25"
-                        }`}
-                      />
-                    ))}
-                  </span>
-                )}
-              </div>
+              <span aria-hidden="true" className="text-muted-foreground/50">·</span>
+              <span className="text-primary">{journeyLabel}</span>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-10 px-2.5 text-[15px] font-semibold text-muted-foreground"
-              onClick={onSkip}
-              tabIndex={popoverVisible ? 0 : -1}
-            >
-              Saltar tutorial
-            </Button>
-          </div>
+          ) : (
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <span className="block text-[15px] font-bold text-muted-foreground">
+                  Paso {step + 1} de {PRODUCT_TOUR_STEPS.length}
+                </span>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-[15px] font-bold text-primary">{journeyLabel}</span>
+                  {sceneCount > 1 && (
+                    <span className="flex items-center gap-1.5" aria-label={`Momento ${scene + 1} de ${sceneCount}`}>
+                      {dots.map((dot) => (
+                        <span
+                          key={dot}
+                          className={`h-2 w-2 rounded-full transition-colors ${
+                            dot <= scene ? "bg-primary" : "bg-muted-foreground/25"
+                          }`}
+                        />
+                      ))}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-10 px-2.5 text-[15px] font-semibold text-muted-foreground"
+                onClick={onSkip}
+                tabIndex={popoverVisible ? 0 : -1}
+              >
+                Saltar tutorial
+              </Button>
+            </div>
+          )}
 
-          <h2 id="tour-title" className="mt-4 text-[24px] font-bold leading-[1.18] tracking-tight">
+          <h2
+            id="tour-title"
+            className={`${finalMobile ? "mt-3 text-[22px] leading-[1.16]" : "mt-4 text-[24px] leading-[1.18]"} font-bold tracking-tight`}
+          >
             {item.title}
           </h2>
-          <p id="tour-description" className="mt-3 text-[18px] leading-[1.48] text-muted-foreground">
+          <p
+            id="tour-description"
+            className={`${finalMobile ? "mt-2 text-[16px] leading-[1.42]" : "mt-3 text-[18px] leading-[1.48]"} text-muted-foreground`}
+          >
             <EmphasizedDescription description={item.description} emphasis={item.emphasis} />
           </p>
 
-          <div className={`mt-6 flex items-center gap-3 ${step > 0 || scene > 0 ? "justify-between" : "justify-end"}`}>
+          <div className={`${finalMobile ? "mt-4" : "mt-6"} flex items-center gap-3 ${step > 0 || scene > 0 ? "justify-between" : "justify-end"}`}>
             {(step > 0 || scene > 0) && (
               <Button
                 variant="ghost"
-                className="h-12 px-3 text-[17px] font-bold text-muted-foreground"
+                className={`${finalMobile ? "h-11 px-2 text-[15px]" : "h-12 px-3 text-[17px]"} font-bold text-muted-foreground`}
                 onClick={goPrevious}
                 aria-label="Paso anterior"
                 tabIndex={popoverVisible ? 0 : -1}
@@ -617,7 +656,7 @@ function SpotlightTour({
             )}
             <Button
               data-tour-primary
-              className="h-12 px-5 text-[17px] font-bold"
+              className={`${finalMobile ? "h-11 px-4 text-[15px]" : "h-12 px-5 text-[17px]"} font-bold`}
               onClick={() => (finalScene ? onFinish() : goNext())}
               tabIndex={popoverVisible ? 0 : -1}
             >
