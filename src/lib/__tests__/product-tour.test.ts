@@ -220,7 +220,7 @@ describe("short product tour v2", () => {
     expect(component).toContain('text-[15px]');
     expect(component).toContain("Saltar tutorial");
     expect(component).toContain("Paso {step + 1} de {PRODUCT_TOUR_STEPS.length}");
-    expect(component).toContain("h-12 px-5 text-[17px] font-bold");
+    expect(component).toContain('"h-12 px-5 text-[17px]"');
     expect(component).toContain("visualViewport");
     expect(studyDemo).toContain('@media (min-width: 900px)');
     expect(studyDemo).toContain('right: 24px !important');
