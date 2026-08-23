@@ -151,11 +151,11 @@ export function ProductTourProvider({ user, children }: { user: User; children: 
         void navigate({ to: "/estudio" });
         return;
       }
-      if (route === "study-unit") {
-        void navigate({ to: "/estudiar/$unitId", params: { unitId }, search: {} });
-        return;
-      }
-      void navigate({ to: "/recordar/$unitId", params: { unitId }, search: {} });
+      void navigate({
+        to: "/estudiar/$unitId",
+        params: { unitId },
+        search: { tour: "preview" },
+      });
     },
     [navigate],
   );
