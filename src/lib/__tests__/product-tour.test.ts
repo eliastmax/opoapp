@@ -123,7 +123,7 @@ describe("short product tour v2", () => {
     expect(studyDemo).toContain('data-tour="tour-study-flashcard"');
     expect(studyDemo).toContain('className="fixed inset-0 z-[50] overflow-hidden bg-background"');
     expect(studyDemo).toContain("Al estudiar verás el resumen completo.");
-    expect(studyDemo).toContain("data.keys.slice(0, 2)");
+    expect(studyDemo).toContain("data.keys.slice(0, 1)");
     expect(studyDemo).toContain("data.confusions.slice(0, 1)");
     expect(studyDemo).toContain("data.traps.slice(0, 1)");
     expect(component).toContain('targetName.startsWith("tour-study-")');
@@ -198,9 +198,11 @@ describe("short product tour v2", () => {
     expect(component).toContain("Paso {step + 1} de {PRODUCT_TOUR_STEPS.length}");
     expect(component).toContain("h-12 px-5 text-[17px] font-bold");
     expect(component).toContain("visualViewport");
-    expect(component).toContain("canUseSide");
-    expect(component).toContain("vw >= 900 ? 400 : 360");
-    expect(component).toContain("overflow-y-auto");
+    expect(studyDemo).toContain('@media (min-width: 900px)');
+    expect(studyDemo).toContain('right: 24px !important');
+    expect(studyDemo).toContain('@media (max-width: 899px)');
+    expect(studyDemo).toContain('bottom: 12px !important');
+    expect(practiceDemo).toContain('max-height: 43dvh !important');
   });
 
   it("uses dots for micro-scenes instead of nested numeric progress", () => {
