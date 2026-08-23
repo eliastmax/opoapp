@@ -149,7 +149,8 @@ describe("first-run spotlight tour", () => {
 
   it("renders a measured spotlight and anchored coach mark without mockups", () => {
     expect(component).toContain("getBoundingClientRect");
-    expect(component).toContain("scrollIntoView");
+    expect(component).toContain("scrollTourTargetIntoView");
+    expect(component).toContain("window.scrollBy");
     expect(component).toContain("ResizeObserver");
     expect(component).toContain("MutationObserver");
     expect(component).toContain("12_000");
@@ -158,6 +159,14 @@ describe("first-run spotlight tour", () => {
     expect(component).toContain('setAttribute("inert"');
     expect(component).not.toContain("TourVisual");
     expect(component).not.toContain("DialogContent");
+  });
+
+  it("repositions each non-navigation target before revealing the next coach mark", () => {
+    expect(component).toContain('targetName.startsWith("nav-")');
+    expect(component).toContain('route === "study-preview" ? 84 : 16');
+    expect(component).toContain("Math.max(popoverHeight, 220)");
+    expect(component).toContain("setCutout(null)");
+    expect(component).toContain("prefersReducedMotion() ? 0 : 260");
   });
 
   it("keeps the coach mark readable and safe at 360, 390 and 430 px", () => {
@@ -185,7 +194,7 @@ describe("first-run spotlight tour", () => {
     expect(component).toContain("setPopoverVisible(false)");
     expect(component).toContain("prefersReducedMotion() ? 0 : 130");
     expect(component).toContain('popoverVisible ? "210ms" : "120ms"');
-    expect(component).toContain("prefersReducedMotion() ? 0 : 220");
+    expect(component).toContain("prefersReducedMotion() ? 0 : 260");
     expect(component).toContain("setRouteTransition(true)");
     expect(component).toContain("routeTransition ? 1 : 0");
     expect(component).toContain("motion-reduce:transition-none");
