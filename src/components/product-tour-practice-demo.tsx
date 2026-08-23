@@ -227,9 +227,9 @@ function LevelsPreview({
             <Layers3 className="h-5 w-5" aria-hidden="true" />
           </span>
           <div>
-            <p className="text-[17px] font-bold">Tres niveles. Un camino hacia el examen.</p>
+            <p className="text-[17px] font-bold">Tres niveles. Cada uno cumple una función.</p>
             <p className="mt-0.5 text-[14px] leading-[1.35] text-muted-foreground">
-              No son fácil, medio y difícil: cada nivel entrena algo distinto.
+              No son grados de dificultad. Cada nivel entrena una fase distinta de tu preparación.
             </p>
           </div>
         </div>
@@ -280,7 +280,10 @@ function LevelsPreview({
                 )}
               >
                 {justUnlocked && !reduceMotion && (
-                  <span className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl" aria-hidden="true">
+                  <span
+                    className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl"
+                    aria-hidden="true"
+                  >
                     <span className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-primary/12 to-transparent [animation:tour-unlock-sweep_520ms_ease-out_both]" />
                   </span>
                 )}
@@ -339,11 +342,15 @@ function LevelsPreview({
                         </span>
                       )}
                     </div>
-                    <p className="mt-0.5 text-[15px] font-semibold text-primary">{stage.description}</p>
+                    <p className="mt-0.5 text-[15px] font-semibold text-primary">
+                      {stage.description}
+                    </p>
                   </div>
                 </div>
                 {active && (
-                  <p className="relative mt-2 text-[14px] leading-[1.35] text-muted-foreground">{stage.detail}</p>
+                  <p className="relative mt-2 text-[14px] leading-[1.35] text-muted-foreground">
+                    {stage.detail}
+                  </p>
                 )}
               </div>
             );
@@ -424,7 +431,9 @@ function QuestionPreview({
           <div data-tour="tour-study-practice-question" className="space-y-2.5">
             <Card className="border-primary/15 bg-gradient-to-br from-card to-primary/5 p-3.5">
               <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-primary">Pregunta</p>
-              <h2 className="mt-1.5 text-[16px] font-semibold leading-[1.35]">{question.pregunta}</h2>
+              <h2 className="mt-1.5 text-[16px] font-semibold leading-[1.35]">
+                {question.pregunta}
+              </h2>
             </Card>
 
             <div className="space-y-1.5">
@@ -450,7 +459,9 @@ function QuestionPreview({
                         {letter}
                       </span>
                       <span className="flex-1 text-[14px] leading-[1.3]">{text}</span>
-                      {selected && <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />}
+                      {selected && (
+                        <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                      )}
                     </div>
                   </div>
                 );
