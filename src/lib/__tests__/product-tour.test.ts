@@ -44,6 +44,10 @@ const preparationFlow = readFileSync(
   new URL("../../components/v3/preparation-profile-flow.tsx", import.meta.url),
   "utf8",
 );
+const preparationPage = readFileSync(
+  new URL("../../routes/_authenticated/preparacion.tsx", import.meta.url),
+  "utf8",
+);
 
 const eligibility = (overrides: Partial<Parameters<typeof shouldOpenProductTour>[0]> = {}) =>
   shouldOpenProductTour({
@@ -189,6 +193,26 @@ describe("short product tour v2", () => {
     expect(practiceDemo).not.toContain("complete_test");
   });
 
+  it("keeps desktop demo content physically out of the coach-mark rail", () => {
+    expect(component).toContain("function reserveDesktopDemoRail");
+    expect(component).toContain('window.innerWidth < 900');
+    expect(component).toContain('stage.style.transform = "translateX(-210px)"');
+    expect(component).toContain("const restoreDemoRail = reserveDesktopDemoRail(target, item.target)");
+    expect(component).toContain("restoreDemoRail();");
+    expect(component).toContain("desktopDemoRail ? 24");
+    expect(component).toContain("right = desktopDemoRail ? 24");
+  });
+
+  it("keeps demo sheets and the final Today action inside the viewport", () => {
+    expect(component).toContain("const mobileDemoSheet = demo && vw < 900");
+    expect(component).toContain("const finalMobile = finalScene && vw < 700");
+    expect(component).toContain("const finalMobileTop");
+    expect(component).toContain('overflowY: "auto"');
+    expect(component).toContain("maxHeight");
+    expect(component).toContain('finalMobile ? "p-4" : "p-5"');
+    expect(component).toContain('finalMobile ? "h-11 px-4 text-[15px]"');
+  });
+
   it("makes the coach marks easier to read", () => {
     expect(component).toContain('text-[24px]');
     expect(component).toContain('text-[18px]');
@@ -219,6 +243,14 @@ describe("short product tour v2", () => {
     expect(preparationFlow).toContain('text-[18px] font-bold');
     expect(preparationFlow).toContain('text-[16px] leading-[1.4] text-muted-foreground');
     expect(preparationFlow).not.toContain("Cambios guardados");
+  });
+
+  it("retries draft autosave silently and only surfaces final-save failure", () => {
+    expect(preparationPage).toContain("for (let attempt = 0; attempt < 3; attempt += 1)");
+    expect(preparationPage).toContain('if (complete) setSaveState("saving")');
+    expect(preparationPage).toContain('if (complete) {\n      setSaveState("error")');
+    expect(preparationPage).toContain('setSaveState("idle")');
+    expect(preparationPage).toContain("Draft autosave is deliberately silent");
   });
 
   it("still exposes the real navigation targets required by the four steps", () => {
