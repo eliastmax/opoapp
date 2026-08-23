@@ -48,10 +48,15 @@ function isDemoTarget(targetName: string) {
 
 function focusRect(target: HTMLElement, targetName: string) {
   const rect = target.getBoundingClientRect();
-  if (isDemoTarget(targetName)) return spotlightRect(rect, 7);
+  const vh = viewportHeight();
+  const compactLayout = window.innerWidth < 1400;
+  const maxHeight = compactLayout
+    ? Math.min(300, vh * 0.38)
+    : isDemoTarget(targetName)
+      ? Math.min(520, vh * 0.7)
+      : Math.min(420, vh * 0.58);
 
-  const maxHeight = Math.min(320, viewportHeight() * 0.42);
-  if (rect.height <= maxHeight) return spotlightRect(rect, 8);
+  if (rect.height <= maxHeight) return spotlightRect(rect, isDemoTarget(targetName) ? 7 : 8);
 
   return spotlightRect(
     {
@@ -60,17 +65,29 @@ function focusRect(target: HTMLElement, targetName: string) {
       right: rect.right,
       bottom: Math.min(rect.bottom, rect.top + maxHeight),
     },
-    8,
+    isDemoTarget(targetName) ? 7 : 8,
   );
 }
 
 function bringRealTargetIntoView(target: HTMLElement, targetName: string) {
-  if (isDemoTarget(targetName) || targetName.startsWith("nav-")) return;
+  if (targetName.startsWith("nav-")) return;
+
+  const compactLayout = window.innerWidth < 1400;
+  if (compactLayout) {
+    target.scrollIntoView({
+      behavior: prefersReducedMotion() ? "auto" : "smooth",
+      block: "start",
+      inline: "nearest",
+    });
+    return;
+  }
+
+  if (isDemoTarget(targetName)) return;
   const rect = target.getBoundingClientRect();
   const vh = viewportHeight();
   const safeTop = 76;
-  const safeBottom = vh - 250;
-  if (rect.top >= safeTop && Math.min(rect.bottom, rect.top + 220) <= safeBottom) return;
+  const safeBottom = vh - 80;
+  if (rect.top >= safeTop && Math.min(rect.bottom, rect.top + 320) <= safeBottom) return;
   target.scrollIntoView({
     behavior: prefersReducedMotion() ? "auto" : "smooth",
     block: "center",
@@ -96,8 +113,8 @@ function reserveDesktopDemoRail(target: HTMLElement, targetName: string) {
   const availableShift = Math.max(0, stageRect.left - 16);
   const shift = Math.min(requiredShift, availableShift);
 
-  // The spotlight is measured on the next frame. A transform transition would leave
-  // the cutout behind while the demo keeps moving, so reserve the rail atomically.
+  // Kept as a harmless compatibility hook for previous tests. Runtime CSS now
+  // neutralises this transform so the demo and spotlight always share one geometry.
   stage.style.transition = "none";
   stage.style.transform = shift > 0 ? `translateX(-${Math.ceil(shift)}px)` : previousTransform;
 
@@ -253,6 +270,7 @@ export function ProductTourProvider({ user, children }: { user: User; children: 
           onStep={setStep}
           onNavigate={navigateTourRoute}
           onSkip={() => (replaying ? closeSafely() : void persist("skipped"))}
+          onCloseFinal={() => (replaying ? closeSafely() : void persist("completed"))}
           onFinish={() => {
             if (replaying) closeSafely();
             else void persist("completed");
@@ -272,6 +290,7 @@ function SpotlightTour({
   onStep,
   onNavigate,
   onSkip,
+  onCloseFinal,
   onFinish,
 }: {
   step: number;
@@ -279,6 +298,7 @@ function SpotlightTour({
   onStep: (step: number) => void;
   onNavigate: (route: ProductTourRoute, unitId: string | null) => void;
   onSkip: () => void;
+  onCloseFinal: () => void;
   onFinish: () => void;
 }) {
   const [scene, setScene] = useState(0);
@@ -389,7 +409,7 @@ function SpotlightTour({
             }, 220);
           }
         },
-        prefersReducedMotion() ? 0 : isDemoTarget(item.target) ? 100 : 320,
+        prefersReducedMotion() ? 0 : 240,
       );
     };
 
@@ -416,8 +436,8 @@ function SpotlightTour({
         });
       };
 
-      if (isDemoTarget(item.target) || prefersReducedMotion()) settle();
-      else window.setTimeout(settle, 260);
+      if (prefersReducedMotion()) settle();
+      else window.setTimeout(settle, window.innerWidth < 1400 ? 280 : 120);
 
       const resizeObserver = new ResizeObserver(update);
       resizeObserver.observe(target);
@@ -501,7 +521,10 @@ function SpotlightTour({
     const shell = document.querySelector<HTMLElement>("[data-app-shell]");
     shell?.setAttribute("inert", "");
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onSkip();
+      if (event.key === "Escape") {
+        if (finalScene) onCloseFinal();
+        else onSkip();
+      }
       if (event.key !== "Tab" || !popoverRef.current) return;
       if (!popoverVisible) {
         event.preventDefault();
@@ -521,7 +544,7 @@ function SpotlightTour({
       shell?.removeAttribute("inert");
       document.removeEventListener("keydown", onKey);
     };
-  }, [onSkip, popoverVisible]);
+  }, [finalScene, onCloseFinal, onSkip, popoverVisible]);
 
   useEffect(() => {
     if (!popoverVisible) return;
@@ -654,17 +677,15 @@ function SpotlightTour({
                   </span>
                 )}
               </div>
-              {!finalScene && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-9 shrink-0 px-2 text-[14px] font-semibold text-muted-foreground"
-                  onClick={onSkip}
-                  tabIndex={popoverVisible ? 0 : -1}
-                >
-                  Saltar
-                </Button>
-              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 shrink-0 px-2 text-[14px] font-semibold text-muted-foreground"
+                onClick={finalScene ? onCloseFinal : onSkip}
+                tabIndex={popoverVisible ? 0 : -1}
+              >
+                {finalScene ? "Cerrar" : "Saltar"}
+              </Button>
             </div>
           ) : (
             <div className="flex items-start justify-between gap-3">
@@ -692,10 +713,10 @@ function SpotlightTour({
                 variant="ghost"
                 size="sm"
                 className="h-10 px-2.5 text-[15px] font-semibold text-muted-foreground"
-                onClick={onSkip}
+                onClick={finalScene ? onCloseFinal : onSkip}
                 tabIndex={popoverVisible ? 0 : -1}
               >
-                Saltar tutorial
+                {finalScene ? "Cerrar" : "Saltar tutorial"}
               </Button>
             </div>
           )}
