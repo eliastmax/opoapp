@@ -127,13 +127,14 @@ describe("short product tour v2", () => {
     expect(productTourScene(2, 0).title).toBe("Tus fallos sirven para algo");
   });
 
-  it("uses fixed compact study targets and separates flashcard recall from its answer", () => {
+  it("uses fixed compact study targets and a real two-face flashcard", () => {
     expect(studyDemo).toContain('data-tour="tour-study-understand"');
     expect(studyDemo).toContain('data-tour="tour-study-traps"');
     expect(studyDemo).toContain('data-tour="tour-study-flashcard-question"');
     expect(studyDemo).toContain('data-tour="tour-study-flashcard-answer"');
     expect(productTourScene(0, 3).target).toBe("tour-study-flashcard-question");
     expect(productTourScene(0, 4).target).toBe("tour-study-flashcard-answer");
+    expect(productTourScene(0, 3).title).toBe("¿Lo recuerdas sin mirar?");
     expect(productTourScene(0, 3).description).toContain("no basta");
     expect(productTourScene(0, 4).description).toContain("Después de intentarlo");
 
@@ -141,7 +142,15 @@ describe("short product tour v2", () => {
     expect(studyDemo).toContain("h-[56dvh]");
     expect(studyDemo).not.toContain("pb-[48dvh]");
     expect(studyDemo).toContain("Al estudiar verás el resumen completo.");
-    expect(studyDemo).toContain("Al estudiar verás la respuesta completa.");
+    expect(studyDemo).toContain("flashcardCompactness");
+    expect(studyDemo).toContain(".limit(12)");
+    expect(studyDemo).toContain("[perspective:1200px]");
+    expect(studyDemo).toContain("[transform-style:preserve-3d]");
+    expect(studyDemo).toContain("[transform:rotateY(180deg)]");
+    expect(studyDemo).toContain("[backface-visibility:hidden]");
+    expect(studyDemo).toContain("motion-reduce:transition-none");
+    expect(studyDemo).toContain("{data.flashcard.answer}");
+    expect(studyDemo).not.toContain("excerpt(data.flashcard.answer");
     expect(studyDemo).toContain("const firstKey = data.keys[0] ?? null");
     expect(studyDemo).toContain("const confusion = data.confusions[0] ?? null");
     expect(studyDemo).toContain("const trap = data.traps[0] ?? null");
@@ -185,18 +194,20 @@ describe("short product tour v2", () => {
     expect(productTourScene(1, 3).target).toBe("tour-study-practice-tribunal");
   });
 
-  it("makes each advanced-stage unlock visible, animated and persistent", () => {
+  it("makes each advanced-stage unlock run lock to open lock to final check", () => {
     expect(practiceDemo).toContain("const targetUnlock = scene - 1");
     expect(practiceDemo).toContain("setUnlocked(previousUnlock)");
     expect(practiceDemo).toContain("setUnlocking(targetUnlock)");
     expect(practiceDemo).toContain("setUnlocked(targetUnlock)");
     expect(practiceDemo).toContain("<Lock");
     expect(practiceDemo).toContain("<LockOpen");
+    expect(practiceDemo).toContain(") : isUnlocking ? (");
     expect(practiceDemo).toContain("tour-lock-shake");
     expect(practiceDemo).toContain("tour-unlock-pop");
     expect(practiceDemo).toContain("tour-stage-glow");
     expect(practiceDemo).toContain("Desbloqueando…");
-    expect(practiceDemo).toContain("Desbloqueado");
+    expect(practiceDemo).toContain('{isUnlocking ? "Desbloqueado" : "Disponible"}');
+    expect(practiceDemo).toContain("disponible");
     expect(practiceDemo).toContain("720");
     expect(practiceDemo).toContain("1_550");
   });
@@ -267,10 +278,15 @@ describe("short product tour v2", () => {
     expect(component).not.toContain("const finalMobileTop");
   });
 
-  it("tightens the Progress spotlight instead of covering the whole upper page", () => {
-    expect(layout).toContain('pathname === "/progreso"');
-    expect(layout).toContain("+5.5rem");
-    expect(layout).toContain("h-[min(39dvh,310px)]");
+  it("anchors Progress to the real Conocimiento real card and excludes the map", () => {
+    expect(layout).toContain("function ProgressTourTarget()");
+    expect(layout).toContain("Distribución del conocimiento");
+    expect(layout).toContain('closest<HTMLElement>(".overflow-hidden")');
+    expect(layout).toContain('data-tour="progress-overview"');
+    expect(layout).toContain("new ResizeObserver(measure)");
+    expect(layout).toContain("new MutationObserver(measure)");
+    expect(layout).not.toContain("+5.5rem");
+    expect(layout).not.toContain("h-[min(39dvh,310px)]");
   });
 
   it("makes the coach marks easier to read", () => {
