@@ -50,48 +50,63 @@ function nearestScrollContainer(target: HTMLElement): HTMLElement | null {
   return null;
 }
 
+function tourContentWindow(route: ProductTourRoute, popoverHeight: number) {
+  const top = route === "study-preview" ? 84 : 16;
+  const reservedPopoverHeight = Math.max(popoverHeight, 300);
+  const bottom = Math.max(top + 120, window.innerHeight - reservedPopoverHeight - 34);
+  return { top, bottom };
+}
+
 function scrollTourTargetIntoView(
   target: HTMLElement,
   targetName: string,
   route: ProductTourRoute,
   popoverHeight: number,
+  instant = false,
 ) {
   if (targetName.startsWith("nav-")) return;
 
   const rect = target.getBoundingClientRect();
-  const viewportHeight = window.innerHeight;
-  const topInset = route === "study-preview" ? 84 : 16;
-  const bottomInset = 16;
-  const gap = 18;
-  const reservedPopoverHeight = Math.max(popoverHeight, 220);
-  const targetHeight = Math.min(rect.height, viewportHeight - topInset - bottomInset);
-  const belowTop = topInset;
-  const aboveTop = bottomInset + reservedPopoverHeight + gap;
-  const candidates: number[] = [];
-
-  if (belowTop + targetHeight + gap + reservedPopoverHeight <= viewportHeight - bottomInset) {
-    candidates.push(belowTop);
-  }
-  if (aboveTop + targetHeight <= viewportHeight - bottomInset) {
-    candidates.push(aboveTop);
-  }
-
+  const contentWindow = tourContentWindow(route, popoverHeight);
+  const availableHeight = Math.max(120, contentWindow.bottom - contentWindow.top);
+  const visibleTargetHeight = Math.min(rect.height, availableHeight);
   const desiredTop =
-    candidates.length > 0
-      ? candidates.reduce((best, candidate) =>
-          Math.abs(rect.top - candidate) < Math.abs(rect.top - best) ? candidate : best,
-        )
-      : topInset;
+    contentWindow.top + Math.max(0, Math.min(28, (availableHeight - visibleTargetHeight) / 2));
   const delta = rect.top - desiredTop;
   if (Math.abs(delta) < 4) return;
 
-  const behavior = prefersReducedMotion() ? "auto" : "smooth";
+  const behavior = instant || prefersReducedMotion() ? "auto" : "smooth";
   const scrollContainer = nearestScrollContainer(target);
   if (scrollContainer) {
     scrollContainer.scrollBy({ top: delta, behavior });
     return;
   }
   window.scrollBy({ top: delta, behavior });
+}
+
+function tourSpotlightRect(
+  target: HTMLElement,
+  targetName: string,
+  route: ProductTourRoute,
+  popoverHeight: number,
+) {
+  const rect = target.getBoundingClientRect();
+  if (targetName.startsWith("nav-")) return spotlightRect(rect);
+
+  const contentWindow = tourContentWindow(route, popoverHeight);
+  const clippedTop = Math.max(rect.top, contentWindow.top);
+  const clippedBottom = Math.min(rect.bottom, contentWindow.bottom);
+  if (clippedBottom - clippedTop < 44) return spotlightRect(rect);
+
+  return spotlightRect(
+    {
+      top: clippedTop,
+      left: rect.left,
+      right: rect.right,
+      bottom: clippedBottom,
+    },
+    8,
+  );
 }
 
 function findExactText(text: string) {
@@ -374,7 +389,7 @@ function SpotlightTour({
   const popoverRef = useRef<HTMLDivElement>(null);
   const stepTimerRef = useRef<number | null>(null);
   const [cutout, setCutout] = useState<Cutout | null>(null);
-  const [popoverHeight, setPopoverHeight] = useState(240);
+  const [popoverHeight, setPopoverHeight] = useState(380);
   const [popoverVisible, setPopoverVisible] = useState(false);
   const [routeTransition, setRouteTransition] = useState(false);
   const [targetAccent, setTargetAccent] = useState(false);
@@ -453,6 +468,7 @@ function SpotlightTour({
     let targetTimeout = 0;
     let revealTimer = 0;
     let accentTimer = 0;
+    let correctionTimer = 0;
     const scheduleReveal = () => {
       window.clearTimeout(revealTimer);
       revealTimer = window.setTimeout(
@@ -470,7 +486,7 @@ function SpotlightTour({
             if (!cancelled) setTargetAccent(false);
           }, 240);
         },
-        prefersReducedMotion() ? 0 : 260,
+        prefersReducedMotion() ? 0 : 280,
       );
     };
     const attachTarget = (target: HTMLElement) => {
@@ -480,8 +496,15 @@ function SpotlightTour({
       targetObserver?.disconnect();
       window.clearTimeout(targetTimeout);
       scrollTourTargetIntoView(target, item.target, item.route, popoverHeight);
+      window.clearTimeout(correctionTimer);
+      correctionTimer = window.setTimeout(
+        () => {
+          if (!cancelled) scrollTourTargetIntoView(target, item.target, item.route, popoverHeight, true);
+        },
+        prefersReducedMotion() ? 0 : 300,
+      );
       const update = () => {
-        setCutout(spotlightRect(target.getBoundingClientRect()));
+        setCutout(tourSpotlightRect(target, item.target, item.route, popoverHeight));
         scheduleReveal();
       };
       frame = window.requestAnimationFrame(update);
@@ -548,6 +571,7 @@ function SpotlightTour({
       window.clearTimeout(targetTimeout);
       window.clearTimeout(revealTimer);
       window.clearTimeout(accentTimer);
+      window.clearTimeout(correctionTimer);
       targetObserver?.disconnect();
       cleanup?.();
       clearTransientTourTargets();

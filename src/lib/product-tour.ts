@@ -20,9 +20,10 @@ export const PRODUCT_TOUR_STEPS = [
       {
         route: "/inicio",
         target: "today-session",
-        title: "Empieza por aquí",
-        description: "OpoTest te propone qué hacer ahora: estudiar, practicar o repasar.",
-        emphasis: ["estudiar, practicar o repasar"],
+        title: "Este es tu punto de partida",
+        description:
+          "En Hoy encontrarás tu sesión recomendada. Cuando quieras empezar, entra aquí y OpoTest te lleva directamente a lo que toca.",
+        emphasis: ["tu sesión recomendada", "lo que toca"],
       },
     ],
     final: false,
@@ -171,16 +172,24 @@ export const PRODUCT_TOUR_STEPS = [
         target: "practice-question",
         title: "Responde como en un test real",
         description:
-          "Aquí eliges una opción como lo harías normalmente. En esta demostración la selección es solo visual.",
-        emphasis: ["solo visual"],
+          "Primero ves la pregunta y sus opciones exactamente como durante una sesión de práctica.",
+        emphasis: ["pregunta y sus opciones"],
+      },
+      {
+        route: "/crear",
+        target: "practice-answer",
+        title: "Toca una opción para responder",
+        description:
+          "La respuesta queda seleccionada antes de corregirse. En esta demo verás ese gesto sin guardar nada en tu historial.",
+        emphasis: ["queda seleccionada antes de corregirse"],
       },
       {
         route: "/crear",
         target: "practice-feedback",
         title: "Un fallo también sirve para avanzar",
         description:
-          "Cuando practiques de verdad, tus aciertos, fallos y dudas ayudarán a detectar qué necesitas seguir trabajando.",
-        emphasis: ["aciertos, fallos y dudas"],
+          "Después ves qué elegiste, cuál era la respuesta correcta y por qué. Cuando practiques de verdad, tus aciertos, fallos y dudas ayudarán a detectar qué necesitas seguir trabajando.",
+        emphasis: ["cuál era la respuesta correcta", "aciertos, fallos y dudas"],
       },
     ],
     final: false,
@@ -190,9 +199,17 @@ export const PRODUCT_TOUR_STEPS = [
       {
         route: "/progreso",
         target: "progress-overview",
-        title: "Siempre sabrás qué hacer después",
+        title: "Aquí ves cómo evoluciona tu preparación",
         description:
-          "Tus fallos, dudas y puntos débiles vuelven a tu preparación. Con tu progreso, OpoTest te propone el siguiente paso.",
+          "Progreso reúne qué conocimientos están en comprobación, cuáles estás consolidando, cuáles ya retienes y qué temas necesitan atención.",
+        emphasis: ["qué temas necesitan atención"],
+      },
+      {
+        route: "/inicio",
+        target: "today-session",
+        title: "Ahora sí: siempre sabrás qué hacer después",
+        description:
+          "Todo lo que estudias y practicas vuelve a Hoy. Con esa evidencia, OpoTest te propone el siguiente paso para que no tengas que decidir desde cero.",
         emphasis: ["OpoTest te propone el siguiente paso"],
       },
     ],
