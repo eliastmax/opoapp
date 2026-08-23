@@ -102,6 +102,13 @@ async function loadStudyPreview(unitId: string): Promise<V4StudyUnitPayload> {
   };
 }
 
+function compactTourText(text: string, limit = 380) {
+  if (text.length <= limit) return text;
+  const slice = text.slice(0, limit);
+  const lastSpace = slice.lastIndexOf(" ");
+  return `${slice.slice(0, lastSpace > limit * 0.7 ? lastSpace : limit).trim()}…`;
+}
+
 function StudyUnitPage() {
   const { unitId } = Route.useParams();
   const search = Route.useSearch();
@@ -163,6 +170,7 @@ function StudyUnitPage() {
   const previewConcept = previewFlashcard
     ? data.concepts.find((concept) => concept.id === previewFlashcard.conceptId) ?? data.concepts[0]
     : data.concepts[0];
+  const summary = previewing ? compactTourText(data.unit.studySummary) : data.unit.studySummary;
 
   return (
     <article className={`space-y-5 ${previewing ? "pb-8" : "pb-28"}`}>
@@ -205,8 +213,13 @@ function StudyUnitPage() {
           <span className="text-xs font-bold uppercase tracking-[0.14em]">Idea central</span>
         </div>
         <div className="mt-3 whitespace-pre-line text-[0.98rem] leading-7 text-foreground/90">
-          {data.unit.studySummary}
+          {summary}
         </div>
+        {previewing && data.unit.studySummary.length > summary.length && (
+          <p className="mt-3 text-[11px] font-medium text-muted-foreground">
+            En tu estudio real verás el resumen completo.
+          </p>
+        )}
       </Card>
 
       {keys.length > 0 && (
@@ -267,7 +280,7 @@ function StudyUnitPage() {
       )}
 
       {previewing && previewFlashcard && (
-        <section data-tour="flashcard-preview" className="scroll-mt-24">
+        <section className="scroll-mt-24">
           <div className="mb-2">
             <h2 className="font-bold">Después, recuérdalo</h2>
             <p className="text-xs text-muted-foreground">
@@ -275,16 +288,18 @@ function StudyUnitPage() {
             </p>
           </div>
           <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-card to-primary/6 p-5 shadow-[0_20px_46px_-36px_oklch(0.3_0.12_250/0.7)]">
-            <div className="flex items-center gap-2 text-primary">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-                <Brain className="h-4 w-4" aria-hidden="true" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Flashcard</p>
-                {previewConcept && <p className="truncate text-xs font-semibold">{previewConcept.title}</p>}
+            <div data-tour="flashcard-preview" className="scroll-mt-24">
+              <div className="flex items-center gap-2 text-primary">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+                  <Brain className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Flashcard</p>
+                  {previewConcept && <p className="truncate text-xs font-semibold">{previewConcept.title}</p>}
+                </div>
               </div>
+              <p className="mt-5 text-center text-lg font-bold leading-relaxed">{previewFlashcard.prompt}</p>
             </div>
-            <p className="mt-5 text-center text-lg font-bold leading-relaxed">{previewFlashcard.prompt}</p>
             <div className="mt-5 rounded-2xl border border-primary/12 bg-background/75 p-4">
               <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-primary">Respuesta</p>
               <p className="mt-2 text-sm leading-relaxed text-foreground/90">{previewFlashcard.answer}</p>
@@ -346,6 +361,9 @@ function StudySection({
     danger: "bg-destructive/10 text-destructive",
     success: "bg-success/10 text-success",
   }[tone];
+  const visibleItems = tourTarget ? items.slice(0, 3) : items;
+  const hiddenCount = items.length - visibleItems.length;
+
   return (
     <Card data-tour={tourTarget} className="scroll-mt-24 p-4">
       <div className="flex items-center gap-2">
@@ -355,7 +373,7 @@ function StudySection({
         <h2 className="text-sm font-bold">{title}</h2>
       </div>
       <ul className="mt-3 space-y-2.5">
-        {items.map((item, index) => (
+        {visibleItems.map((item, index) => (
           <li
             key={`${item}-${index}`}
             className="flex gap-2.5 text-sm leading-relaxed text-foreground/85"
@@ -365,6 +383,11 @@ function StudySection({
           </li>
         ))}
       </ul>
+      {hiddenCount > 0 && (
+        <p className="mt-3 text-[11px] font-semibold text-muted-foreground">
+          + {hiddenCount} {hiddenCount === 1 ? "punto más" : "puntos más"} en la unidad completa
+        </p>
+      )}
     </Card>
   );
 }
