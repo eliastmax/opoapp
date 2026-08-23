@@ -205,26 +205,29 @@ describe("short product tour v2", () => {
     expect(practiceDemo).toContain("exámenes oficiales");
   });
 
-  it("makes each advanced-stage unlock run lock to open lock to activation sweep to final check", () => {
-    expect(practiceDemo).toContain("const targetUnlock = scene - 1");
-    expect(practiceDemo).toContain("setUnlocked(previousUnlock)");
-    expect(practiceDemo).toContain("setUnlocking(targetUnlock)");
-    expect(practiceDemo).toContain("setUnlocked(targetUnlock)");
-    expect(practiceDemo).toContain("<Lock");
-    expect(practiceDemo).toContain("<LockOpen");
-    expect(practiceDemo).toContain(") : isUnlocking ? (");
-    expect(practiceDemo).toContain("tour-lock-release");
-    expect(practiceDemo).toContain("tour-unlock-open");
-    expect(practiceDemo).toContain("tour-stage-activate");
-    expect(practiceDemo).toContain("tour-unlock-sweep");
-    expect(practiceDemo).toContain("tour-check-arrive");
-    expect(practiceDemo).toContain("Desbloqueando…");
-    expect(practiceDemo).toContain('{isUnlocking ? "Nivel disponible" : "Disponible"}');
-    expect(practiceDemo).toContain("disponible");
-    expect(practiceDemo).toContain("360");
-    expect(practiceDemo).toContain("900");
-    expect(practiceDemo).toContain("prefersReducedMotion");
-  });
+  it(
+    "makes each advanced-stage unlock run lock to open lock to activation sweep to final check",
+    () => {
+      expect(practiceDemo).toContain("const targetUnlock = scene - 1");
+      expect(practiceDemo).toContain("setUnlocked(previousUnlock)");
+      expect(practiceDemo).toContain("setUnlocking(targetUnlock)");
+      expect(practiceDemo).toContain("setUnlocked(targetUnlock)");
+      expect(practiceDemo).toContain("<Lock");
+      expect(practiceDemo).toContain("<LockOpen");
+      expect(practiceDemo).toContain(") : isUnlocking ? (");
+      expect(practiceDemo).toContain("tour-lock-release");
+      expect(practiceDemo).toContain("tour-unlock-open");
+      expect(practiceDemo).toContain("tour-stage-activate");
+      expect(practiceDemo).toContain("tour-unlock-sweep");
+      expect(practiceDemo).toContain("tour-check-arrive");
+      expect(practiceDemo).toContain("Desbloqueando…");
+      expect(practiceDemo).toContain('{isUnlocking ? "Nivel disponible" : "Disponible"}');
+      expect(practiceDemo).toContain("disponible");
+      expect(practiceDemo).toContain("360");
+      expect(practiceDemo).toContain("900");
+      expect(practiceDemo).toContain("prefersReducedMotion");
+    },
+  );
 
   it("chooses a compact real question and separates selection from correction", () => {
     expect(productTourScene(1, 4).target).toBe("tour-study-practice-question");
@@ -341,8 +344,7 @@ describe("short product tour v2", () => {
   it("retries draft autosave silently and only surfaces final-save failure", () => {
     expect(preparationPage).toContain("for (let attempt = 0; attempt < 3; attempt += 1)");
     expect(preparationPage).toContain('if (complete) setSaveState("saving")');
-    expect(preparationPage).toContain('if (complete) {\
-      setSaveState("error")');
+    expect(preparationPage).toContain('if (complete) {\n      setSaveState("error")');
     expect(preparationPage).toContain('setSaveState("idle")');
     expect(preparationPage).toContain("Draft autosave is deliberately silent");
   });
