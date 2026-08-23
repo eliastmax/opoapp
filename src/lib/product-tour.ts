@@ -59,10 +59,10 @@ export const PRODUCT_TOUR_STEPS = [
       {
         route: "study-preview",
         target: "study-summary",
-        title: "Empieza entendiendo lo esencial",
+        title: "Aquí es donde estudias",
         description:
-          "La idea central te sitúa antes de memorizar detalles: primero necesitas entender qué estás aprendiendo.",
-        emphasis: ["entender qué estás aprendiendo"],
+          "Cada unidad reúne un resumen, claves y conceptos para que entiendas qué necesitas aprender.",
+        emphasis: ["entiendas qué necesitas aprender"],
       },
       {
         route: "study-preview",
@@ -91,10 +91,10 @@ export const PRODUCT_TOUR_STEPS = [
       {
         route: "study-preview",
         target: "flashcard-preview",
-        title: "Ahora recupéralo sin mirar",
+        title: "Después, intenta recordarlo",
         description:
-          "Antes de ver la respuesta, intenta encontrarla en tu memoria. No se trata solo de releer.",
-        emphasis: ["encontrarla en tu memoria"],
+          "Las flashcards te piden la respuesta antes de mostrarla para que compruebes qué recuerdas sin mirar.",
+        emphasis: ["qué recuerdas sin mirar"],
       },
       {
         route: "study-preview",
@@ -163,7 +163,7 @@ export const PRODUCT_TOUR_STEPS = [
         target: "practice-start",
         title: "Todo listo para comprobarlo",
         description:
-          "La demostración va a abrir una pregunta real, pero no creará ningún test ni contará para tus estadísticas.",
+          "La demostración va a abrir una pregunta real, pero no creará ningún test y no contará para tus estadísticas.",
         emphasis: ["no contará para tus estadísticas"],
       },
       {
@@ -190,10 +190,10 @@ export const PRODUCT_TOUR_STEPS = [
       {
         route: "/progreso",
         target: "progress-overview",
-        title: "Mira cómo evoluciona tu preparación",
+        title: "Siempre sabrás qué hacer después",
         description:
-          "Lo que estudias, recuerdas y practicas termina aquí: ves qué avanza, qué necesita atención y qué conviene trabajar después.",
-        emphasis: ["qué avanza", "qué necesita atención"],
+          "Tus fallos, dudas y puntos débiles vuelven a tu preparación. Con tu progreso, OpoTest te propone el siguiente paso.",
+        emphasis: ["OpoTest te propone el siguiente paso"],
       },
     ],
     final: true,

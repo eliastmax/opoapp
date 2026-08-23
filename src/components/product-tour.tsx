@@ -42,7 +42,8 @@ function nearestScrollContainer(target: HTMLElement): HTMLElement | null {
   let current = target.parentElement;
   while (current && current !== document.body) {
     const style = window.getComputedStyle(current);
-    const scrollable = /(auto|scroll)/.test(style.overflowY) && current.scrollHeight > current.clientHeight;
+    const scrollable =
+      /(auto|scroll)/.test(style.overflowY) && current.scrollHeight > current.clientHeight;
     if (scrollable) return current;
     current = current.parentElement;
   }
@@ -505,7 +506,8 @@ function SpotlightTour({
     if (!document.querySelector(`[data-tour="${item.target}"]`)) {
       targetObserver = new MutationObserver(findTarget);
       targetObserver.observe(document.body, { childList: true, subtree: true, attributes: true });
-      const optionalStudyTarget = item.route === "study-preview" && OPTIONAL_STUDY_TARGETS.has(item.target);
+      const optionalStudyTarget =
+        item.route === "study-preview" && OPTIONAL_STUDY_TARGETS.has(item.target);
       targetTimeout = window.setTimeout(
         () => {
           if (cancelled) return;
@@ -531,9 +533,13 @@ function SpotlightTour({
           const fallback = fallbackSelector
             ? document.querySelector<HTMLElement>(fallbackSelector)
             : null;
-          if (fallback) attachTarget(fallback);
+          if (fallback) {
+            attachTarget(fallback);
+            return;
+          }
+          goNext();
         },
-        optionalStudyTarget ? 1_200 : 12_000,
+        optionalStudyTarget ? 1_200 : 6_000,
       );
     }
     return () => {

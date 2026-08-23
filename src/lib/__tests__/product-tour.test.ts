@@ -43,6 +43,10 @@ const studyUnit = readFileSync(
   new URL("../../routes/_authenticated/estudiar.$unitId.tsx", import.meta.url),
   "utf8",
 );
+const recallUnit = readFileSync(
+  new URL("../../routes/_authenticated/recordar.$unitId.tsx", import.meta.url),
+  "utf8",
+);
 const contract = readFileSync(
   new URL("../../../docs/PRODUCT_TOUR_METHOD_DEMO_2026-08-23.md", import.meta.url),
   "utf8",
@@ -131,18 +135,25 @@ describe("first-run spotlight tour", () => {
   it("teaches the valuable Study layers and skips optional missing sections instead of stalling", () => {
     const studyScenes = PRODUCT_TOUR_STEPS[3].scenes;
     expect(studyScenes.map((scene) => scene.title)).toEqual([
-      "Empieza entendiendo lo esencial",
+      "Aquí es donde estudias",
       "Fíjate en lo que suele importar",
       "Aprende también qué se parece",
       "Prepárate para donde suelen pillarte",
-      "Ahora recupéralo sin mirar",
+      "Después, intenta recordarlo",
       "Comprueba lo que recordabas",
     ]);
+    expect(studyScenes[0].description).toBe(
+      "Cada unidad reúne un resumen, claves y conceptos para que entiendas qué necesitas aprender.",
+    );
+    expect(studyScenes[4].description).toBe(
+      "Las flashcards te piden la respuesta antes de mostrarla para que compruebes qué recuerdas sin mirar.",
+    );
     expect(component).toContain('findStudyCard("Claves de examen")');
     expect(component).toContain('findStudyCard("No lo confundas")');
     expect(component).toContain('findStudyCard("Trampas frecuentes")');
     expect(component).toContain("OPTIONAL_STUDY_TARGETS");
-    expect(component).toContain("optionalStudyTarget ? 1_200 : 12_000");
+    expect(component).toContain("optionalStudyTarget ? 1_200 : 6_000");
+    expect(component).toContain("goNext();");
     expect(component).toContain("setFlashcardAnswerVisible(false)");
     expect(component).toContain("setFlashcardAnswerVisible(true)");
     expect(component).toContain("rotateY(88deg)");
@@ -163,6 +174,10 @@ describe("first-run spotlight tour", () => {
     expect(studyUnit).toContain('.from("flashcards")');
     expect(studyUnit).toContain("if (previewing) return;");
     expect(studyUnit).toContain("Vista del tutorial · tu progreso no cambia");
+    expect(study).toContain("model.continuation?.activeFlashcards");
+    expect(study).toContain("model.units.find((unit) => unit.activeFlashcards > 0)");
+    expect(study).toContain("tourUnit?.id ?? null");
+    expect(recallUnit).not.toContain('data-tour="flashcard-card"');
   });
 
   it("uses a real catalog flashcard without reviewing it", () => {
@@ -175,9 +190,13 @@ describe("first-run spotlight tour", () => {
   it("explains the three learning stages as a method and Mezcladas as the later combination", () => {
     const practiceScenes = PRODUCT_TOUR_STEPS[4].scenes;
     expect(practiceScenes.map((scene) => scene.title)).toContain("Aprendizaje · entiende la base");
-    expect(practiceScenes.map((scene) => scene.title)).toContain("Consolidación · conecta y distingue");
+    expect(practiceScenes.map((scene) => scene.title)).toContain(
+      "Consolidación · conecta y distingue",
+    );
     expect(practiceScenes.map((scene) => scene.title)).toContain("Tribunal · entrena la precisión");
-    expect(practiceScenes.map((scene) => scene.title)).toContain("Después, mantén el tema completo");
+    expect(practiceScenes.map((scene) => scene.title)).toContain(
+      "Después, mantén el tema completo",
+    );
     expect(practiceDemo).toContain("No es fácil, medio y difícil");
     expect(practiceDemo).toContain("LEARNING_STAGE_DESCRIPTIONS");
     expect(practiceDemo).toContain("practice-level-aprendizaje");
@@ -212,7 +231,7 @@ describe("first-run spotlight tour", () => {
     for (const scene of scenes) {
       for (const fragment of scene.emphasis) expect(scene.description).toContain(fragment);
     }
-    expect(productTourScene(3, 4).emphasis).toEqual(["encontrarla en tu memoria"]);
+    expect(productTourScene(3, 4).emphasis).toEqual(["qué recuerdas sin mirar"]);
     expect(productTourScene(4, 8).emphasis).toEqual(["aciertos, fallos y dudas"]);
     expect(component).toContain("EmphasizedDescription");
     expect(component).toContain("font-semibold text-foreground");

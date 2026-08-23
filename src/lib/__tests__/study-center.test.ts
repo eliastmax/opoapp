@@ -57,6 +57,16 @@ describe("study center view model", () => {
     expect(model.topics[0].units[0].totalConcepts).toBe(2);
   });
 
+  it("sums active flashcards across unique concepts in a unit", () => {
+    const model = buildStudyCenterModel([
+      row({ concept_id: "c1", study_unit_id: "u1", active_flashcards: 2 }),
+      row({ concept_id: "c2", study_unit_id: "u1", active_flashcards: 3 }),
+      row({ concept_id: "c1", study_unit_id: "u1", active_flashcards: 2 }),
+    ]);
+
+    expect(model.units[0].activeFlashcards).toBe(5);
+  });
+
   it("continues the most recently worked incomplete unit before untouched units", () => {
     const model = buildStudyCenterModel([
       row({
