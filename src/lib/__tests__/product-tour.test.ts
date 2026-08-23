@@ -246,18 +246,21 @@ describe("short product tour v2", () => {
     expect(component).toContain("new ResizeObserver(measure)");
     expect(component).toContain('overflowY: "auto"');
     expect(component).toContain('compactPopover ? "p-4" : "p-5"');
-    expect(component).toContain('compactPopover ? "h-11 px-4 text-[15px]"');
+    expect(component).toContain('compactPopover ? "h-12 px-5 text-[18px]"');
     expect(component).not.toContain("const finalMobileTop");
   });
 
   it("makes the coach marks easier to read", () => {
-    expect(component).toContain('text-[24px]');
+    expect(component).toContain('text-[27px]');
+    expect(component).toContain('text-[25px]');
+    expect(component).toContain('text-[20px]');
+    expect(component).toContain('text-[19px]');
     expect(component).toContain('text-[18px]');
     expect(component).toContain('text-[17px]');
-    expect(component).toContain('text-[15px]');
+    expect(component).toContain('text-[16px]');
     expect(component).toContain("Saltar tutorial");
     expect(component).toContain("Paso {step + 1} de {PRODUCT_TOUR_STEPS.length}");
-    expect(component).toContain('"h-12 px-5 text-[17px]"');
+    expect(component).toContain('"h-12 px-5 text-[18px]"');
     expect(component).toContain("visualViewport");
     expect(studyDemo).toContain('@media (min-width: 900px)');
     expect(studyDemo).toContain('right: 24px !important');
