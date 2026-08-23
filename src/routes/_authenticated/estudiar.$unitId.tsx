@@ -104,7 +104,10 @@ function StudyUnitPage() {
           </span>
         </div>
       </header>
-      <Card className="border-primary/15 bg-gradient-to-br from-card to-primary/6 p-5">
+      <Card
+        data-tour="study-summary"
+        className="border-primary/15 bg-gradient-to-br from-card to-primary/6 p-5"
+      >
         <div className="flex items-center gap-2 text-primary">
           <BookOpen className="h-5 w-5" />
           <span className="text-xs font-bold uppercase tracking-[0.14em]">Idea central</span>
