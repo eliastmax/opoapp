@@ -1,0 +1,47 @@
+{
+  "$schema": "OpoTestV4SourceManifestV1",
+  "manifestVersion": "1.0.0",
+  "factoryVersion": "8",
+  "generatorVersion": "Factory.8-source-coverage-cross-opposition-reuse-2026-08-23",
+  "factoryPinnedMain": "f6642c04cf4e393ae82cb6bfe04d00c276831626",
+  "branchBaseMain": "d9547377d3508c11127f322dfa3af2d2ea613529",
+  "topicGlobal": "T01",
+  "section": "Parte General",
+  "officialTopicNumber": 1,
+  "topicTitle": "LOS DERECHOS Y DEBERES FUNDAMENTALES EN EL TÍTULO I DE LA CONSTITUCIÓN ESPAÑOLA. LA PROTECCIÓN DE LA SALUD EN LA CONSTITUCIÓN. LEY ORGÁNICA 4/1982, DE 9 DE JUNIO, DEL ESTATUTO DE AUTONOMÍA DE LA REGIÓN DE MURCIA: ÓRGANOS INSTITUCIONALES Y RÉGIMEN JURÍDICO.",
+  "oppositionCode": "celador-sms",
+  "oppositionId": "00000000-0000-4000-8000-000000000002",
+  "subjectName": "Celador SMS · Parte General",
+  "topicId": "7b8d620d-a3ec-4500-bc69-4de0daa51dee",
+  "status": "production-green",
+  "writePreflight": {"read":"GREEN","rollbackOnlyDml":"GREEN","postRollbackIdentity":"GREEN","residue":0},
+  "sourcePolicy": {
+    "primarySource": {"document":"T01_CANONICAL.pdf","pages":37,"sha256":"652307985bbcd7bdebfc486da249a3e2366ff4b845e35ffae1381840925d3b66","readMode":"visual-multimodal","substantiveExclusive":true,"externalKnowledge":false},
+    "provenance": [
+      {"document":"20260505122857063.pdf","physicalPages":"3-21"},
+      {"document":"20260505122942322.pdf","physicalPages":"5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35,37,39","discontinuous":true}
+    ],
+    "examReferenceOnly": {"document":"T01_EXAM_REFERENCE_SLICE.json","rule":"frequency/style/traps/difficulty only; never substantive authority"},
+    "externalSourcesUsed": []
+  },
+  "reuseAudit": {"auxTopicId":"827baaed-1aa8-4a17-8ef4-f4d6afdfd4b5","auxRowsAudited":248,"candidateRows":149,"reused":118,"rejectedUnsupported":31,"outOfScope":99,"auxRowsMoved":0,"auxRowsModified":0},
+  "sourceCoverage": {"pagesAudited":37,"reusedQuestions":118,"newIndependentQuestions":179,"finalQuestions":297,"coveragePercentage":100,"unexploitedEvaluableFacets":0,"sourceCoverageGapsRemaining":0,"sourceReviewRequiredRemaining":0},
+  "bankDepth": {"priority":"BANK_DEPTH_AND_USER_EXHAUSTION_RESISTANCE","masteryConcepts":45,"minPrimaryPerConcept":5,"avgPrimaryPerConcept":6.60,"maxPrimaryPerConcept":16,"sourceLimitedConcepts":0,"conceptsBelowFour":0,"conceptsMissingLearningStage":0,"nearDuplicateInflationAllowed":false,"status":"GREEN"},
+  "production": {"finalActiveQuestions":297,"reused":118,"new":179,"codeRange":"SMS-CEL-G-T01-0001..0297","answerBalance":{"A":75,"B":75,"C":73,"D":74},"levelBalance":{"aprendizaje":107,"consolidacion":97,"tribunal":93},"documentReference":"T01_CANONICAL.pdf","status":"GREEN"},
+  "qa": {"duplicateStems":0,"repeatedOptionsWithinQuestion":0,"repeatedOptionSets":0,"answerLengthOutliers":0,"sourcePageErrors":0,"scopePageMismatch":0,"auxiliaryLeakage":0,"nearDuplicateAudit":"GREEN_AFTER_HARDENING","status":"GREEN"},
+  "masteryAndStudy": {"units":9,"concepts":45,"primaryMappings":297,"unmappedQuestions":0,"multiPrimaryQuestions":0,"flashcards":90,"minFlashcardsPerConcept":2,"importId":"a56ddc4f-9795-4460-b0c0-2cc4ffe5710e","contractVersion":"4.0","sourceRevision":"Factory.8:T01:T01_CANONICAL.pdf:37p:652307985bbcd7bdebfc486da249a3e2366ff4b845e35ffae1381840925d3b66"},
+  "smokes": {
+    "curatorRollback": {"v2Learning":5,"v2Consolidation":5,"v2Tribunal":5,"v2Smart":5,"v3Recommended":5,"v3Roadmap":"GREEN_NO_NONEMPTY_ASSERTION","v4StudyOpen":"GREEN","v4Evidence":"GREEN","v4FlashcardQueue":4,"v4Verify":4,"v4Today":"GREEN","residue":0,"status":"GREEN"},
+    "freshUserRollback": {"ownedTopics":0,"ownedQuestions":0,"visibleT01Questions":297,"visibleUnits":9,"visibleConcepts":45,"visibleFlashcards":90,"v2Learning":5,"v2Consolidation":5,"v2Tribunal":5,"v2Smart":5,"v3Recommended":5,"v4StudyOpen":"GREEN","v4Evidence":"GREEN","v4FlashcardQueue":4,"v4Verify":4,"v4Today":"GREEN","auxSelections":0,"residue":{"authUsers":0,"profiles":0,"memberships":0,"preparationProfiles":0,"tests":0,"studyProgress":0,"mastery":0},"status":"GREEN"}
+  },
+  "contamination": {
+    "outsideT01Before":{"celadorQuestions":601,"units":23,"concepts":91,"primaryMappings":521,"flashcards":172,"auxQuestions":4466},
+    "outsideT01After":{"celadorQuestions":601,"units":23,"concepts":91,"primaryMappings":521,"flashcards":172,"auxQuestions":4466},
+    "closedSpecificTopics":{"T09":65,"T10":89,"T11":214,"T12":153},
+    "preservedGeneralT03Questions":80,
+    "finalCeladorQuestions":898,"finalCeladorUnits":32,"finalCeladorConcepts":136,"finalCeladorPrimaryMappings":818,"finalCeladorFlashcards":262,"scratchResidue":0,"status":"GREEN"
+  },
+  "quality": {"t01QuestionQa":"GREEN","v4Contract":"GREEN","sharedCatalogFreshUser":"GREEN","crossOppositionIsolation":"GREEN","repositoryQualityGate":"REQUIRED_BEFORE_MERGE"},
+  "governance": {"questionFacetNotMastery":true,"noQuotaGeneration":true,"bankDepthPriority":true,"sharedCatalogByOpposition":true,"personalStateByUser":true,"factory9Opened":false,"processedTopics":["T01"],"t13Touched":false},
+  "notes": ["No web or external substantive knowledge was used.","The 118 reused rows remain independent Celador catalog rows with Celador provenance; Auxiliar remains 4,466 active questions.","All 179 new rows were validated against live enum/check constraints before closure.","A transient factory-scratch import row used during interrupted recovery was removed; non-production T01 import residue is zero."]
+}
