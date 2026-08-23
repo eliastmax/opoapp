@@ -19,9 +19,13 @@ import { postAuthRoute } from "@/lib/post-auth-route";
 import {
   PRODUCT_TOUR_STEPS,
   maintainTourSession,
+  productTourPath,
+  productTourScene,
+  productTourSceneCount,
   shouldOpenProductTour,
   spotlightRect,
   type ProductTourCompletionKind,
+  type ProductTourRoute,
 } from "@/lib/product-tour";
 
 const ProductTourContext = createContext<{ replay: () => void } | null>(null);
@@ -137,6 +141,24 @@ export function ProductTourProvider({ user, children }: { user: User; children: 
     setReplaying(true);
     void navigate({ to: "/inicio" });
   }, [navigate]);
+  const navigateTourRoute = useCallback(
+    (route: ProductTourRoute, unitId: string | null) => {
+      if (route === "/inicio" || route === "/estudio") {
+        void navigate({ to: route });
+        return;
+      }
+      if (!unitId) {
+        void navigate({ to: "/estudio" });
+        return;
+      }
+      if (route === "study-unit") {
+        void navigate({ to: "/estudiar/$unitId", params: { unitId }, search: {} });
+        return;
+      }
+      void navigate({ to: "/recordar/$unitId", params: { unitId }, search: {} });
+    },
+    [navigate],
+  );
   const contextValue = useMemo(() => ({ replay }), [replay]);
   return (
     <ProductTourContext.Provider value={contextValue}>
@@ -146,7 +168,7 @@ export function ProductTourProvider({ user, children }: { user: User; children: 
           step={step}
           pathname={pathname}
           onStep={setStep}
-          onNavigate={(route) => void navigate({ to: route })}
+          onNavigate={navigateTourRoute}
           onSkip={() => (replaying ? closeSafely() : void persist("skipped"))}
           onFinish={() => {
             if (replaying) closeSafely();
@@ -172,11 +194,13 @@ function SpotlightTour({
   step: number;
   pathname: string;
   onStep: (step: number) => void;
-  onNavigate: (route: "/inicio" | "/estudio") => void;
+  onNavigate: (route: ProductTourRoute, unitId: string | null) => void;
   onSkip: () => void;
   onFinish: () => void;
 }) {
-  const item = PRODUCT_TOUR_STEPS[step];
+  const [scene, setScene] = useState(0);
+  const [tourUnitId, setTourUnitId] = useState<string | null>(null);
+  const item = productTourScene(step, scene);
   const popoverRef = useRef<HTMLDivElement>(null);
   const stepTimerRef = useRef<number | null>(null);
   const [cutout, setCutout] = useState<Cutout | null>(null);
@@ -184,21 +208,47 @@ function SpotlightTour({
   const [popoverVisible, setPopoverVisible] = useState(false);
   const [routeTransition, setRouteTransition] = useState(false);
   const [targetAccent, setTargetAccent] = useState(false);
+  const expectedPath = productTourPath(item.route, tourUnitId);
+  const finalScene = PRODUCT_TOUR_STEPS[step].final && scene === productTourSceneCount(step) - 1;
 
-  const queueStep = useCallback(
-    (nextStep: number) => {
-      const nextItem = PRODUCT_TOUR_STEPS[nextStep];
+  const queuePosition = useCallback(
+    (nextStep: number, nextScene: number) => {
+      const nextItem = productTourScene(nextStep, nextScene);
+      const currentPath = productTourPath(item.route, tourUnitId);
+      const nextPath = productTourPath(nextItem.route, tourUnitId);
       setPopoverVisible(false);
       setTargetAccent(false);
-      if (nextItem.route !== item.route) setRouteTransition(true);
+      if (currentPath !== nextPath) setRouteTransition(true);
       if (stepTimerRef.current !== null) window.clearTimeout(stepTimerRef.current);
       stepTimerRef.current = window.setTimeout(
-        () => onStep(nextStep),
+        () => {
+          if (nextStep !== step) onStep(nextStep);
+          setScene(nextScene);
+        },
         prefersReducedMotion() ? 0 : 130,
       );
     },
-    [item.route, onStep],
+    [item.route, onStep, step, tourUnitId],
   );
+
+  const goNext = useCallback(() => {
+    const scenes = productTourSceneCount(step);
+    if (scene + 1 < scenes) {
+      queuePosition(step, scene + 1);
+      return;
+    }
+    if (step + 1 < PRODUCT_TOUR_STEPS.length) queuePosition(step + 1, 0);
+  }, [queuePosition, scene, step]);
+
+  const goPrevious = useCallback(() => {
+    if (scene > 0) {
+      queuePosition(step, scene - 1);
+      return;
+    }
+    if (step <= 0) return;
+    const previousStep = step - 1;
+    queuePosition(previousStep, productTourSceneCount(previousStep) - 1);
+  }, [queuePosition, scene, step]);
 
   useEffect(
     () => () => {
@@ -209,14 +259,15 @@ function SpotlightTour({
 
   useEffect(() => {
     setPopoverVisible(false);
-    if (pathname !== item.route) {
+    if (!expectedPath) return;
+    if (pathname !== expectedPath) {
       setRouteTransition(true);
-      onNavigate(item.route);
+      onNavigate(item.route, tourUnitId);
     }
-  }, [item.route, item.target, onNavigate, pathname, step]);
+  }, [expectedPath, item.route, item.target, onNavigate, pathname, scene, step, tourUnitId]);
 
   useLayoutEffect(() => {
-    if (pathname !== item.route) return;
+    if (!expectedPath || pathname !== expectedPath) return;
     let cancelled = false;
     let frame = 0;
     let cleanup: (() => void) | undefined;
@@ -246,6 +297,8 @@ function SpotlightTour({
     };
     const attachTarget = (target: HTMLElement) => {
       if (cancelled) return;
+      const discoveredUnitId = target.dataset.tourUnitId;
+      if (discoveredUnitId) setTourUnitId(discoveredUnitId);
       targetObserver?.disconnect();
       window.clearTimeout(targetTimeout);
       target.scrollIntoView({
@@ -279,9 +332,15 @@ function SpotlightTour({
       targetObserver.observe(document.body, { childList: true, subtree: true });
       targetTimeout = window.setTimeout(() => {
         if (cancelled) return;
-        const fallback = document.querySelector<HTMLElement>(
-          item.route === "/estudio" ? '[data-tour="nav-study"]' : '[data-tour="today-session"]',
-        );
+        const fallbackSelector =
+          item.route === "/estudio"
+            ? '[data-tour="nav-study"]'
+            : item.route === "/inicio"
+              ? '[data-tour="today-session"]'
+              : null;
+        const fallback = fallbackSelector
+          ? document.querySelector<HTMLElement>(fallbackSelector)
+          : null;
         if (fallback) attachTarget(fallback);
       }, 12_000);
     }
@@ -294,11 +353,11 @@ function SpotlightTour({
       targetObserver?.disconnect();
       cleanup?.();
     };
-  }, [item.route, item.target, pathname]);
+  }, [expectedPath, item.route, item.target, pathname]);
 
   useLayoutEffect(() => {
     if (popoverRef.current) setPopoverHeight(popoverRef.current.getBoundingClientRect().height);
-  }, [cutout, step]);
+  }, [cutout, scene, step]);
   useEffect(() => {
     const shell = document.querySelector<HTMLElement>("[data-app-shell]");
     shell?.setAttribute("inert", "");
@@ -330,7 +389,7 @@ function SpotlightTour({
       popoverRef.current?.querySelector<HTMLElement>("[data-tour-primary]")?.focus();
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [popoverVisible, step]);
+  }, [popoverVisible, scene, step]);
 
   if (!cutout)
     return (
@@ -431,14 +490,14 @@ function SpotlightTour({
           <EmphasizedDescription description={item.description} emphasis={item.emphasis} />
         </p>
         <div
-          className={`mt-5 flex items-center gap-2 ${step > 0 ? "justify-between" : "justify-end"}`}
+          className={`mt-5 flex items-center gap-2 ${step > 0 || scene > 0 ? "justify-between" : "justify-end"}`}
         >
-          {step > 0 && (
+          {(step > 0 || scene > 0) && (
             <Button
               variant="ghost"
               size="sm"
               className="h-10 px-2.5 text-[15px] font-semibold text-muted-foreground"
-              onClick={() => queueStep(step - 1)}
+              onClick={goPrevious}
               aria-label="Paso anterior"
               tabIndex={popoverVisible ? 0 : -1}
             >
@@ -449,10 +508,10 @@ function SpotlightTour({
             data-tour-primary
             size="sm"
             className="h-10 px-4 text-[15px] font-semibold"
-            onClick={() => (item.final ? onFinish() : queueStep(step + 1))}
+            onClick={() => (finalScene ? onFinish() : goNext())}
             tabIndex={popoverVisible ? 0 : -1}
           >
-            {item.final ? "Empezar mi sesión" : "Siguiente"}
+            {finalScene ? "Empezar mi sesión" : "Siguiente"}
           </Button>
         </div>
       </div>
