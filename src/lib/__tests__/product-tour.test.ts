@@ -8,6 +8,7 @@ import {
   productTourScene,
   productTourSceneCount,
   shouldOpenProductTour,
+  type ProductTourScene,
 } from "../product-tour";
 
 const migration = readFileSync(
@@ -78,7 +79,11 @@ describe("first-run spotlight tour", () => {
     expect(PRODUCT_TOUR_STEPS.map((_, index) => productTourSceneCount(index))).toEqual([
       1, 1, 1, 2, 1, 1,
     ]);
-    expect(PRODUCT_TOUR_STEPS.flatMap((phase) => phase.scenes.map((scene) => scene.target))).toEqual([
+    expect(
+      PRODUCT_TOUR_STEPS.flatMap<ProductTourScene>((phase) => phase.scenes).map(
+        (scene) => scene.target,
+      ),
+    ).toEqual([
       "today-session",
       "nav-study",
       "study-unit",
@@ -116,7 +121,7 @@ describe("first-run spotlight tour", () => {
   });
 
   it("keeps concise copy with selective emphasis", () => {
-    const scenes = PRODUCT_TOUR_STEPS.flatMap((phase) => phase.scenes);
+    const scenes = PRODUCT_TOUR_STEPS.flatMap<ProductTourScene>((phase) => phase.scenes);
     expect(scenes.map((scene) => scene.title)).toEqual([
       "Empieza por aquí",
       "Aquí está todo tu temario",
@@ -155,7 +160,9 @@ describe("first-run spotlight tour", () => {
     expect(component).toContain("Math.min(340, viewportWidth - 32)");
     expect(component).toContain("viewportWidth - width - 16");
     expect(component).toContain("min-[390px]:p-[18px]");
-    expect(component).toContain('className="mt-3 text-[19px] font-semibold leading-[1.2] min-[390px]:text-xl"');
+    expect(component).toContain(
+      'className="mt-3 text-[19px] font-semibold leading-[1.2] min-[390px]:text-xl"',
+    );
     expect(component).toContain('className="mt-2 text-base leading-[1.45] text-muted-foreground"');
   });
 

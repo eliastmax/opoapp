@@ -6,16 +6,17 @@ import type { V4TodayContextRow } from "../v4-today-plan";
 function row(
   overrides: Partial<V4TodayContextRow> & Pick<V4TodayContextRow, "concept_id" | "study_unit_id">,
 ): V4TodayContextRow {
+  const { concept_id, study_unit_id, ...rest } = overrides;
   return {
-    concept_id: overrides.concept_id,
-    concept_code: overrides.concept_id,
-    concept_title: overrides.concept_id,
+    concept_id,
+    concept_code: concept_id,
+    concept_title: concept_id,
     topic_id: "topic-1",
     topic_number: 1,
     topic_name: "La Constitución Española. Derechos y deberes fundamentales.",
-    study_unit_id: overrides.study_unit_id,
-    study_unit_code: overrides.study_unit_id,
-    study_unit_title: overrides.study_unit_id,
+    study_unit_id,
+    study_unit_code: study_unit_id,
+    study_unit_title: study_unit_id,
     unit_position: 1,
     unit_estimated_minutes: 10,
     unit_completed: false,
@@ -33,7 +34,7 @@ function row(
     last_evidence_at: null,
     roadmap_slot: null,
     roadmap_scheduled_date: null,
-    ...overrides,
+    ...rest,
   };
 }
 
