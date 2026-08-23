@@ -197,8 +197,8 @@ describe("short product tour v2", () => {
     expect(productTourScene(1, 1).target).toBe("tour-study-practice-aprendizaje");
     expect(productTourScene(1, 2).target).toBe("tour-study-practice-consolidacion");
     expect(productTourScene(1, 3).target).toBe("tour-study-practice-tribunal");
-    expect(practiceDemo).toContain("Tres niveles. Un camino hacia el examen.");
-    expect(practiceDemo).toContain("No son fácil, medio y difícil");
+    expect(practiceDemo).toContain("Tres niveles. Cada uno cumple una función.");
+    expect(practiceDemo).toContain("No son grados de dificultad.");
     expect(practiceDemo).toContain("Entiende la base del examen");
     expect(practiceDemo).toContain("Distingue relaciones y excepciones");
     expect(practiceDemo).toContain("Entrena al nivel del examen");
