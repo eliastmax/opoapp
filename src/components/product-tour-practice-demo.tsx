@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { LEARNING_STAGE_DESCRIPTIONS, LEARNING_STAGE_LABELS } from "@/lib/learning-stages";
+import { LEARNING_STAGE_LABELS } from "@/lib/learning-stages";
 import { cn } from "@/lib/utils";
 
 type PreviewQuestion = {
@@ -64,6 +64,7 @@ function DemoShell({ children }: { children: React.ReactNode }) {
 
 export function ProductTourPracticeDemo({ scene }: { scene: number }) {
   const [unlocked, setUnlocked] = useState(0);
+  const [unlocking, setUnlocking] = useState<number | null>(null);
   const [answerPhase, setAnswerPhase] = useState<"idle" | "selected" | "feedback">("idle");
   const questionQuery = useQuery({
     queryKey: ["product-tour-practice-preview-question-v2"],
@@ -75,14 +76,24 @@ export function ProductTourPracticeDemo({ scene }: { scene: number }) {
   useEffect(() => {
     if (scene !== 1) {
       setUnlocked(0);
+      setUnlocking(null);
       return;
     }
     setUnlocked(0);
-    const consolidation = window.setTimeout(() => setUnlocked(1), 520);
-    const tribunal = window.setTimeout(() => setUnlocked(2), 1_080);
+    setUnlocking(null);
+    const consolidationStart = window.setTimeout(() => setUnlocking(1), 700);
+    const consolidationOpen = window.setTimeout(() => setUnlocked(1), 1_050);
+    const consolidationEnd = window.setTimeout(() => setUnlocking(null), 1_650);
+    const tribunalStart = window.setTimeout(() => setUnlocking(2), 2_100);
+    const tribunalOpen = window.setTimeout(() => setUnlocked(2), 2_450);
+    const tribunalEnd = window.setTimeout(() => setUnlocking(null), 3_050);
     return () => {
-      window.clearTimeout(consolidation);
-      window.clearTimeout(tribunal);
+      window.clearTimeout(consolidationStart);
+      window.clearTimeout(consolidationOpen);
+      window.clearTimeout(consolidationEnd);
+      window.clearTimeout(tribunalStart);
+      window.clearTimeout(tribunalOpen);
+      window.clearTimeout(tribunalEnd);
     };
   }, [scene]);
 
@@ -100,7 +111,7 @@ export function ProductTourPracticeDemo({ scene }: { scene: number }) {
     };
   }, [questionQuery.data, questionQuery.isLoading, scene]);
 
-  if (scene === 1) return <LevelsPreview unlocked={unlocked} />;
+  if (scene === 1) return <LevelsPreview unlocked={unlocked} unlocking={unlocking} />;
   if (scene === 2)
     return (
       <QuestionPreview
@@ -112,13 +123,15 @@ export function ProductTourPracticeDemo({ scene }: { scene: number }) {
   return null;
 }
 
-function LevelsPreview({ unlocked }: { unlocked: number }) {
+function LevelsPreview({ unlocked, unlocking }: { unlocked: number; unlocking: number | null }) {
+  const reduceMotion =
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const stages = [
     {
       key: "aprendizaje",
       title: LEARNING_STAGE_LABELS.aprendizaje,
       description: "Entiende la base",
-      detail: LEARNING_STAGE_DESCRIPTIONS.aprendizaje,
+      detail: "Base, reglas y conceptos esenciales. Empiezas aquí.",
       locked: false,
       index: 0,
     },
@@ -126,7 +139,7 @@ function LevelsPreview({ unlocked }: { unlocked: number }) {
       key: "consolidacion",
       title: LEARNING_STAGE_LABELS.consolidacion,
       description: "Domina relaciones y excepciones",
-      detail: LEARNING_STAGE_DESCRIPTIONS.consolidacion,
+      detail: "Excepciones y relaciones. Se desbloquea cuando tu base ya es estable.",
       locked: unlocked < 1,
       index: 1,
     },
@@ -134,7 +147,7 @@ function LevelsPreview({ unlocked }: { unlocked: number }) {
       key: "tribunal",
       title: LEARNING_STAGE_LABELS.tribunal,
       description: "Entrena los matices del examen",
-      detail: LEARNING_STAGE_DESCRIPTIONS.tribunal,
+      detail: "Casos, matices y distractores. Se desbloquea tras consolidar con seguridad.",
       locked: unlocked < 2,
       index: 2,
     },
@@ -142,7 +155,7 @@ function LevelsPreview({ unlocked }: { unlocked: number }) {
 
   return (
     <DemoShell>
-      <Card data-tour="practice-levels" className="border-primary/15 bg-card/95 p-5">
+      <Card className="border-primary/15 bg-card/95 p-5">
         <div className="flex items-center gap-3 border-b border-border/70 pb-4">
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             <Layers3 className="h-5 w-5" aria-hidden="true" />
@@ -150,47 +163,89 @@ function LevelsPreview({ unlocked }: { unlocked: number }) {
           <div>
             <p className="text-lg font-bold">Tres niveles. Tres objetivos.</p>
             <p className="mt-1 text-[16px] leading-[1.4] text-muted-foreground">
-              No es fácil, medio y difícil.
+              Empiezas por la base y avanzas cuando tu práctica demuestra seguridad.
             </p>
           </div>
         </div>
 
-        <div className="mt-4 space-y-3">
+        <style>{`
+          @keyframes tour-lock-release {
+            0%, 18% { transform: translateX(0) rotate(0) scale(1); opacity: 1; }
+            36% { transform: translateX(-2px) rotate(-10deg) scale(1.05); }
+            54% { transform: translateX(2px) rotate(9deg) scale(1.08); }
+            76% { transform: translateY(-2px) rotate(-12deg) scale(.92); opacity: 1; }
+            100% { transform: translateY(-5px) rotate(-24deg) scale(.62); opacity: 0; }
+          }
+          @keyframes tour-unlock-pop {
+            0% { transform: scale(.55) rotate(18deg); opacity: 0; }
+            62% { transform: scale(1.18) rotate(-4deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0); opacity: 1; }
+          }
+          @keyframes tour-stage-release {
+            0% { transform: scale(1); }
+            55% { transform: scale(1.018); }
+            100% { transform: scale(1.012); }
+          }
+        `}</style>
+        <div data-tour="practice-levels" className="mt-4 space-y-3">
           {stages.map((stage) => {
             const active = stage.index === unlocked;
+            const isUnlocking = unlocking === stage.index;
+            const justUnlocked = isUnlocking && !stage.locked;
             return (
               <div
                 key={stage.key}
                 className={cn(
-                  "rounded-2xl border p-4 transition-[border-color,background-color,transform,box-shadow] duration-250 motion-reduce:transition-none",
+                  "relative overflow-hidden rounded-2xl border p-3.5 transition-[border-color,background-color,transform,box-shadow] duration-300 motion-reduce:transition-none",
                   active
                     ? "scale-[1.012] border-primary bg-primary/8 shadow-[0_18px_38px_-32px_oklch(0.3_0.14_250/0.8)]"
                     : "border-border/80 bg-background/70",
+                  justUnlocked && "[animation:tour-stage-release_420ms_ease-out]",
                 )}
               >
                 <div className="flex items-center gap-3">
                   <span
                     className={cn(
-                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors duration-250",
+                      "relative flex h-10 w-10 shrink-0 items-center justify-center overflow-visible rounded-xl transition-colors duration-300",
                       stage.locked ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary",
                     )}
                   >
-                    {stage.locked ? (
-                      <Lock className="h-5 w-5" aria-label={`${stage.title} bloqueado`} />
-                    ) : stage.index > 0 ? (
-                      <LockOpen
+                    {stage.index === 0 ? (
+                      <Check className="h-5 w-5" aria-hidden="true" />
+                    ) : stage.locked ? (
+                      <Lock
                         className={cn(
                           "h-5 w-5",
-                          active && "animate-in zoom-in-50 spin-in-45 duration-300 motion-reduce:animate-none",
+                          isUnlocking && "motion-reduce:animate-none",
                         )}
-                        aria-label={`${stage.title} desbloqueado`}
+                        style={{
+                          animation: isUnlocking && !reduceMotion
+                            ? "tour-lock-release 360ms ease-in-out forwards"
+                            : undefined,
+                        }}
+                        aria-label={`${stage.title} bloqueado`}
                       />
                     ) : (
-                      <Check className="h-5 w-5" aria-hidden="true" />
+                      <LockOpen
+                        className="h-5 w-5 motion-reduce:animate-none"
+                        style={{
+                          animation: justUnlocked && !reduceMotion
+                            ? "tour-unlock-pop 430ms cubic-bezier(.2,.9,.25,1.25) both"
+                            : undefined,
+                        }}
+                        aria-label={`${stage.title} desbloqueado`}
+                      />
                     )}
                   </span>
-                  <div className="min-w-0">
-                    <p className="text-[17px] font-bold">{stage.title}</p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-[17px] font-bold">{stage.title}</p>
+                      {stage.index > 0 && justUnlocked && (
+                        <span className="animate-in fade-in-0 zoom-in-50 rounded-full bg-primary/10 px-2 py-0.5 text-[13px] font-bold text-primary duration-300 motion-reduce:animate-none">
+                          Desbloqueado
+                        </span>
+                      )}
+                    </div>
                     <p className="mt-0.5 text-[16px] font-semibold text-primary">{stage.description}</p>
                   </div>
                 </div>
@@ -200,8 +255,8 @@ function LevelsPreview({ unlocked }: { unlocked: number }) {
           })}
         </div>
 
-        <p className="mt-4 text-[15px] font-medium leading-[1.4] text-muted-foreground">
-          Después puedes mezclarlos para mantener el tema completo.
+        <p className="mt-4 text-[15px] font-medium leading-[1.45] text-muted-foreground">
+          Aprendizaje está disponible desde el principio. Consolidación y Tribunal se desbloquean en orden; OpoTest te avisa cuándo avanzar.
         </p>
       </Card>
     </DemoShell>
@@ -265,10 +320,12 @@ function QuestionPreview({
         </div>
         <Progress value={10} className="h-2" />
 
-        <Card className="border-primary/15 bg-gradient-to-br from-card to-primary/5 p-4">
-          <p className="text-[15px] font-bold uppercase tracking-[0.08em] text-primary">Pregunta</p>
-          <h2 className="mt-2 text-[18px] font-semibold leading-[1.45]">{question.pregunta}</h2>
-        </Card>
+        {!feedback && (
+          <Card className="border-primary/15 bg-gradient-to-br from-card to-primary/5 p-4">
+            <p className="text-[15px] font-bold uppercase tracking-[0.08em] text-primary">Pregunta</p>
+            <h2 className="mt-2 text-[18px] font-semibold leading-[1.45]">{question.pregunta}</h2>
+          </Card>
+        )}
 
         {!feedback ? (
           <div className="space-y-2">
@@ -320,7 +377,9 @@ function QuestionPreview({
             </div>
             {question.explicacion && (
               <p className="text-[15px] leading-[1.45] text-muted-foreground">
-                {question.explicacion}
+                {question.explicacion.length > 160
+                  ? `${question.explicacion.slice(0, 157).trim()}…`
+                  : question.explicacion}
               </p>
             )}
           </Card>
