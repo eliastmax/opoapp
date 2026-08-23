@@ -69,13 +69,14 @@ function focusRect(target: HTMLElement, targetName: string) {
   );
 }
 
-function bringRealTargetIntoView(target: HTMLElement, targetName: string) {
+function bringRealTargetIntoView(target: HTMLElement, targetName: string, instant = false) {
   if (targetName.startsWith("nav-")) return;
 
+  const behavior = instant || prefersReducedMotion() ? "auto" : "smooth";
   const compactLayout = window.innerWidth < 1400;
   if (compactLayout) {
     target.scrollIntoView({
-      behavior: prefersReducedMotion() ? "auto" : "smooth",
+      behavior,
       block: "start",
       inline: "nearest",
     });
@@ -89,7 +90,7 @@ function bringRealTargetIntoView(target: HTMLElement, targetName: string) {
   const safeBottom = vh - 80;
   if (rect.top >= safeTop && Math.min(rect.bottom, rect.top + 320) <= safeBottom) return;
   target.scrollIntoView({
-    behavior: prefersReducedMotion() ? "auto" : "smooth",
+    behavior,
     block: "center",
     inline: "nearest",
   });
@@ -393,6 +394,7 @@ function SpotlightTour({
     let targetTimeout = 0;
     let mutationObserver: MutationObserver | null = null;
     let cleanupTarget: (() => void) | null = null;
+    let scrollTimers: number[] = [];
 
     const reveal = () => {
       window.clearTimeout(revealTimer);
@@ -409,7 +411,7 @@ function SpotlightTour({
             }, 220);
           }
         },
-        prefersReducedMotion() ? 0 : 240,
+        prefersReducedMotion() ? 0 : 180,
       );
     };
 
@@ -420,6 +422,8 @@ function SpotlightTour({
 
       mutationObserver?.disconnect();
       window.clearTimeout(targetTimeout);
+      scrollTimers.forEach((timer) => window.clearTimeout(timer));
+      scrollTimers = [];
       cleanupTarget?.();
       const restoreDemoRail = reserveDesktopDemoRail(target, item.target);
       bringRealTargetIntoView(target, item.target);
@@ -436,8 +440,25 @@ function SpotlightTour({
         });
       };
 
-      if (prefersReducedMotion()) settle();
-      else window.setTimeout(settle, window.innerWidth < 1400 ? 280 : 120);
+      const enforceStudyUnitScroll = item.target === "study-unit" && window.innerWidth < 1400;
+      if (prefersReducedMotion()) {
+        bringRealTargetIntoView(target, item.target, true);
+        settle();
+      } else if (enforceStudyUnitScroll) {
+        const alignmentDelays = [160, 380, 680];
+        scrollTimers = alignmentDelays.map((delay, index) =>
+          window.setTimeout(() => {
+            if (cancelled) return;
+            bringRealTargetIntoView(target, item.target, true);
+            update();
+            if (index === alignmentDelays.length - 1) reveal();
+          }, delay),
+        );
+      } else {
+        scrollTimers = [
+          window.setTimeout(settle, window.innerWidth < 1400 ? 280 : 120),
+        ];
+      }
 
       const resizeObserver = new ResizeObserver(update);
       resizeObserver.observe(target);
@@ -495,6 +516,7 @@ function SpotlightTour({
       window.clearTimeout(revealTimer);
       window.clearTimeout(accentTimer);
       window.clearTimeout(targetTimeout);
+      scrollTimers.forEach((timer) => window.clearTimeout(timer));
       mutationObserver?.disconnect();
       cleanupTarget?.();
     };
@@ -607,7 +629,7 @@ function SpotlightTour({
   const maxHeight = desktopDemoRail
     ? vh - 48
     : mobileDemoSheet
-      ? Math.max(220, Math.min(vh * 0.43, 360))
+      ? Math.max(240, Math.min(vh * 0.48, 400))
       : realTargetMaxHeight;
   const dots = Array.from({ length: sceneCount }, (_, index) => index);
 
@@ -658,18 +680,18 @@ function SpotlightTour({
         >
           {compactPopover ? (
             <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-2 text-[14px] font-bold">
+              <div className="flex min-w-0 items-center gap-2 text-[16px] font-bold">
                 <span className="shrink-0 text-muted-foreground">
                   Paso {step + 1} de {PRODUCT_TOUR_STEPS.length}
                 </span>
                 <span aria-hidden="true" className="text-muted-foreground/50">·</span>
                 <span className="shrink-0 text-primary">{journeyLabel}</span>
                 {sceneCount > 1 && (
-                  <span className="flex items-center gap-1" aria-label={`Momento ${scene + 1} de ${sceneCount}`}>
+                  <span className="flex items-center gap-1.5" aria-label={`Momento ${scene + 1} de ${sceneCount}`}>
                     {dots.map((dot) => (
                       <span
                         key={dot}
-                        className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                        className={`h-2 w-2 rounded-full transition-colors ${
                           dot <= scene ? "bg-primary" : "bg-muted-foreground/25"
                         }`}
                       />
@@ -680,7 +702,7 @@ function SpotlightTour({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-9 shrink-0 px-2 text-[14px] font-semibold text-muted-foreground"
+                className="h-10 shrink-0 px-2 text-[16px] font-semibold text-muted-foreground"
                 onClick={finalScene ? onCloseFinal : onSkip}
                 tabIndex={popoverVisible ? 0 : -1}
               >
@@ -690,17 +712,17 @@ function SpotlightTour({
           ) : (
             <div className="flex items-start justify-between gap-3">
               <div>
-                <span className="block text-[15px] font-bold text-muted-foreground">
+                <span className="block text-[17px] font-bold text-muted-foreground">
                   Paso {step + 1} de {PRODUCT_TOUR_STEPS.length}
                 </span>
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="text-[15px] font-bold text-primary">{journeyLabel}</span>
+                <div className="mt-2 flex items-center gap-2.5">
+                  <span className="text-[17px] font-bold text-primary">{journeyLabel}</span>
                   {sceneCount > 1 && (
                     <span className="flex items-center gap-1.5" aria-label={`Momento ${scene + 1} de ${sceneCount}`}>
                       {dots.map((dot) => (
                         <span
                           key={dot}
-                          className={`h-2 w-2 rounded-full transition-colors ${
+                          className={`h-2.5 w-2.5 rounded-full transition-colors ${
                             dot <= scene ? "bg-primary" : "bg-muted-foreground/25"
                           }`}
                         />
@@ -712,7 +734,7 @@ function SpotlightTour({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-10 px-2.5 text-[15px] font-semibold text-muted-foreground"
+                className="h-11 px-2.5 text-[17px] font-semibold text-muted-foreground"
                 onClick={finalScene ? onCloseFinal : onSkip}
                 tabIndex={popoverVisible ? 0 : -1}
               >
@@ -723,22 +745,22 @@ function SpotlightTour({
 
           <h2
             id="tour-title"
-            className={`${compactPopover ? "mt-3 text-[21px] leading-[1.18]" : "mt-4 text-[24px] leading-[1.18]"} font-bold tracking-tight`}
+            className={`${compactPopover ? "mt-3 text-[25px] leading-[1.16]" : "mt-4 text-[27px] leading-[1.16]"} font-bold tracking-tight`}
           >
             {item.title}
           </h2>
           <p
             id="tour-description"
-            className={`${compactPopover ? "mt-2 text-[16px] leading-[1.42]" : "mt-3 text-[18px] leading-[1.48]"} text-muted-foreground`}
+            className={`${compactPopover ? "mt-2.5 text-[19px] leading-[1.45]" : "mt-3 text-[20px] leading-[1.5]"} text-muted-foreground`}
           >
             <EmphasizedDescription description={item.description} emphasis={item.emphasis} />
           </p>
 
-          <div className={`${compactPopover ? "mt-4" : "mt-6"} flex items-center gap-3 ${step > 0 || scene > 0 ? "justify-between" : "justify-end"}`}>
+          <div className={`${compactPopover ? "mt-5" : "mt-6"} flex items-center gap-3 ${step > 0 || scene > 0 ? "justify-between" : "justify-end"}`}>
             {(step > 0 || scene > 0) && (
               <Button
                 variant="ghost"
-                className={`${compactPopover ? "h-11 px-2 text-[15px]" : "h-12 px-3 text-[17px]"} font-bold text-muted-foreground`}
+                className={`${compactPopover ? "h-12 px-2.5 text-[18px]" : "h-13 px-3 text-[19px]"} font-bold text-muted-foreground`}
                 onClick={goPrevious}
                 aria-label="Paso anterior"
                 tabIndex={popoverVisible ? 0 : -1}
@@ -748,7 +770,7 @@ function SpotlightTour({
             )}
             <Button
               data-tour-primary
-              className={`${compactPopover ? "h-11 px-4 text-[15px]" : "h-12 px-5 text-[17px]"} font-bold`}
+              className={`${compactPopover ? "h-12 px-5 text-[18px]" : "h-13 px-5 text-[19px]"} font-bold`}
               onClick={() => (finalScene ? onFinish() : goNext())}
               tabIndex={popoverVisible ? 0 : -1}
             >
