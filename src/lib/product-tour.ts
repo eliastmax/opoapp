@@ -8,6 +8,12 @@ export type ProductTourScene = {
   emphasis: readonly string[];
 };
 
+type ProductTourStep = {
+  scenes: readonly ProductTourScene[];
+  final: boolean;
+  journeyLabel?: string;
+};
+
 export const PRODUCT_TOUR_STEPS = [
   {
     scenes: [
@@ -48,35 +54,133 @@ export const PRODUCT_TOUR_STEPS = [
     final: false,
   },
   {
+    journeyLabel: "Dentro de una unidad",
     scenes: [
       {
         route: "study-preview",
         target: "study-summary",
-        title: "Aquí es donde estudias",
+        title: "Empieza entendiendo lo esencial",
         description:
-          "Cada unidad reúne un resumen, claves y conceptos para que entiendas qué necesitas aprender.",
-        emphasis: ["resumen, claves y conceptos"],
+          "La idea central te sitúa antes de memorizar detalles: primero necesitas entender qué estás aprendiendo.",
+        emphasis: ["entender qué estás aprendiendo"],
+      },
+      {
+        route: "study-preview",
+        target: "study-keys",
+        title: "Fíjate en lo que suele importar",
+        description:
+          "Las claves destacan los detalles que merece la pena tener especialmente presentes para el examen.",
+        emphasis: ["especialmente presentes para el examen"],
+      },
+      {
+        route: "study-preview",
+        target: "study-confusions",
+        title: "Aprende también qué se parece",
+        description:
+          "OpoTest te señala conceptos que pueden confundirse para que aprendas a distinguirlos, no solo a reconocer una respuesta.",
+        emphasis: ["aprendas a distinguirlos"],
+      },
+      {
+        route: "study-preview",
+        target: "study-traps",
+        title: "Prepárate para donde suelen pillarte",
+        description:
+          "Las trampas frecuentes ponen el foco en matices que pueden hacerte fallar incluso cuando conoces el tema.",
+        emphasis: ["matices que pueden hacerte fallar"],
       },
       {
         route: "study-preview",
         target: "flashcard-preview",
-        title: "Después, intenta recordarlo",
+        title: "Ahora recupéralo sin mirar",
         description:
-          "Las flashcards te piden la respuesta antes de mostrarla para que compruebes qué recuerdas sin mirar.",
-        emphasis: ["qué recuerdas sin mirar"],
+          "Antes de ver la respuesta, intenta encontrarla en tu memoria. No se trata solo de releer.",
+        emphasis: ["encontrarla en tu memoria"],
+      },
+      {
+        route: "study-preview",
+        target: "flashcard-answer",
+        title: "Comprueba lo que recordabas",
+        description:
+          "La respuesta aparece después del intento para que puedas comparar lo que recordabas con la respuesta real.",
+        emphasis: ["después del intento"],
       },
     ],
     final: false,
   },
   {
+    journeyLabel: "Crear un test",
     scenes: [
       {
         route: "/crear",
         target: "practice-builder",
-        title: "Crea el test que necesitas",
+        title: "Practica exactamente lo que necesitas",
         description:
-          "Elige qué quieres practicar y ajusta cantidad, nivel y tipo de preguntas antes de empezar.",
-        emphasis: ["cantidad, nivel y tipo de preguntas"],
+          "Puedes elegir qué contenido trabajar y ajustar cómo quieres ponerte a prueba antes de empezar.",
+        emphasis: ["qué contenido trabajar"],
+      },
+      {
+        route: "/crear",
+        target: "practice-level-aprendizaje",
+        title: "Aprendizaje · entiende la base",
+        description:
+          "Empiezas por reglas esenciales, conceptos principales y comprensión. Primero construyes una base segura.",
+        emphasis: ["construyes una base segura"],
+      },
+      {
+        route: "/crear",
+        target: "practice-level-consolidacion",
+        title: "Consolidación · conecta y distingue",
+        description:
+          "Cuando la base es estable, trabajas excepciones, relaciones y situaciones donde ya no basta con reconocer la respuesta.",
+        emphasis: ["excepciones, relaciones"],
+      },
+      {
+        route: "/crear",
+        target: "practice-level-tribunal",
+        title: "Tribunal · entrena la precisión",
+        description:
+          "Casos, matices y distractores próximos te preparan para cuando varias respuestas podrían parecer correctas.",
+        emphasis: ["varias respuestas podrían parecer correctas"],
+      },
+      {
+        route: "/crear",
+        target: "practice-level-mezcladas",
+        title: "Después, mantén el tema completo",
+        description:
+          "Cuando Tribunal ya está disponible, Mezcladas combina los tres niveles para mantener activo todo el tema.",
+        emphasis: ["combina los tres niveles"],
+      },
+      {
+        route: "/crear",
+        target: "practice-format",
+        title: "OpoTest te ayuda a avanzar por etapas",
+        description:
+          "La app recomienda qué nivel conviene trabajar según tu práctica; tú sigues teniendo el control del contenido y el formato.",
+        emphasis: ["recomienda qué nivel conviene trabajar"],
+      },
+      {
+        route: "/crear",
+        target: "practice-start",
+        title: "Todo listo para comprobarlo",
+        description:
+          "La demostración va a abrir una pregunta real, pero no creará ningún test ni contará para tus estadísticas.",
+        emphasis: ["no contará para tus estadísticas"],
+      },
+      {
+        route: "/crear",
+        target: "practice-question",
+        title: "Responde como en un test real",
+        description:
+          "Aquí eliges una opción como lo harías normalmente. En esta demostración la selección es solo visual.",
+        emphasis: ["solo visual"],
+      },
+      {
+        route: "/crear",
+        target: "practice-feedback",
+        title: "Un fallo también sirve para avanzar",
+        description:
+          "Cuando practiques de verdad, tus aciertos, fallos y dudas ayudarán a detectar qué necesitas seguir trabajando.",
+        emphasis: ["aciertos, fallos y dudas"],
       },
     ],
     final: false,
@@ -88,13 +192,13 @@ export const PRODUCT_TOUR_STEPS = [
         target: "progress-overview",
         title: "Mira cómo evoluciona tu preparación",
         description:
-          "Aquí ves qué temas avanzan, cuáles necesitan atención y qué necesitas seguir trabajando.",
-        emphasis: ["qué temas avanzan", "cuáles necesitan atención"],
+          "Lo que estudias, recuerdas y practicas termina aquí: ves qué avanza, qué necesita atención y qué conviene trabajar después.",
+        emphasis: ["qué avanza", "qué necesita atención"],
       },
     ],
     final: true,
   },
-] as const satisfies readonly { scenes: readonly ProductTourScene[]; final: boolean }[];
+] as const satisfies readonly ProductTourStep[];
 
 export type ProductTourCompletionKind = "completed" | "skipped";
 
@@ -105,6 +209,10 @@ export function productTourScene(step: number, scene = 0): ProductTourScene {
 
 export function productTourSceneCount(step: number) {
   return PRODUCT_TOUR_STEPS[step]?.scenes.length ?? 1;
+}
+
+export function productTourJourneyLabel(step: number) {
+  return PRODUCT_TOUR_STEPS[step]?.journeyLabel ?? null;
 }
 
 export function productTourPath(route: ProductTourRoute, unitId: string | null) {
