@@ -30,15 +30,29 @@ function AuthLayout() {
     pathname.startsWith("/sesion") ||
     pathname.startsWith("/estudiar/") ||
     pathname.startsWith("/recordar/");
+  const pageTourTarget =
+    pathname === "/crear"
+      ? "practice-builder"
+      : pathname === "/progreso"
+        ? "progress-overview"
+        : null;
+
   return (
     <ProductTourProvider user={user}>
       <div data-app-shell className="min-h-screen flex flex-col">
         <main
           className={cn(
-            "flex-1 w-full max-w-md mx-auto px-4 pt-[calc(env(safe-area-inset-top,0px)+1rem)]",
+            "relative flex-1 w-full max-w-md mx-auto px-4 pt-[calc(env(safe-area-inset-top,0px)+1rem)]",
             focusedJourney ? "pb-6" : "pb-28",
           )}
         >
+          {pageTourTarget && (
+            <div
+              data-tour={pageTourTarget}
+              className="pointer-events-none absolute inset-x-4 top-[calc(env(safe-area-inset-top,0px)+1rem)] h-[min(48dvh,360px)]"
+              aria-hidden="true"
+            />
+          )}
           <Outlet />
         </main>
         {!focusedJourney && (
@@ -56,7 +70,9 @@ function AuthLayout() {
                         ? "nav-study"
                         : item.to === "/crear"
                           ? "nav-practice"
-                          : undefined
+                          : item.to === "/progreso"
+                            ? "nav-progress"
+                            : undefined
                     }
                     className={cn(
                       "group flex min-h-14 flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium transition-colors sm:text-[11px]",
