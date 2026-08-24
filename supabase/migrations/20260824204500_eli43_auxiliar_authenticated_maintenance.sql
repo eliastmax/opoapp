@@ -123,7 +123,7 @@ begin
     raise exception 'ELI-42 package is restricted to Auxiliar T11' using errcode = '42501';
   end if;
 
-  if v_mode not in ('preflight','execute') then
+  if v_mode is null or v_mode not in ('preflight','execute') then
     raise exception 'ELI-42 package mode must be preflight or execute' using errcode = '22023';
   end if;
 
