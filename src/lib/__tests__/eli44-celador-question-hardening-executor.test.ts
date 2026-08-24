@@ -192,7 +192,7 @@ describe("ELI-44 Celador question hardening executor", () => {
       "cross-scope contamination detected",
     ]) expect(migration).toContain(marker);
 
-    const updateBlock = migration.slice(migration.indexOf("update public.questions q"), migration.indexOf("get diagnostics v_rows"));
+    const updateBlock = migration.slice(migration.indexOf("update public.questions q"), migration.indexOf("from pg_temp.eli44_mutations m"));
     for (const field of ["pregunta","opcion_a","opcion_b","opcion_c","opcion_d","respuesta_correcta","explicacion","nivel_pedagogico","tipo_trampa"]) {
       expect(updateBlock).toContain(field);
     }
