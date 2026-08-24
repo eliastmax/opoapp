@@ -132,7 +132,7 @@ describe("short product tour v2", () => {
     expect(productTourScene(2, 0).title).toBe("Tus fallos sirven para algo");
   });
 
-  it("uses fixed compact study targets and a real two-face flashcard", () => {
+  it("uses fixed compact study targets and a single-layout flip flashcard", () => {
     expect(studyDemo).toContain('data-tour="tour-study-understand"');
     expect(studyDemo).toContain('data-tour="tour-study-traps"');
     expect(studyDemo).toContain('data-tour="tour-study-flashcard-question"');
@@ -149,13 +149,20 @@ describe("short product tour v2", () => {
     expect(studyDemo).toContain("Al estudiar verás el resumen completo.");
     expect(studyDemo).toContain("flashcardCompactness");
     expect(studyDemo).toContain(".limit(12)");
+    expect(studyDemo).toContain("normalizedText(flashcard.prompt).length <= 135");
+    expect(studyDemo).toContain("normalizedText(flashcard.answer).length <= 220");
     expect(studyDemo).toContain("[perspective:1200px]");
-    expect(studyDemo).toContain("[transform-style:preserve-3d]");
-    expect(studyDemo).toContain("[transform:rotateY(180deg)]");
+    expect(studyDemo).toContain("tour-flashcard-flip-in");
+    expect(studyDemo).toContain("rotateY(88deg)");
+    expect(studyDemo).toContain('key="flashcard-question"');
+    expect(studyDemo).toContain('key="flashcard-answer"');
     expect(studyDemo).toContain("[backface-visibility:hidden]");
-    expect(studyDemo).toContain("motion-reduce:transition-none");
-    expect(studyDemo).toContain("{data.flashcard.answer}");
-    expect(studyDemo).not.toContain("excerpt(data.flashcard.answer");
+    expect(studyDemo).toContain("motion-safe:[animation:tour-flashcard-flip-in_320ms_ease-out_both]");
+    expect(studyDemo).toContain("showingAnswer ? (");
+    expect(studyDemo).toContain("excerpt(data.flashcard.answer, 205)");
+    expect(studyDemo).toContain("En Estudio verás la respuesta completa.");
+    expect(studyDemo).not.toContain("[grid-area:1/1]");
+    expect(studyDemo).not.toContain("[transform-style:preserve-3d]");
     expect(studyDemo).toContain("const firstKey = data.keys[0] ?? null");
     expect(studyDemo).toContain("const confusion = data.confusions[0] ?? null");
     expect(studyDemo).toContain("const trap = data.traps[0] ?? null");
