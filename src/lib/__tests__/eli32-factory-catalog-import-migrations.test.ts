@@ -69,12 +69,12 @@ describe("ELI-32 Factory catalog import infrastructure", () => {
     expect(factoryV4Start).toBeGreaterThan(factoryQuestionsStart);
     expect(authenticatedWrapperStart).toBeGreaterThan(factoryV4Start);
 
-    expect(factoryQuestions).toMatch(/security\s+definer/i);
-    expect(factoryQuestions).toMatch(/set\s+search_path\s*=\s*pg_catalog,pg_temp/i);
-    expect(factoryQuestions).toMatch(/session_user\s*<>\s*'postgres'/i);
-    expect(factoryV4).toMatch(/security\s+definer/i);
-    expect(factoryV4).toMatch(/set\s+search_path\s*=\s*pg_catalog,pg_temp/i);
-    expect(factoryV4).toMatch(/session_user\s*<>\s*'postgres'/i);
+    expect(factoryQuestions).toContain("security definer");
+    expect(factoryQuestions).toContain("set search_path=pg_catalog,pg_temp");
+    expect(factoryQuestions).toContain("session_user<>'postgres'");
+    expect(factoryV4).toContain("security definer");
+    expect(factoryV4).toContain("set search_path=pg_catalog,pg_temp");
+    expect(factoryV4).toContain("session_user<>'postgres'");
 
     for (const core of [questionsCore, v4Core]) {
       expect(core).toContain("security invoker");
