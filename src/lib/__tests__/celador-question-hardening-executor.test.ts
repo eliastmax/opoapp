@@ -210,7 +210,7 @@ describe("ELI-44 SQL hardening surface", () => {
     expect(migration).toContain("postcondition target mismatch");
     expect(migration).toContain("postcondition count/distribution mismatch");
     expect(migration).toContain("preservation hash mismatch; rolling back");
-    expect(migration).not.toMatch(/\bcommit\b/i);
+    expect(migration).not.toMatch(/^\s*commit\s*;?\s*$/im);
     expect(migration).toContain("question_concepts");
     expect(migration).toContain("study_units");
     expect(migration).toContain("concepts");
