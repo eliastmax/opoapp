@@ -13,7 +13,7 @@ import {
 } from "../auxiliar-maintenance-executor";
 
 const migration = readFileSync(
-  new URL("../../../supabase/migrations/20260824204500_eli43_auxiliar_authenticated_maintenance.sql", import.meta.url),
+  new URL("../../../supabase/migrations/20260824185129_eli43_auxiliar_authenticated_maintenance.sql", import.meta.url),
   "utf8",
 );
 const cli = readFileSync(new URL("../../cli/eli43-auxiliar-maintenance.ts", import.meta.url), "utf8");
