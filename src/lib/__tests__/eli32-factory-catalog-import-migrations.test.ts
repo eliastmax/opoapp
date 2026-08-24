@@ -45,28 +45,37 @@ describe("ELI-32 Factory catalog import infrastructure", () => {
   });
 
   it("uses security-definer wrappers with fixed search paths and security-invoker cores", () => {
-    const factoryQuestions = importers.slice(
-      importers.indexOf("create or replace function factory_admin.import_questions("),
-      importers.indexOf("create or replace function factory_admin.import_v4_study_content("),
+    const factoryQuestionsStart = importers.indexOf(
+      "create or replace function factory_admin.import_questions(",
     );
-    const factoryV4 = importers.slice(
-      importers.indexOf("create or replace function factory_admin.import_v4_study_content("),
-      importers.indexOf("-- Historical authenticated wrapper"),
+    const factoryV4Start = importers.indexOf(
+      "create or replace function factory_admin.import_v4_study_content(",
     );
+    const authenticatedWrapperStart = importers.indexOf(
+      "-- Historical authenticated wrapper",
+    );
+    const factoryQuestions = importers.slice(factoryQuestionsStart, factoryV4Start);
+    const factoryV4 = importers.slice(factoryV4Start, authenticatedWrapperStart);
     const questionsCore = importers.slice(
       importers.indexOf("create or replace function catalog_import_private.import_questions_core("),
       importers.indexOf("create or replace function catalog_import_private.import_v4_core("),
     );
     const v4Core = importers.slice(
       importers.indexOf("create or replace function catalog_import_private.import_v4_core("),
-      importers.indexOf("create or replace function factory_admin.import_questions("),
+      factoryQuestionsStart,
     );
 
-    for (const wrapper of [factoryQuestions, factoryV4]) {
-      expect(wrapper).toContain("security definer");
-      expect(wrapper).toContain("set search_path=pg_catalog,pg_temp");
-      expect(wrapper).toContain("session_user<>'postgres'");
-    }
+    expect(factoryQuestionsStart).toBeGreaterThanOrEqual(0);
+    expect(factoryV4Start).toBeGreaterThan(factoryQuestionsStart);
+    expect(authenticatedWrapperStart).toBeGreaterThan(factoryV4Start);
+
+    expect(factoryQuestions).toMatch(/security\s+definer/i);
+    expect(factoryQuestions).toMatch(/set\s+search_path\s*=\s*pg_catalog,pg_temp/i);
+    expect(factoryQuestions).toMatch(/session_user\s*<>\s*'postgres'/i);
+    expect(factoryV4).toMatch(/security\s+definer/i);
+    expect(factoryV4).toMatch(/set\s+search_path\s*=\s*pg_catalog,pg_temp/i);
+    expect(factoryV4).toMatch(/session_user\s*<>\s*'postgres'/i);
+
     for (const core of [questionsCore, v4Core]) {
       expect(core).toContain("security invoker");
       expect(core).toContain("set search_path=pg_catalog,pg_temp");
@@ -140,14 +149,17 @@ describe("ELI-32 Factory catalog import infrastructure", () => {
   });
 
   it("preserves authenticated V4 authorization after identity resolution", () => {
-    expect(policyPatch).toContain("v_user_id uuid := catalog_import_private.session_auth_uid()");
-    expect(policyPatch).toContain("select p.active_opposition_id into v_active_opposition_id");
-    expect(policyPatch).toContain("The package opposition must be the current active opposition");
-    expect(policyPatch).toContain("Opposition administrator permission required");
-    expect(policyPatch).toContain("subjectName");
-    expect(policyPatch).toContain("Topic % is ambiguous in opposition %; subjectName is required");
-    expect(policyPatch).not.toContain("auth.uid()");
-    expect(policyPatch).not.toContain("current_active_opposition_id()");
+    const policyPatchBody = policyPatch.slice(0, policyPatch.indexOf("do $assertions$"));
+
+    expect(policyPatchBody).toContain("v_user_id uuid := catalog_import_private.session_auth_uid()");
+    expect(policyPatchBody).toContain("select p.active_opposition_id into v_active_opposition_id");
+    expect(policyPatchBody).toContain("The package opposition must be the current active opposition");
+    expect(policyPatchBody).toContain("Opposition administrator permission required");
+    expect(policyPatchBody).toContain("subjectName");
+    expect(policyPatchBody).toContain("Topic % is ambiguous in opposition %; subjectName is required");
+    expect(policyPatchBody).not.toContain("auth.uid()");
+    expect(policyPatchBody).not.toContain("current_active_opposition_id()");
+    expect(policyPatch).toContain("ilike '%auth.uid%'");
   });
 
   it("persists private audit metadata without academic payload bodies", () => {
