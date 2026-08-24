@@ -85,7 +85,8 @@ describe("ELI-43 Auxiliar authenticated maintenance executor", () => {
     expect(migration).not.toContain("00000000-0000-4000-8000-000000000002");
   });
 
-  it("requires exact ELI-42 pre/post state and exact execution confirmation", () => {
+  it("requires explicit valid cleanup mode, exact ELI-42 state and execution confirmation", () => {
+    expect(migration).toContain("if v_mode is null or v_mode not in ('preflight','execute') then");
     expect(migration).toContain("v_t11_active <> 200");
     expect(migration).toContain("v_oos_active <> 20");
     expect(migration).toContain("v_inscope_primary <> 180");
