@@ -15,19 +15,16 @@ begin
     return false;
   end if;
 
-  for v_item in
-    select value from pg_catalog.jsonb_array_elements(p_value)
+  for v_item in select value from pg_catalog.jsonb_array_elements(p_value)
   loop
     if pg_catalog.jsonb_typeof(v_item) <> 'string' then
       return false;
     end if;
-
     v_text := v_item #>> '{}';
     if v_text = '' or pg_catalog.btrim(v_text) = '' or v_text <> pg_catalog.btrim(v_text) then
       return false;
     end if;
   end loop;
-
   return true;
 end;
 $function$;
@@ -51,15 +48,13 @@ begin
     return false;
   end if;
 
-  for v_item in
-    select value from pg_catalog.jsonb_array_elements(p_value)
+  for v_item in select value from pg_catalog.jsonb_array_elements(p_value)
   loop
     if pg_catalog.jsonb_typeof(v_item) <> 'object' then
       return false;
     end if;
 
-    for v_key in
-      select key from pg_catalog.jsonb_object_keys(v_item) as keys(key)
+    for v_key in select key from pg_catalog.jsonb_object_keys(v_item) as keys(key)
     loop
       if v_key not in ('source_id', 'locator', 'page_start', 'page_end', 'excerpt', 'supports') then
         return false;
@@ -91,33 +86,19 @@ begin
 
     v_page_start := null;
     v_page_end := null;
-
     if v_item ? 'page_start' then
-      if pg_catalog.jsonb_typeof(v_item -> 'page_start') <> 'number' then
-        return false;
-      end if;
+      if pg_catalog.jsonb_typeof(v_item -> 'page_start') <> 'number' then return false; end if;
       v_page_start := (v_item ->> 'page_start')::numeric;
-      if v_page_start < 1 or pg_catalog.trunc(v_page_start) <> v_page_start then
-        return false;
-      end if;
+      if v_page_start < 1 or pg_catalog.trunc(v_page_start) <> v_page_start then return false; end if;
     end if;
 
     if v_item ? 'page_end' then
-      if not (v_item ? 'page_start') or pg_catalog.jsonb_typeof(v_item -> 'page_end') <> 'number' then
-        return false;
-      end if;
+      if not (v_item ? 'page_start') or pg_catalog.jsonb_typeof(v_item -> 'page_end') <> 'number' then return false; end if;
       v_page_end := (v_item ->> 'page_end')::numeric;
-      if v_page_end < 1
-         or pg_catalog.trunc(v_page_end) <> v_page_end
-         or v_page_end < v_page_start then
-        return false;
-      end if;
+      if v_page_end < 1 or pg_catalog.trunc(v_page_end) <> v_page_end or v_page_end < v_page_start then return false; end if;
     end if;
 
-    if not (v_item ? 'locator') and not (v_item ? 'page_start') then
-      return false;
-    end if;
-
+    if not (v_item ? 'locator') and not (v_item ? 'page_start') then return false; end if;
     if not (v_item ? 'supports')
        or pg_catalog.jsonb_typeof(v_item -> 'supports') <> 'array'
        or pg_catalog.jsonb_array_length(v_item -> 'supports') = 0 then
@@ -125,12 +106,9 @@ begin
     end if;
 
     v_seen_supports := array[]::text[];
-    for v_support in
-      select value from pg_catalog.jsonb_array_elements(v_item -> 'supports')
+    for v_support in select value from pg_catalog.jsonb_array_elements(v_item -> 'supports')
     loop
-      if pg_catalog.jsonb_typeof(v_support) <> 'string' then
-        return false;
-      end if;
+      if pg_catalog.jsonb_typeof(v_support) <> 'string' then return false; end if;
       v_support_text := v_support #>> '{}';
       if v_support_text not in (
         'learner_title', 'introduction', 'main_content', 'memory_keys',
@@ -138,17 +116,13 @@ begin
       ) then
         return false;
       end if;
-      if pg_catalog.array_position(v_seen_supports, v_support_text) is not null then
-        return false;
-      end if;
+      if pg_catalog.array_position(v_seen_supports, v_support_text) is not null then return false; end if;
       v_seen_supports := pg_catalog.array_append(v_seen_supports, v_support_text);
     end loop;
   end loop;
-
   return true;
 exception
-  when invalid_text_representation or numeric_value_out_of_range then
-    return false;
+  when invalid_text_representation or numeric_value_out_of_range then return false;
 end;
 $function$;
 
@@ -167,27 +141,24 @@ begin
     return false;
   end if;
 
-  -- No raw HTML/autolinks, URLs, Markdown links/images, code, or fenced blocks.
+  -- No raw HTML/autolinks, URLs, Markdown links/images, inline/fenced code.
   if p_value ~ '<[^>]*>'
      or p_value ~* '(https?://|mailto:)'
      or p_value ~ '!\[[^]]*\]\([^)]*\)'
      or p_value ~ '\[[^]]+\]\([^)]*\)'
-     or pg_catalog.position('`' in p_value) > 0
-     or pg_catalog.position('~~~' in p_value) > 0 then
+     or pg_catalog.strpos(p_value, '`') > 0
+     or pg_catalog.strpos(p_value, '~~~') > 0 then
     return false;
   end if;
 
-  for v_line in
-    select line from pg_catalog.regexp_split_to_table(p_value, E'\n') as lines(line)
+  for v_line in select line from pg_catalog.regexp_split_to_table(p_value, E'\n') as lines(line)
   loop
-    if v_line = '' then
-      continue;
-    end if;
+    if v_line = '' then continue; end if;
 
-    -- Indented code, blockquotes, tables, horizontal rules, and unsupported list markers.
+    -- No indented code, blockquotes, tables, horizontal rules, or unsupported list markers.
     if v_line ~ E'^(    |\t)'
        or v_line ~ '^>'
-       or pg_catalog.position('|' in v_line) > 0
+       or pg_catalog.strpos(v_line, '|') > 0
        or v_line ~ '^(-{3,}|_{3,}|\*{3,})$'
        or v_line ~ '^\+ '
        or v_line ~ '^\* ' then
@@ -195,35 +166,24 @@ begin
     end if;
 
     v_body := v_line;
-
-    -- Light headings are exactly H2/H3.
     if v_body ~ '^#{2,3} ' then
       v_body := pg_catalog.regexp_replace(v_body, '^#{2,3} ', '');
     elsif v_body ~ '^#' then
       return false;
-    -- Unordered lists use the canonical hyphen marker.
     elsif v_body ~ '^- ' then
       v_body := pg_catalog.regexp_replace(v_body, '^- ', '');
-    -- Ordered lists use a positive decimal marker.
     elsif v_body ~ '^[0-9]+[.] ' then
       v_body := pg_catalog.regexp_replace(v_body, '^[0-9]+[.] ', '');
     end if;
 
-    if pg_catalog.btrim(v_body) = '' then
-      return false;
-    end if;
+    if pg_catalog.btrim(v_body) = '' then return false; end if;
 
-    -- Remove the only allowed inline Markdown constructs, then reject leftovers.
+    -- Bold/italic are the only allowed inline Markdown constructs.
     v_rest := pg_catalog.regexp_replace(v_body, '\*\*[^*\n]+\*\*', '', 'g');
     v_rest := pg_catalog.regexp_replace(v_rest, '\*[^*\n]+\*', '', 'g');
     v_rest := pg_catalog.regexp_replace(v_rest, '_[^_\n]+_', '', 'g');
-
-    if v_rest ~ '[*_\[\]~]'
-       or pg_catalog.position(E'\\' in v_rest) > 0 then
-      return false;
-    end if;
+    if v_rest ~ '[*_\[\]~]' or pg_catalog.strpos(v_rest, E'\\') > 0 then return false; end if;
   end loop;
-
   return true;
 end;
 $function$;
@@ -231,7 +191,6 @@ $function$;
 revoke all on function private.is_trimmed_nonempty_text_array(jsonb) from public, anon, authenticated;
 revoke all on function private.is_valid_concept_source_evidence(jsonb) from public, anon, authenticated;
 revoke all on function private.is_safe_learner_markdown(text) from public, anon, authenticated;
-
 grant execute on function private.is_trimmed_nonempty_text_array(jsonb) to service_role;
 grant execute on function private.is_valid_concept_source_evidence(jsonb) to service_role;
 grant execute on function private.is_safe_learner_markdown(text) to service_role;
@@ -259,9 +218,7 @@ create table public.concept_study_content (
 
   constraint concept_study_content_scope_fk
     foreign key (opposition_id, topic_id, concept_id)
-    references public.concepts (opposition_id, topic_id, id)
-    on delete cascade,
-
+    references public.concepts (opposition_id, topic_id, id) on delete cascade,
   constraint concept_study_content_created_by_fk
     foreign key (created_by) references auth.users(id) on delete set null,
   constraint concept_study_content_updated_by_fk
@@ -289,13 +246,11 @@ create table public.concept_study_content (
     check (private.is_valid_concept_source_evidence(source_evidence)),
   constraint concept_study_content_editorial_status_check
     check (editorial_status in ('draft', 'reviewed', 'approved', 'retired')),
-  constraint concept_study_content_content_version_check
-    check (content_version > 0),
+  constraint concept_study_content_content_version_check check (content_version > 0),
   constraint concept_study_content_approval_metadata_check
     check (
       (editorial_status = 'approved' and approved_at is not null and approved_by is not null)
-      or
-      (editorial_status <> 'approved' and approved_at is null and approved_by is null)
+      or (editorial_status <> 'approved' and approved_at is null and approved_by is null)
     ),
   constraint concept_study_content_approved_content_check
     check (
@@ -309,17 +264,12 @@ create table public.concept_study_content (
   constraint concept_study_content_timestamps_check
     check (
       updated_at >= created_at
-      and (
-        approved_at is null
-        or (approved_at >= created_at and approved_at <= updated_at)
-      )
+      and (approved_at is null or (approved_at >= created_at and approved_at <= updated_at))
     )
 );
 
 alter table public.concept_study_content enable row level security;
-
--- No direct learner/admin Data API access. All learner reads go through open_my_v4_study_unit;
--- all editorial writes go through import_concept_study_content.
+-- Deliberately no policies: learners cannot query or mutate this table directly.
 revoke all on table public.concept_study_content from public, anon, authenticated;
 grant select, insert, update, delete on table public.concept_study_content to service_role;
 
@@ -364,10 +314,7 @@ declare
   v_updated integer := 0;
   v_unchanged integer := 0;
 begin
-  if v_user_id is null then
-    raise exception 'Authentication required' using errcode = '42501';
-  end if;
-
+  if v_user_id is null then raise exception 'Authentication required' using errcode = '42501'; end if;
   if p_package is null or pg_catalog.jsonb_typeof(p_package) <> 'object' then
     raise exception 'Learner content package must be an object' using errcode = '22023';
   end if;
@@ -382,7 +329,6 @@ begin
   if p_package ->> 'version' is distinct from '1.0' then
     raise exception 'Unsupported learner content package version' using errcode = '22023';
   end if;
-
   if pg_catalog.jsonb_typeof(p_package -> 'items') is distinct from 'array'
      or pg_catalog.jsonb_array_length(p_package -> 'items') = 0 then
     raise exception 'items must be a non-empty array' using errcode = '22023';
@@ -392,32 +338,22 @@ begin
     raise exception 'oppositionCode is required' using errcode = '22023';
   end if;
   v_opposition_code := p_package ->> 'oppositionCode';
-  if v_opposition_code = ''
-     or pg_catalog.btrim(v_opposition_code) = ''
-     or v_opposition_code <> pg_catalog.btrim(v_opposition_code) then
+  if v_opposition_code = '' or pg_catalog.btrim(v_opposition_code) = '' or v_opposition_code <> pg_catalog.btrim(v_opposition_code) then
     raise exception 'oppositionCode must be canonical' using errcode = '22023';
   end if;
 
-  select opposition.id
-  into v_opposition_id
+  select opposition.id into v_opposition_id
   from public.oppositions opposition
-  where opposition.code = v_opposition_code
-    and opposition.published is true;
-
-  if v_opposition_id is null then
-    raise exception 'Published opposition not found' using errcode = '22023';
-  end if;
+  where opposition.code = v_opposition_code and opposition.published is true;
+  if v_opposition_id is null then raise exception 'Published opposition not found' using errcode = '22023'; end if;
 
   v_active_opposition_id := public.current_active_opposition_id();
   if v_active_opposition_id is distinct from v_opposition_id then
     raise exception 'Package opposition must be the active opposition' using errcode = '42501';
   end if;
-
   if not exists (
-    select 1
-    from public.opposition_admins admin
-    where admin.user_id = v_user_id
-      and admin.opposition_id = v_opposition_id
+    select 1 from public.opposition_admins admin
+    where admin.user_id = v_user_id and admin.opposition_id = v_opposition_id
   ) then
     raise exception 'Opposition administrator permission required' using errcode = '42501';
   end if;
@@ -430,9 +366,7 @@ begin
   exception when invalid_text_representation or numeric_value_out_of_range then
     raise exception 'topicNumber must be a positive integer' using errcode = '22023';
   end;
-  if v_topic_number < 1 then
-    raise exception 'topicNumber must be a positive integer' using errcode = '22023';
-  end if;
+  if v_topic_number < 1 then raise exception 'topicNumber must be a positive integer' using errcode = '22023'; end if;
 
   v_subject_name := null;
   if p_package ? 'subjectName' and pg_catalog.jsonb_typeof(p_package -> 'subjectName') <> 'null' then
@@ -440,9 +374,7 @@ begin
       raise exception 'subjectName must be a canonical string or null' using errcode = '22023';
     end if;
     v_subject_name := p_package ->> 'subjectName';
-    if v_subject_name = ''
-       or pg_catalog.btrim(v_subject_name) = ''
-       or v_subject_name <> pg_catalog.btrim(v_subject_name) then
+    if v_subject_name = '' or pg_catalog.btrim(v_subject_name) = '' or v_subject_name <> pg_catalog.btrim(v_subject_name) then
       raise exception 'subjectName must be a canonical string or null' using errcode = '22023';
     end if;
   end if;
@@ -452,46 +384,34 @@ begin
            case when count(*) = 1 then (pg_catalog.array_agg(topic.id order by topic.id))[1] else null end
     into v_topic_matches, v_topic_id
     from public.topics topic
-    join public.subjects subject
-      on subject.id = topic.subject_id
-     and subject.opposition_id = topic.opposition_id
-    where topic.opposition_id = v_opposition_id
-      and topic.numero = v_topic_number
-      and subject.nombre = v_subject_name;
+    join public.subjects subject on subject.id = topic.subject_id and subject.opposition_id = topic.opposition_id
+    where topic.opposition_id = v_opposition_id and topic.numero = v_topic_number and subject.nombre = v_subject_name;
   else
     select count(*)::integer,
            case when count(*) = 1 then (pg_catalog.array_agg(topic.id order by topic.id))[1] else null end
     into v_topic_matches, v_topic_id
     from public.topics topic
-    where topic.opposition_id = v_opposition_id
-      and topic.numero = v_topic_number;
+    where topic.opposition_id = v_opposition_id and topic.numero = v_topic_number;
   end if;
-
-  if v_topic_matches = 0 then
-    raise exception 'Topic not found in package opposition' using errcode = '22023';
-  elsif v_topic_matches > 1 then
-    raise exception 'Topic is ambiguous; subjectName is required' using errcode = '22023';
-  end if;
+  if v_topic_matches = 0 then raise exception 'Topic not found in package opposition' using errcode = '22023'; end if;
+  if v_topic_matches > 1 then raise exception 'Topic is ambiguous; subjectName is required' using errcode = '22023'; end if;
 
   if exists (
-    select 1
-    from (
+    select 1 from (
       select item ->> 'conceptCode' as concept_code
       from pg_catalog.jsonb_array_elements(p_package -> 'items') as items(item)
-      group by item ->> 'conceptCode'
-      having count(*) > 1
+      group by item ->> 'conceptCode' having count(*) > 1
     ) duplicates
   ) then
     raise exception 'Duplicate conceptCode in learner content package' using errcode = '22023';
   end if;
 
-  -- PASS 1: validate the complete package and build an in-memory plan. No writes occur here.
+  -- PASS 1: validate all items and build an in-memory plan. No writes occur in this pass.
   for v_item in select value from pg_catalog.jsonb_array_elements(p_package -> 'items')
   loop
     if pg_catalog.jsonb_typeof(v_item) <> 'object' then
       raise exception 'Every learner content item must be an object' using errcode = '22023';
     end if;
-
     for v_key in select key from pg_catalog.jsonb_object_keys(v_item) as keys(key)
     loop
       if v_key not in (
@@ -507,9 +427,7 @@ begin
       raise exception 'Every item requires conceptCode' using errcode = '22023';
     end if;
     v_concept_code := v_item ->> 'conceptCode';
-    if v_concept_code = ''
-       or pg_catalog.btrim(v_concept_code) = ''
-       or v_concept_code <> pg_catalog.btrim(v_concept_code) then
+    if v_concept_code = '' or pg_catalog.btrim(v_concept_code) = '' or v_concept_code <> pg_catalog.btrim(v_concept_code) then
       raise exception 'conceptCode must be canonical' using errcode = '22023';
     end if;
 
@@ -524,9 +442,7 @@ begin
       exception when invalid_text_representation or numeric_value_out_of_range then
         raise exception 'expectedContentVersion must be a positive integer or null' using errcode = '22023';
       end;
-      if v_expected_version < 1 then
-        raise exception 'expectedContentVersion must be a positive integer or null' using errcode = '22023';
-      end if;
+      if v_expected_version < 1 then raise exception 'expectedContentVersion must be a positive integer or null' using errcode = '22023'; end if;
     else
       raise exception 'expectedContentVersion must be a positive integer or null' using errcode = '22023';
     end if;
@@ -536,17 +452,14 @@ begin
        or pg_catalog.jsonb_typeof(v_item -> 'mainContent') <> 'string' then
       raise exception 'learnerTitle, introduction and mainContent are required strings' using errcode = '22023';
     end if;
-
     v_learner_title := v_item ->> 'learnerTitle';
     v_introduction := v_item ->> 'introduction';
     v_main_content := v_item ->> 'mainContent';
-
     if v_learner_title = '' or pg_catalog.btrim(v_learner_title) = '' or v_learner_title <> pg_catalog.btrim(v_learner_title)
        or v_introduction = '' or pg_catalog.btrim(v_introduction) = '' or v_introduction <> pg_catalog.btrim(v_introduction)
        or v_main_content = '' or pg_catalog.btrim(v_main_content) = '' or v_main_content <> pg_catalog.btrim(v_main_content) then
       raise exception 'Learner text fields must be canonical and non-empty' using errcode = '22023';
     end if;
-
     if not private.is_safe_learner_markdown(v_main_content) then
       raise exception 'mainContent contains unsupported Markdown' using errcode = '22023';
     end if;
@@ -555,24 +468,20 @@ begin
       raise exception 'Invalid memoryKeys' using errcode = '22023';
     end if;
     v_memory_keys := v_item -> 'memoryKeys';
-
     if not (v_item ? 'confusions') or not private.is_trimmed_nonempty_text_array(v_item -> 'confusions') then
       raise exception 'Invalid confusions' using errcode = '22023';
     end if;
     v_confusions := v_item -> 'confusions';
-
     if not (v_item ? 'learnerSourceRefs') or not private.is_trimmed_nonempty_text_array(v_item -> 'learnerSourceRefs') then
       raise exception 'Invalid learnerSourceRefs' using errcode = '22023';
     end if;
     v_learner_source_refs := v_item -> 'learnerSourceRefs';
-
     if not (v_item ? 'sourceEvidence') or not private.is_valid_concept_source_evidence(v_item -> 'sourceEvidence') then
       raise exception 'Invalid sourceEvidence' using errcode = '22023';
     end if;
     v_source_evidence := v_item -> 'sourceEvidence';
 
-    if not (v_item ? 'example')
-       or pg_catalog.jsonb_typeof(v_item -> 'example') not in ('string', 'null') then
+    if not (v_item ? 'example') or pg_catalog.jsonb_typeof(v_item -> 'example') not in ('string', 'null') then
       raise exception 'example must be a non-empty canonical string or null' using errcode = '22023';
     end if;
     if pg_catalog.jsonb_typeof(v_item -> 'example') = 'null' then
@@ -594,17 +503,14 @@ begin
 
     v_approval_action := null;
     if v_item ? 'approvalAction' and pg_catalog.jsonb_typeof(v_item -> 'approvalAction') <> 'null' then
-      if pg_catalog.jsonb_typeof(v_item -> 'approvalAction') <> 'string'
-         or v_item ->> 'approvalAction' <> 'approve' then
+      if pg_catalog.jsonb_typeof(v_item -> 'approvalAction') <> 'string' or v_item ->> 'approvalAction' <> 'approve' then
         raise exception 'approvalAction must be approve or null' using errcode = '22023';
       end if;
       v_approval_action := 'approve';
     end if;
-
     if v_target_status <> 'approved' and v_approval_action is not null then
       raise exception 'approvalAction=approve requires editorialStatus=approved' using errcode = '22023';
     end if;
-
     if v_target_status = 'approved' and (
       pg_catalog.jsonb_array_length(v_memory_keys) < 1
       or pg_catalog.jsonb_array_length(v_learner_source_refs) < 1
@@ -613,17 +519,13 @@ begin
       raise exception 'Approved content lacks required editorial evidence' using errcode = '22023';
     end if;
 
-    select concept.id
-    into v_concept_id
+    select concept.id into v_concept_id
     from public.concepts concept
     where concept.opposition_id = v_opposition_id
       and concept.topic_id = v_topic_id
       and concept.code = v_concept_code
       and concept.active is true;
-
-    if v_concept_id is null then
-      raise exception 'Active concept not found in package topic' using errcode = '23503';
-    end if;
+    if v_concept_id is null then raise exception 'Active concept not found in package topic' using errcode = '23503'; end if;
 
     v_candidate_state := pg_catalog.jsonb_build_object(
       'learnerTitle', v_learner_title,
@@ -637,17 +539,10 @@ begin
       'editorialStatus', v_target_status
     );
 
-    select
-      content.learner_title,
-      content.introduction,
-      content.main_content,
-      content.memory_keys,
-      content.example,
-      content.confusions,
-      content.learner_source_refs,
-      content.source_evidence,
-      content.editorial_status,
-      content.content_version
+    select content.learner_title, content.introduction, content.main_content,
+           content.memory_keys, content.example, content.confusions,
+           content.learner_source_refs, content.source_evidence,
+           content.editorial_status, content.content_version
     into v_existing
     from public.concept_study_content content
     where content.concept_id = v_concept_id;
@@ -664,7 +559,6 @@ begin
         'sourceEvidence', v_existing.source_evidence,
         'editorialStatus', v_existing.editorial_status
       );
-
       if v_candidate_state is distinct from v_current_state then
         if v_expected_version is null or v_expected_version <> v_existing.content_version then
           raise exception 'Concurrent learner content version mismatch for concept %', v_concept_code using errcode = '40001';
@@ -700,26 +594,18 @@ begin
     ));
   end loop;
 
-  -- PASS 2: lock/re-read each current row, recompute equality, then condition writes on version.
+  -- PASS 2: lock/re-read each current row, recompute equality, and condition writes on version.
   for v_plan_item in select value from pg_catalog.jsonb_array_elements(v_plan)
   loop
     v_concept_id := (v_plan_item ->> 'conceptId')::uuid;
     v_concept_code := v_plan_item ->> 'conceptCode';
     v_target_status := v_plan_item ->> 'editorialStatus';
-    v_approval_action := case
-      when pg_catalog.jsonb_typeof(v_plan_item -> 'approvalAction') = 'null' then null
-      else v_plan_item ->> 'approvalAction'
-    end;
-    v_expected_version := case
-      when pg_catalog.jsonb_typeof(v_plan_item -> 'expectedContentVersion') = 'null' then null
-      else (v_plan_item ->> 'expectedContentVersion')::integer
-    end;
+    v_approval_action := case when pg_catalog.jsonb_typeof(v_plan_item -> 'approvalAction') = 'null' then null else v_plan_item ->> 'approvalAction' end;
+    v_expected_version := case when pg_catalog.jsonb_typeof(v_plan_item -> 'expectedContentVersion') = 'null' then null else (v_plan_item ->> 'expectedContentVersion')::integer end;
     v_candidate_state := v_plan_item -> 'candidateState';
 
-    -- Confirm the concept has not moved/deactivated between passes.
     if not exists (
-      select 1
-      from public.concepts concept
+      select 1 from public.concepts concept
       where concept.id = v_concept_id
         and concept.opposition_id = v_opposition_id
         and concept.topic_id = v_topic_id
@@ -729,17 +615,10 @@ begin
       raise exception 'Concept scope changed while importing learner content' using errcode = '40001';
     end if;
 
-    select
-      content.learner_title,
-      content.introduction,
-      content.main_content,
-      content.memory_keys,
-      content.example,
-      content.confusions,
-      content.learner_source_refs,
-      content.source_evidence,
-      content.editorial_status,
-      content.content_version
+    select content.learner_title, content.introduction, content.main_content,
+           content.memory_keys, content.example, content.confusions,
+           content.learner_source_refs, content.source_evidence,
+           content.editorial_status, content.content_version
     into v_existing
     from public.concept_study_content content
     where content.concept_id = v_concept_id
@@ -757,7 +636,6 @@ begin
         'sourceEvidence', v_existing.source_evidence,
         'editorialStatus', v_existing.editorial_status
       );
-
       if v_candidate_state is not distinct from v_current_state then
         v_unchanged := v_unchanged + 1;
         v_results := v_results || pg_catalog.jsonb_build_array(pg_catalog.jsonb_build_object(
@@ -791,10 +669,8 @@ begin
           updated_at = now(),
           approved_by = case when v_target_status = 'approved' then v_user_id else null end,
           approved_at = case when v_target_status = 'approved' then now() else null end
-      where concept_id = v_concept_id
-        and content_version = v_expected_version
+      where concept_id = v_concept_id and content_version = v_expected_version
       returning content_version into v_new_version;
-
       if not found then
         raise exception 'Concurrent learner content modification for concept %', v_concept_code using errcode = '40001';
       end if;
@@ -862,7 +738,7 @@ $function$;
 revoke all on function public.import_concept_study_content(jsonb) from public, anon, authenticated;
 grant execute on function public.import_concept_study_content(jsonb) to authenticated;
 
--- Extend the existing V4 learner read model. Legacy keys remain intact.
+-- Extend the existing V4 read model. Legacy keys remain intact.
 create or replace function private.open_my_v4_study_unit(p_study_unit_id uuid)
 returns jsonb
 language plpgsql
@@ -878,21 +754,12 @@ declare
   v_completion_count integer;
   v_result jsonb;
 begin
-  if v_user_id is null then
-    raise exception 'Authentication required' using errcode = '42501';
-  end if;
-
+  if v_user_id is null then raise exception 'Authentication required' using errcode = '42501'; end if;
   v_opposition_id := public.current_active_opposition_id();
-  if v_opposition_id is null then
-    raise exception 'An active opposition is required' using errcode = '42501';
-  end if;
-
+  if v_opposition_id is null then raise exception 'An active opposition is required' using errcode = '42501'; end if;
   if not exists (
-    select 1
-    from public.study_units unit
-    where unit.id = p_study_unit_id
-      and unit.opposition_id = v_opposition_id
-      and unit.active is true
+    select 1 from public.study_units unit
+    where unit.id = p_study_unit_id and unit.opposition_id = v_opposition_id and unit.active is true
   ) then
     raise exception 'Study unit not found' using errcode = '22023';
   end if;
@@ -903,33 +770,23 @@ begin
     v_user_id, v_opposition_id, p_study_unit_id, now(), now(), now()
   )
   on conflict (user_id, study_unit_id) do update
-  set last_opened_at = excluded.last_opened_at,
-      updated_at = excluded.updated_at
+  set last_opened_at = excluded.last_opened_at, updated_at = excluded.updated_at
   returning first_opened_at, last_opened_at, completed_at, completion_count
   into v_first_opened_at, v_last_opened_at, v_completed_at, v_completion_count;
 
   select pg_catalog.jsonb_build_object(
     'unit', pg_catalog.jsonb_build_object(
-      'id', unit.id,
-      'code', unit.code,
-      'topicId', unit.topic_id,
-      'title', unit.title,
-      'position', unit.position,
-      'estimatedMinutes', unit.estimated_minutes,
-      'studySummary', unit.study_summary,
-      'examKeys', unit.exam_keys,
-      'confusions', unit.confusions,
-      'traps', unit.traps,
-      'mnemonics', unit.mnemonics,
-      'sourceRefs', unit.source_refs
+      'id', unit.id, 'code', unit.code, 'topicId', unit.topic_id, 'title', unit.title,
+      'position', unit.position, 'estimatedMinutes', unit.estimated_minutes,
+      'studySummary', unit.study_summary, 'examKeys', unit.exam_keys,
+      'confusions', unit.confusions, 'traps', unit.traps,
+      'mnemonics', unit.mnemonics, 'sourceRefs', unit.source_refs
     ),
     'progress', pg_catalog.jsonb_build_object(
-      'firstOpenedAt', v_first_opened_at,
-      'lastOpenedAt', v_last_opened_at,
-      'completedAt', v_completed_at,
-      'completionCount', v_completion_count
+      'firstOpenedAt', v_first_opened_at, 'lastOpenedAt', v_last_opened_at,
+      'completedAt', v_completed_at, 'completionCount', v_completion_count
     ),
-    'concepts', pg_catalog.coalesce((
+    'concepts', coalesce((
       select pg_catalog.jsonb_agg(
         pg_catalog.jsonb_build_object(
           'id', concept.id,
@@ -975,17 +832,12 @@ begin
         and concept.opposition_id = v_opposition_id
         and concept.active is true
     ), '[]'::jsonb),
-    'flashcards', pg_catalog.coalesce((
+    'flashcards', coalesce((
       select pg_catalog.jsonb_agg(
         pg_catalog.jsonb_build_object(
-          'id', card.id,
-          'code', card.code,
-          'conceptId', card.concept_id,
-          'cardType', card.card_type,
-          'prompt', card.prompt,
-          'answer', card.answer,
-          'position', card.position,
-          'sourceRefs', card.source_refs
+          'id', card.id, 'code', card.code, 'conceptId', card.concept_id,
+          'cardType', card.card_type, 'prompt', card.prompt, 'answer', card.answer,
+          'position', card.position, 'sourceRefs', card.source_refs
         ) order by card.position, card.code
       )
       from public.flashcards card
@@ -995,19 +847,18 @@ begin
         and card.active is true
         and concept.active is true
     ), '[]'::jsonb)
-  )
-  into v_result
+  ) into v_result
   from public.study_units unit
-  where unit.id = p_study_unit_id
-    and unit.opposition_id = v_opposition_id;
-
+  where unit.id = p_study_unit_id and unit.opposition_id = v_opposition_id;
   return v_result;
 end;
 $function$;
 
--- The private reader is no longer a client-callable surface. The public wrapper is the only learner API.
+-- The private reader is no longer directly client-callable.
 revoke all on function private.open_my_v4_study_unit(uuid) from public, anon, authenticated;
 
+-- Wrapper remains the sole learner API. SECURITY DEFINER is required so callers do not need
+-- EXECUTE on the private function; auth.uid() still resolves from the request JWT claims.
 create or replace function public.open_my_v4_study_unit(p_study_unit_id uuid)
 returns jsonb
 language sql
