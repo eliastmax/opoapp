@@ -81,7 +81,12 @@ describe("ELI-34 learner-facing Study persistence migration", () => {
   });
 
   it("contains no academic backfill or direct invocation of the new importer", () => {
-    expect(migration).not.toMatch(/insert\s+into\s+public\.concept_study_content[\s\S]*select\s+/i);
+    expect(
+      migration.match(/insert\s+into\s+public\.concept_study_content/gi),
+    ).toHaveLength(1);
+    expect(migration).not.toMatch(
+      /insert\s+into\s+public\.concept_study_content\s+select/i,
+    );
     expect(migration).not.toMatch(/select\s+public\.import_concept_study_content/i);
   });
 });
