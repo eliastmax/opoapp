@@ -33,6 +33,16 @@ export type V4DailySession = {
   blocks: V4DailyBlock[];
 };
 
+export type V4LearnerConceptContent = {
+  learnerTitle: string;
+  introduction: string;
+  mainContent: string;
+  memoryKeys: string[];
+  example: string | null;
+  confusions: string[];
+  learnerSourceRefs: string[];
+};
+
 export type V4StudyUnitPayload = {
   unit: {
     id: string;
@@ -61,6 +71,8 @@ export type V4StudyUnitPayload = {
     description: string;
     position: number;
     activePrimaryQuestions: number;
+    // Optional because the tutorial preview still uses the legacy direct catalog loader.
+    learnerContent?: V4LearnerConceptContent | null;
   }>;
   flashcards: Array<{
     id: string;
