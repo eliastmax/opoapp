@@ -13,8 +13,12 @@ type StudyPreview = {
   flashcard: { prompt: string; answer: string; conceptTitle: string | null } | null;
 };
 
+function normalizedText(text: string) {
+  return text.trim().replace(/\s+/g, " ");
+}
+
 function excerpt(text: string, max = 120) {
-  const clean = text.trim().replace(/\s+/g, " ");
+  const clean = normalizedText(text);
   if (clean.length <= max) return clean;
   const slice = clean.slice(0, max);
   const stop = Math.max(slice.lastIndexOf(". "), slice.lastIndexOf("; "), slice.lastIndexOf(", "));
@@ -56,7 +60,12 @@ async function loadStudyPreview(unitId: string): Promise<StudyPreview> {
       : { data: [], error: null };
   if (flashcardsResult.error) throw flashcardsResult.error;
 
-  const flashcard = [...(flashcardsResult.data ?? [])].sort(
+  const flashcards = flashcardsResult.data ?? [];
+  const compactFlashcards = flashcards.filter(
+    (flashcard) =>
+      normalizedText(flashcard.prompt).length <= 135 && normalizedText(flashcard.answer).length <= 220,
+  );
+  const flashcard = [...(compactFlashcards.length > 0 ? compactFlashcards : flashcards)].sort(
     (a, b) => flashcardCompactness(a) - flashcardCompactness(b),
   )[0] ?? null;
   const conceptTitle = flashcard
@@ -102,6 +111,11 @@ function DemoShell({ children }: { children: React.ReactNode }) {
             max-height: calc(100dvh - 48px) !important;
             overflow-y: auto !important;
           }
+        }
+        @keyframes tour-flashcard-flip-in {
+          0% { transform: rotateY(88deg) scale(.985); opacity: .22; }
+          68% { transform: rotateY(-5deg) scale(1.008); opacity: 1; }
+          100% { transform: rotateY(0deg) scale(1); opacity: 1; }
         }
       `}</style>
       <div className="mx-auto flex h-[56dvh] w-full max-w-lg flex-col px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] min-[900px]:h-full min-[900px]:min-h-[100dvh] min-[900px]:pb-8">
@@ -173,7 +187,7 @@ export function ProductTourStudyDemo({
             <span className="text-[14px] font-bold uppercase tracking-[0.08em]">Idea central</span>
           </div>
           <p className="mt-2.5 text-[16px] leading-[1.45] text-foreground/90">{excerpt(data.summary, 105)}</p>
-          {data.summary.trim().length > 105 && (
+          {normalizedText(data.summary).length > 105 && (
             <p className="mt-1.5 text-[13px] font-medium text-muted-foreground">
               Al estudiar verás el resumen completo.
             </p>
@@ -239,14 +253,32 @@ export function ProductTourStudyDemo({
     <DemoShell>
       {data.flashcard ? (
         <div className="w-full [perspective:1200px]">
-          <div
-            className={`grid w-full [transform-style:preserve-3d] transition-transform duration-300 ease-out motion-reduce:transition-none ${
-              showingAnswer ? "[transform:rotateY(180deg)]" : ""
-            }`}
-          >
+          {showingAnswer ? (
             <Card
+              key="flashcard-answer"
+              data-tour="tour-study-flashcard-answer"
+              className="w-full [backface-visibility:hidden] border-primary/15 bg-gradient-to-br from-card to-primary/5 p-4 motion-safe:[animation:tour-flashcard-flip-in_320ms_ease-out_both]"
+            >
+              <div className="flex items-center gap-2 text-primary">
+                <Brain className="h-5 w-5" aria-hidden="true" />
+                <p className="text-[14px] font-bold uppercase tracking-[0.08em]">
+                  {normalizedText(data.flashcard.answer).length > 205 ? "Respuesta · vista breve" : "Respuesta"}
+                </p>
+              </div>
+              <p className="mt-4 text-[16px] font-medium leading-[1.4] text-foreground">
+                {excerpt(data.flashcard.answer, 205)}
+              </p>
+              {normalizedText(data.flashcard.answer).length > 205 && (
+                <p className="mt-3 text-[13px] font-medium leading-[1.35] text-muted-foreground">
+                  En Estudio verás la respuesta completa.
+                </p>
+              )}
+            </Card>
+          ) : (
+            <Card
+              key="flashcard-question"
               data-tour="tour-study-flashcard-question"
-              className="[grid-area:1/1] w-full [backface-visibility:hidden] border-primary/15 bg-gradient-to-br from-card to-primary/5 p-4"
+              className="w-full [backface-visibility:hidden] border-primary/15 bg-gradient-to-br from-card to-primary/5 p-4 motion-safe:[animation:tour-flashcard-flip-in_320ms_ease-out_both]"
             >
               <div className="flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -268,31 +300,7 @@ export function ProductTourStudyDemo({
                 Piensa la respuesta antes de verla.
               </p>
             </Card>
-
-            <Card
-              data-tour="tour-study-flashcard-answer"
-              className="[grid-area:1/1] w-full [backface-visibility:hidden] [transform:rotateY(180deg)] border-primary/15 bg-gradient-to-br from-card to-primary/5 p-4"
-            >
-              <div className="flex items-center gap-2 text-primary">
-                <Brain className="h-5 w-5" aria-hidden="true" />
-                <p className="text-[14px] font-bold uppercase tracking-[0.08em]">Respuesta</p>
-              </div>
-              <p className="mt-2 text-[12px] font-semibold leading-[1.3] text-muted-foreground">
-                {excerpt(data.flashcard.prompt, 72)}
-              </p>
-              <p
-                className={`mt-3 font-medium text-foreground ${
-                  data.flashcard.answer.trim().length > 360
-                    ? "text-[13px] leading-[1.3]"
-                    : data.flashcard.answer.trim().length > 240
-                      ? "text-[14px] leading-[1.35]"
-                      : "text-[16px] leading-[1.4]"
-                }`}
-              >
-                {data.flashcard.answer}
-              </p>
-            </Card>
-          </div>
+          )}
         </div>
       ) : (
         <Card data-tour={target} className="w-full p-6 text-center">
