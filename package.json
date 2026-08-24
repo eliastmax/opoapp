@@ -12,6 +12,8 @@
     "typecheck": "tsc --noEmit",
     "check": "bun test && tsc --noEmit && vite build",
     "maintenance:auxiliar": "bun src/cli/eli43-auxiliar-maintenance.ts",
+    "maintenance:celador-hardening": "bun src/cli/eli44-celador-hardening.ts",
+    "maintenance:celador-hardening:build": "bun src/cli/eli44-build-celador-hardening-package.ts",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
@@ -82,13 +84,14 @@
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.6",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.20",
-    "globals": "^15.15.0",
-    "nitro": "3.0.260603-beta",
-    "prettier": "^3.7.3",
-    "typescript": "^5.8.3",
-    "typescript-eslint": "^8.56.1",
-    "vite": "^8.0.16"
+    "eslint-plugin-react-hooks": "^6.0.0",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "nitro": "3.0.1-alpha.1",
+    "prettier": "^3.8.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.52.0",
+    "vite": "^7.3.1",
+    "vitest": "^4.0.16"
   }
 }
