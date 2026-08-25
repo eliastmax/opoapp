@@ -11,18 +11,20 @@ import {
   executionConfirmation,
   packageFingerprint,
   validateHardeningPackage,
-  type AuditSnapshotRow,
+  type PrewriteSnapshotRow,
   type V5AuditRow,
 } from "../celador-question-hardening-executor";
 
 function id(index: number): string {
   return `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`;
 }
+
 function levelFor(index: number) {
   if (index < 83) return "aprendizaje" as const;
   if (index < 155) return "consolidacion" as const;
   return "tribunal" as const;
 }
+
 function answerFor(index: number) {
   if (index < 54) return "A" as const;
   if (index < 108) return "B" as const;
@@ -31,7 +33,7 @@ function answerFor(index: number) {
 }
 
 function fixture() {
-  const snapshot: AuditSnapshotRow[] = [];
+  const snapshot: PrewriteSnapshotRow[] = [];
   const audit: V5AuditRow[] = [];
   for (let i = 0; i < 214; i++) {
     const codigo = `SMS-CEL-E-T05-${String(i + 1).padStart(4, "0")}`;
@@ -39,19 +41,37 @@ function fixture() {
     const level = levelFor(i);
     const answer = answerFor(i);
     snapshot.push({
-      question_id: questionId, codigo, pregunta: `old question ${i}`, opcion_a: `old a ${i}`, opcion_b: `old b ${i}`,
-      opcion_c: `old c ${i}`, opcion_d: `old d ${i}`, respuesta_correcta: answer, explicacion: `old explanation ${i}`,
-      nivel_pedagogico: level, tipo_trampa: "ninguna",
+      question_id: questionId,
+      codigo,
+      pregunta: `old question ${i}`,
+      opcion_a: `old a ${i}`,
+      opcion_b: `old b ${i}`,
+      opcion_c: `old c ${i}`,
+      opcion_d: `old d ${i}`,
+      respuesta_correcta: answer,
+      explicacion: `old explanation ${i}`,
+      nivel_pedagogico: level,
+      tipo_trampa: "ninguna",
     });
-    const decision = i < 29 ? "KEEP" : i === 213 ? "REPLACE" : "EDIT";
+    const decision = i < 29 ? "KEEP" : i === 173 ? "REPLACE" : "EDIT";
     audit.push({
-      question_id: questionId, codigo, nivel_actual: level, editorial_decision: decision,
+      question_id: questionId,
+      codigo,
+      nivel_actual: level,
+      editorial_decision: decision,
       new_level_if_any: "",
-      ...(decision === "KEEP" ? {} : {
-        proposed_stem: `new question ${i}`, proposed_a: `new a ${i}`, proposed_b: `new b ${i}`,
-        proposed_c: `new c ${i}`, proposed_d: `new d ${i}`, proposed_correct: answer,
-        proposed_explanation: `new explanation ${i}`, proposed_tipo_trampa: "concepto_proximo",
-      }),
+      ...(decision === "KEEP"
+        ? {}
+        : {
+            proposed_stem: `new question ${i}`,
+            proposed_a: `new a ${i}`,
+            proposed_b: `new b ${i}`,
+            proposed_c: `new c ${i}`,
+            proposed_d: `new d ${i}`,
+            proposed_correct: answer,
+            proposed_explanation: `new explanation ${i}`,
+            proposed_tipo_trampa: "concepto_proximo",
+          }),
     });
   }
   return { audit, snapshot };
@@ -70,49 +90,110 @@ describe("ELI-44 package contract", () => {
   test("builds the approved T11 V5 shape deterministically", () => {
     const { audit, snapshot } = fixture();
     const first = buildT11V5Package(audit, snapshot, "preflight");
-    const second = buildT11V5Package([...audit].reverse(), [...snapshot].reverse(), "preflight");
+    const second = buildT11V5Package(
+      [...audit].reverse(),
+      [...snapshot].reverse(),
+      "preflight",
+    );
     expect(first.mutations).toHaveLength(185);
     expect(first.keeps).toHaveLength(29);
-    expect(first.mutations.filter((row) => row.decision === "EDIT")).toHaveLength(184);
-    expect(first.mutations.filter((row) => row.decision === "REPLACE")).toHaveLength(1);
+    expect(
+      first.mutations.filter((row) => row.decision === "EDIT"),
+    ).toHaveLength(184);
+    expect(
+      first.mutations.filter((row) => row.decision === "REPLACE"),
+    ).toHaveLength(1);
+    expect(
+      first.mutations.find((row) => row.decision === "REPLACE")?.codigo,
+    ).toBe("SMS-CEL-E-T05-0174");
     expect(first.expected).toEqual(T11_V5_EXPECTED);
     expect(first.package_fingerprint).toBe(second.package_fingerprint);
-    expect(validateHardeningPackage(first).package_fingerprint).toBe(first.package_fingerprint);
+    expect(validateHardeningPackage(first).package_fingerprint).toBe(
+      first.package_fingerprint,
+    );
   });
 
-  test("requires a frozen audit-time snapshot instead of blessing fresh state implicitly", () => {
+  test("requires a PRE-WRITE CURRENT checkpoint for the stale guard", () => {
     const { audit } = fixture();
-    expect(() => buildT11V5Package(audit, [], "preflight")).toThrow("audit-time snapshot");
+    expect(() => buildT11V5Package(audit, [], "preflight")).toThrow(
+      "PRE-WRITE CURRENT",
+    );
   });
 
   test("current fingerprint covers identity and all nine mutable current fields", () => {
     const { snapshot } = fixture();
     const baseline = currentQuestionFingerprint(snapshot[0]);
-    for (const key of ["codigo","pregunta","opcion_a","opcion_b","opcion_c","opcion_d","respuesta_correcta","explicacion","nivel_pedagogico","tipo_trampa"] as const) {
-      const changed = { ...snapshot[0], [key]: `${String((snapshot[0] as any)[key])}-changed` } as AuditSnapshotRow;
+    for (const key of [
+      "codigo",
+      "pregunta",
+      "opcion_a",
+      "opcion_b",
+      "opcion_c",
+      "opcion_d",
+      "respuesta_correcta",
+      "explicacion",
+      "nivel_pedagogico",
+      "tipo_trampa",
+    ] as const) {
+      const changed = {
+        ...snapshot[0],
+        [key]: `${String((snapshot[0] as any)[key])}-changed`,
+      } as PrewriteSnapshotRow;
       expect(currentQuestionFingerprint(changed)).not.toBe(baseline);
     }
-    expect(currentQuestionFingerprint({ ...snapshot[0], question_id: id(999) })).not.toBe(baseline);
+    expect(
+      currentQuestionFingerprint({ ...snapshot[0], question_id: id(999) }),
+    ).not.toBe(baseline);
   });
 
   test("package fingerprint is order-independent but content-bound", () => {
     const pkg = validPackage();
-    const base = { package_id: pkg.package_id, opposition_id: pkg.opposition_id, topic_id: pkg.topic_id, expected: pkg.expected, mutations: pkg.mutations, keeps: pkg.keeps };
+    const base = {
+      package_id: pkg.package_id,
+      opposition_id: pkg.opposition_id,
+      topic_id: pkg.topic_id,
+      expected: pkg.expected,
+      mutations: pkg.mutations,
+      keeps: pkg.keeps,
+    };
     expect(packageFingerprint(base)).toBe(pkg.package_fingerprint);
-    expect(packageFingerprint({ ...base, mutations: [...pkg.mutations].reverse(), keeps: [...pkg.keeps].reverse() })).toBe(pkg.package_fingerprint);
+    expect(
+      packageFingerprint({
+        ...base,
+        mutations: [...pkg.mutations].reverse(),
+        keeps: [...pkg.keeps].reverse(),
+      }),
+    ).toBe(pkg.package_fingerprint);
     const changed = mutableCopy(base);
     changed.mutations[0].new_values.pregunta += " x";
     expect(packageFingerprint(changed)).not.toBe(pkg.package_fingerprint);
   });
 
   test("rejects credential and privileged-key CLI flags", () => {
-    for (const args of [["--password=x"],["--jwt=x"],["--token=x"],["--service-role=x"],["--secret=x"]]) {
+    for (const args of [
+      ["--password=x"],
+      ["--jwt=x"],
+      ["--token=x"],
+      ["--service-role=x"],
+      ["--secret=x"],
+    ]) {
       expect(() => assertSafeCliArgs(args)).toThrow("Credentials");
     }
   });
 
   test("rejects unsupported mutation fields including identity/source/topic attempts", () => {
-    for (const forbidden of ["codigo","topic_id","opposition_id","subject_id","user_id","activa","referencia_fuente","documento_referencia","pagina_inicio","question_concepts"]) {
+    for (const forbidden of [
+      "codigo",
+      "topic_id",
+      "opposition_id",
+      "subject_id",
+      "user_id",
+      "activa",
+      "referencia_fuente",
+      "documento_referencia",
+      "pagina_inicio",
+      "question_concepts",
+    ]) {
       const pkg = mutableCopy(validPackage());
       pkg.mutations[0].new_values[forbidden] = "forbidden";
       expect(() => validateHardeningPackage(pkg)).toThrow("unsupported keys");
@@ -122,10 +203,14 @@ describe("ELI-44 package contract", () => {
   test("rejects duplicate IDs and duplicate codes", () => {
     const duplicateId = mutableCopy(validPackage());
     duplicateId.mutations[1].question_id = duplicateId.mutations[0].question_id;
-    expect(() => validateHardeningPackage(duplicateId)).toThrow("Duplicate question_id");
+    expect(() => validateHardeningPackage(duplicateId)).toThrow(
+      "Duplicate question_id",
+    );
     const duplicateCode = mutableCopy(validPackage());
     duplicateCode.mutations[1].codigo = duplicateCode.mutations[0].codigo;
-    expect(() => validateHardeningPackage(duplicateCode)).toThrow("Duplicate codigo");
+    expect(() => validateHardeningPackage(duplicateCode)).toThrow(
+      "Duplicate codigo",
+    );
   });
 
   test("rejects 185→184 and 185→186 mutation cardinality drift", () => {
@@ -143,10 +228,14 @@ describe("ELI-44 package contract", () => {
   test("rejects wrong opposition, package fingerprint and execute confirmation", () => {
     const opposition = mutableCopy(validPackage());
     opposition.opposition_id = "00000000-0000-4000-8000-000000000001";
-    expect(() => validateHardeningPackage(opposition)).toThrow("restricted to Celador");
+    expect(() => validateHardeningPackage(opposition)).toThrow(
+      "restricted to Celador",
+    );
     const fingerprint = mutableCopy(validPackage());
     fingerprint.mutations[0].new_values.pregunta += " tampered";
-    expect(() => validateHardeningPackage(fingerprint)).toThrow("PACKAGE_FINGERPRINT_MISMATCH");
+    expect(() => validateHardeningPackage(fingerprint)).toThrow(
+      "PACKAGE_FINGERPRINT_MISMATCH",
+    );
     const execute = mutableCopy(validPackage());
     execute.mode = "execute";
     execute.confirmation = "execute=true";
@@ -164,7 +253,13 @@ describe("ELI-44 package contract", () => {
 });
 
 describe("ELI-44 SQL hardening surface", () => {
-  const migration = readFileSync(new URL("../../../supabase/migrations/20260824223841_eli44_celador_question_hardening.sql", import.meta.url), "utf8");
+  const migration = readFileSync(
+    new URL(
+      "../../../supabase/migrations/20260824223841_eli44_celador_question_hardening.sql",
+      import.meta.url,
+    ),
+    "utf8",
+  );
 
   test("is SECURITY INVOKER and authenticated-only, including service_role denial", () => {
     expect(migration).toContain("security invoker");
@@ -172,8 +267,12 @@ describe("ELI-44 SQL hardening surface", () => {
     expect(migration).toContain("auth.uid()");
     expect(migration).toContain("current_active_opposition_id()");
     expect(migration).toContain("opposition_admins");
-    expect(migration).toContain("revoke all on function public.execute_celador_question_hardening(jsonb) from service_role");
-    expect(migration).toContain("grant execute on function public.execute_celador_question_hardening(jsonb) to authenticated");
+    expect(migration).toContain(
+      "revoke all on function public.execute_celador_question_hardening(jsonb) from service_role",
+    );
+    expect(migration).toContain(
+      "grant execute on function public.execute_celador_question_hardening(jsonb) to authenticated",
+    );
   });
 
   test("guards wrong active opposition, cross-topic/opposition, id/code mismatch and nonexistent rows", () => {
@@ -188,18 +287,42 @@ describe("ELI-44 SQL hardening surface", () => {
   test("implements package-bound stale guard and exact confirmation", () => {
     expect(migration).toContain("STALE_PACKAGE: current fingerprint mismatch");
     expect(migration).toContain("for update");
-    expect(migration).toContain("STALE_PACKAGE: locked current fingerprint mismatch");
+    expect(migration).toContain(
+      "STALE_PACKAGE: locked current fingerprint mismatch",
+    );
     expect(migration).toContain("PACKAGE_FINGERPRINT_MISMATCH");
     expect(migration).toContain("APPLY_CELADOR_QUESTION_HARDENING:");
     expect(migration).not.toContain("execute=true");
   });
 
   test("updates only the nine authorized fields and never inserts/deletes academic rows", () => {
-    const updateBlock = migration.slice(migration.indexOf("update public.questions q set"), migration.indexOf("get diagnostics v_affected"));
-    for (const field of ["pregunta","opcion_a","opcion_b","opcion_c","opcion_d","respuesta_correcta","explicacion","nivel_pedagogico","tipo_trampa"]) {
+    const updateBlock = migration.slice(
+      migration.indexOf("update public.questions q set"),
+      migration.indexOf("get diagnostics v_affected"),
+    );
+    for (const field of [
+      "pregunta",
+      "opcion_a",
+      "opcion_b",
+      "opcion_c",
+      "opcion_d",
+      "respuesta_correcta",
+      "explicacion",
+      "nivel_pedagogico",
+      "tipo_trampa",
+    ]) {
       expect(updateBlock).toContain(`${field} =`);
     }
-    for (const forbidden of ["codigo =","topic_id =","opposition_id =","subject_id =","user_id =","activa =","referencia_fuente =","documento_referencia ="]) {
+    for (const forbidden of [
+      "codigo =",
+      "topic_id =",
+      "opposition_id =",
+      "subject_id =",
+      "user_id =",
+      "activa =",
+      "referencia_fuente =",
+      "documento_referencia =",
+    ]) {
       expect(updateBlock).not.toContain(forbidden);
     }
     expect(migration).not.toMatch(/insert\s+into\s+public\.questions/i);
