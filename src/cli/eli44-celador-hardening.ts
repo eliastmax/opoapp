@@ -15,9 +15,7 @@ import {
 const RPC_NAME = "execute_celador_question_hardening";
 type Command = "probe" | "preflight" | "execute";
 
-function requiredEnvironment(
-  name: "SUPABASE_URL" | "SUPABASE_PUBLISHABLE_KEY",
-): string {
+function requiredEnvironment(name: "SUPABASE_URL" | "SUPABASE_PUBLISHABLE_KEY"): string {
   const value =
     process.env[name] ??
     (name === "SUPABASE_URL"
@@ -32,9 +30,7 @@ function requiredEnvironment(
 function createPublishableKeyFetch(apiKey: string): typeof fetch {
   return (input, init) => {
     const headers = new Headers(
-      typeof Request !== "undefined" && input instanceof Request
-        ? input.headers
-        : undefined,
+      typeof Request !== "undefined" && input instanceof Request ? input.headers : undefined,
     );
     if (init?.headers) {
       new Headers(init.headers).forEach((value, key) => headers.set(key, value));
@@ -76,10 +72,7 @@ async function readHidden(label: string): Promise<string> {
       stdin.setRawMode(false);
       stdin.pause();
     };
-    const onKeypress = (
-      chunk: string,
-      key: { name?: string; ctrl?: boolean },
-    ) => {
+    const onKeypress = (chunk: string, key: { name?: string; ctrl?: boolean }) => {
       if (key.ctrl && key.name === "c") {
         cleanup();
         reject(new Error("Authentication cancelled."));
@@ -132,12 +125,12 @@ async function loadPackage(path: string, mode: "preflight" | "execute") {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
     throw new Error("Hardening package must be a JSON object.");
   }
-  const base = { ...(raw as Record<string, unknown>), mode };
+  const base: Record<string, unknown> = {
+    ...(raw as Record<string, unknown>),
+    mode,
+  };
   if (mode === "preflight") delete base.confirmation;
-  const fingerprint =
-    typeof base.package_fingerprint === "string"
-      ? base.package_fingerprint
-      : "";
+  const fingerprint = typeof base.package_fingerprint === "string" ? base.package_fingerprint : "";
   if (mode === "execute") {
     base.confirmation = executionConfirmation(fingerprint);
   }
@@ -159,9 +152,7 @@ async function main(): Promise<void> {
   } else {
     const pkg = await loadPackage(packagePath!, command);
     if (command === "execute") {
-      stdout.write(
-        "\nWARNING: this command mutates existing Celador question content in place.\n",
-      );
+      stdout.write("\nWARNING: this command mutates existing Celador question content in place.\n");
       stdout.write(
         "Do not continue without a separate Governance authorization for this exact package fingerprint.\n\n",
       );
@@ -175,9 +166,7 @@ async function main(): Promise<void> {
   }
 
   const email = await readLine("Supabase Celador admin email: ");
-  const password = await readHidden(
-    "Supabase admin password (hidden, runtime only): ",
-  );
+  const password = await readHidden("Supabase admin password (hidden, runtime only): ");
   if (!email || !password) throw new Error("Email and password are required.");
 
   const supabase = createClient(url, publishableKey, {
@@ -191,25 +180,21 @@ async function main(): Promise<void> {
   });
 
   try {
-    const { data: login, error: loginError } =
-      await supabase.auth.signInWithPassword({ email, password });
+    const { data: login, error: loginError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     if (loginError || !login.user) throw new Error("Authentication failed.");
     const userId = login.user.id;
-    const [
-      { data: profile, error: profileError },
-      { data: adminRows, error: adminError },
-    ] = await Promise.all([
-      supabase
-        .from("profiles")
-        .select("active_opposition_id")
-        .eq("id", userId)
-        .maybeSingle(),
-      supabase
-        .from("opposition_admins")
-        .select("opposition_id")
-        .eq("user_id", userId)
-        .eq("opposition_id", CELADOR_OPPOSITION_ID),
-    ]);
+    const [{ data: profile, error: profileError }, { data: adminRows, error: adminError }] =
+      await Promise.all([
+        supabase.from("profiles").select("active_opposition_id").eq("id", userId).maybeSingle(),
+        supabase
+          .from("opposition_admins")
+          .select("opposition_id")
+          .eq("user_id", userId)
+          .eq("opposition_id", CELADOR_OPPOSITION_ID),
+      ]);
     if (profileError || adminError) {
       throw new Error("Authorization preflight failed.");
     }
@@ -217,9 +202,7 @@ async function main(): Promise<void> {
       throw new Error("Rejected: Celador SMS is not the active opposition.");
     }
     if (!adminRows?.length) {
-      throw new Error(
-        "Rejected: authenticated user is not opposition_admin for Celador.",
-      );
+      throw new Error("Rejected: authenticated user is not opposition_admin for Celador.");
     }
 
     stdout.write(`Authorized Celador session verified. Operation: ${command}.\n`);
@@ -230,9 +213,7 @@ async function main(): Promise<void> {
       throw new Error(`RPC rejected: ${redactSensitiveText(error.message)}`);
     }
     const result =
-      data && typeof data === "object"
-        ? (data as Record<string, unknown>)
-        : { result: data };
+      data && typeof data === "object" ? (data as Record<string, unknown>) : { result: data };
     stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   } finally {
     await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
@@ -241,9 +222,7 @@ async function main(): Promise<void> {
 
 main().catch((error: unknown) => {
   const message =
-    error instanceof Error
-      ? error.message
-      : "Unknown Celador hardening executor failure.";
+    error instanceof Error ? error.message : "Unknown Celador hardening executor failure.";
   console.error(redactSensitiveText(message));
   process.exitCode = 1;
 });

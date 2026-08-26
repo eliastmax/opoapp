@@ -30,3 +30,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Private production-derived academic artifacts
+/private-artifacts/eli44/
+/ELI44_T11_PREWRITE_SNAPSHOT.json
+/ELI44_T11_HARDENING_PACKAGE_V5.json

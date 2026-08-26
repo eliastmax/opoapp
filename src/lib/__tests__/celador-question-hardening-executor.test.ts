@@ -1,3 +1,4 @@
+// @ts-expect-error bun:test is provided by the Bun test runtime
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import {
@@ -90,34 +91,22 @@ describe("ELI-44 package contract", () => {
   test("builds the approved T11 V5 shape deterministically", () => {
     const { audit, snapshot } = fixture();
     const first = buildT11V5Package(audit, snapshot, "preflight");
-    const second = buildT11V5Package(
-      [...audit].reverse(),
-      [...snapshot].reverse(),
-      "preflight",
-    );
+    const second = buildT11V5Package([...audit].reverse(), [...snapshot].reverse(), "preflight");
     expect(first.mutations).toHaveLength(185);
     expect(first.keeps).toHaveLength(29);
-    expect(
-      first.mutations.filter((row) => row.decision === "EDIT"),
-    ).toHaveLength(184);
-    expect(
-      first.mutations.filter((row) => row.decision === "REPLACE"),
-    ).toHaveLength(1);
-    expect(
-      first.mutations.find((row) => row.decision === "REPLACE")?.codigo,
-    ).toBe("SMS-CEL-E-T05-0174");
+    expect(first.mutations.filter((row) => row.decision === "EDIT")).toHaveLength(184);
+    expect(first.mutations.filter((row) => row.decision === "REPLACE")).toHaveLength(1);
+    expect(first.mutations.find((row) => row.decision === "REPLACE")?.codigo).toBe(
+      "SMS-CEL-E-T05-0174",
+    );
     expect(first.expected).toEqual(T11_V5_EXPECTED);
     expect(first.package_fingerprint).toBe(second.package_fingerprint);
-    expect(validateHardeningPackage(first).package_fingerprint).toBe(
-      first.package_fingerprint,
-    );
+    expect(validateHardeningPackage(first).package_fingerprint).toBe(first.package_fingerprint);
   });
 
   test("requires a PRE-WRITE CURRENT checkpoint for the stale guard", () => {
     const { audit } = fixture();
-    expect(() => buildT11V5Package(audit, [], "preflight")).toThrow(
-      "PRE-WRITE CURRENT",
-    );
+    expect(() => buildT11V5Package(audit, [], "preflight")).toThrow("PRE-WRITE CURRENT");
   });
 
   test("current fingerprint covers identity and all nine mutable current fields", () => {
@@ -141,9 +130,7 @@ describe("ELI-44 package contract", () => {
       } as PrewriteSnapshotRow;
       expect(currentQuestionFingerprint(changed)).not.toBe(baseline);
     }
-    expect(
-      currentQuestionFingerprint({ ...snapshot[0], question_id: id(999) }),
-    ).not.toBe(baseline);
+    expect(currentQuestionFingerprint({ ...snapshot[0], question_id: id(999) })).not.toBe(baseline);
   });
 
   test("package fingerprint is order-independent but content-bound", () => {
@@ -203,14 +190,10 @@ describe("ELI-44 package contract", () => {
   test("rejects duplicate IDs and duplicate codes", () => {
     const duplicateId = mutableCopy(validPackage());
     duplicateId.mutations[1].question_id = duplicateId.mutations[0].question_id;
-    expect(() => validateHardeningPackage(duplicateId)).toThrow(
-      "Duplicate question_id",
-    );
+    expect(() => validateHardeningPackage(duplicateId)).toThrow("Duplicate question_id");
     const duplicateCode = mutableCopy(validPackage());
     duplicateCode.mutations[1].codigo = duplicateCode.mutations[0].codigo;
-    expect(() => validateHardeningPackage(duplicateCode)).toThrow(
-      "Duplicate codigo",
-    );
+    expect(() => validateHardeningPackage(duplicateCode)).toThrow("Duplicate codigo");
   });
 
   test("rejects 185→184 and 185→186 mutation cardinality drift", () => {
@@ -228,14 +211,10 @@ describe("ELI-44 package contract", () => {
   test("rejects wrong opposition, package fingerprint and execute confirmation", () => {
     const opposition = mutableCopy(validPackage());
     opposition.opposition_id = "00000000-0000-4000-8000-000000000001";
-    expect(() => validateHardeningPackage(opposition)).toThrow(
-      "restricted to Celador",
-    );
+    expect(() => validateHardeningPackage(opposition)).toThrow("restricted to Celador");
     const fingerprint = mutableCopy(validPackage());
     fingerprint.mutations[0].new_values.pregunta += " tampered";
-    expect(() => validateHardeningPackage(fingerprint)).toThrow(
-      "PACKAGE_FINGERPRINT_MISMATCH",
-    );
+    expect(() => validateHardeningPackage(fingerprint)).toThrow("PACKAGE_FINGERPRINT_MISMATCH");
     const execute = mutableCopy(validPackage());
     execute.mode = "execute";
     execute.confirmation = "execute=true";
@@ -267,8 +246,8 @@ describe("ELI-44 SQL hardening surface", () => {
     expect(migration).toContain("auth.uid()");
     expect(migration).toContain("current_active_opposition_id()");
     expect(migration).toContain("opposition_admins");
-    expect(migration).toContain(
-      "revoke all on function public.execute_celador_question_hardening(jsonb) from service_role",
+    expect(migration).toMatch(
+      /revoke all on function public\.execute_celador_question_hardening\(jsonb\) from [^;]*\bservice_role\b/,
     );
     expect(migration).toContain(
       "grant execute on function public.execute_celador_question_hardening(jsonb) to authenticated",
@@ -287,9 +266,7 @@ describe("ELI-44 SQL hardening surface", () => {
   test("implements package-bound stale guard and exact confirmation", () => {
     expect(migration).toContain("STALE_PACKAGE: current fingerprint mismatch");
     expect(migration).toContain("for update");
-    expect(migration).toContain(
-      "STALE_PACKAGE: locked current fingerprint mismatch",
-    );
+    expect(migration).toContain("STALE_PACKAGE: locked current fingerprint mismatch");
     expect(migration).toContain("PACKAGE_FINGERPRINT_MISMATCH");
     expect(migration).toContain("APPLY_CELADOR_QUESTION_HARDENING:");
     expect(migration).not.toContain("execute=true");
@@ -338,7 +315,12 @@ describe("ELI-44 SQL hardening surface", () => {
     expect(migration).toContain("study_units");
     expect(migration).toContain("concepts");
     expect(migration).toContain("flashcards");
-    expect(migration).toContain("referencia_fuente");
-    expect(migration).toContain("documento_referencia");
+    const preservedQuestionHash = migration.slice(
+      migration.indexOf("select encode(digest(coalesce(string_agg("),
+      migration.indexOf("into v_questions_preserved_before"),
+    );
+    expect(preservedQuestionHash).toContain("to_jsonb(q) - array[");
+    expect(preservedQuestionHash).not.toContain("referencia_fuente");
+    expect(preservedQuestionHash).not.toContain("documento_referencia");
   });
 });
