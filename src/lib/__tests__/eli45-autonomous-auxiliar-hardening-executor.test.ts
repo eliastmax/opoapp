@@ -11,10 +11,10 @@ const migration = readFileSync(
 );
 
 describe("ELI-45 autonomous governed Auxiliar hardening executor", () => {
-  it("creates a non-login internal executor and keeps app roles closed", () => {
-    expect(migration).toContain("create role auxiliar_question_hardening_executor nologin noinherit bypassrls");
-    expect(migration).toContain("security definer");
-    expect(migration).toContain("session_user <> 'postgres'");
+  it("keeps the executor private to the trusted Postgres maintenance runtime", () => {
+    expect(migration).toContain("create schema if not exists catalog_maintenance_private");
+    expect(migration).toContain("security invoker");
+    expect(migration).toContain("current_user <> 'postgres'");
     expect(migration).toContain(
       "revoke all on function catalog_maintenance_private.execute_auxiliar_question_hardening(jsonb)",
     );
@@ -22,11 +22,14 @@ describe("ELI-45 autonomous governed Auxiliar hardening executor", () => {
     expect(migration).toContain(
       "grant execute on function catalog_maintenance_private.execute_auxiliar_question_hardening(jsonb) to postgres",
     );
+    expect(migration).not.toMatch(/signInWithPassword|password|jwt|access_token|refresh_token/i);
   });
 
-  it("hard-locks the new executor to Auxiliar and question updates only", () => {
+  it("hard-locks the internal branch to Auxiliar and question updates only", () => {
     expect(migration).toContain("00000000-0000-4000-8000-000000000001");
-    expect(migration).toContain("if current_user='auxiliar_question_hardening_executor' then");
+    expect(migration).toContain(
+      "current_user='postgres' and current_setting('opoapp.aux_hardening.operation',true)='question_hardening'",
+    );
     expect(migration).toContain("tg_table_name <> 'questions'");
     expect(migration).toContain("tg_op <> 'UPDATE'");
     expect(migration).toContain("v_operation <> 'question_hardening'");
@@ -34,16 +37,26 @@ describe("ELI-45 autonomous governed Auxiliar hardening executor", () => {
     expect(migration).not.toMatch(/delete\s+from\s+public\.questions/i);
   });
 
-  it("preserves the existing Celador Factory branch rather than repurposing it", () => {
+  it("preserves the existing Celador Factory branch unchanged in principle", () => {
     expect(migration).toContain("if current_user='factory_catalog_executor' then");
     expect(migration).toContain("00000000-0000-4000-8000-000000000002");
     expect(migration).toContain("Factory v1 is restricted to Celador SMS");
   });
 
-  it("limits mutable fields and preserves identity/scope", () => {
-    expect(migration).toContain(
-      "grant update (pregunta, opcion_a, opcion_b, opcion_c, opcion_d, respuesta_correcta, explicacion, nivel_pedagogico, tipo_trampa)",
-    );
+  it("limits mutations to the seven academic question surfaces", () => {
+    for (const assignment of [
+      "pregunta=v_change->>'pregunta'",
+      "opcion_a=v_change->>'opcion_a'",
+      "opcion_b=v_change->>'opcion_b'",
+      "opcion_c=v_change->>'opcion_c'",
+      "opcion_d=v_change->>'opcion_d'",
+      "respuesta_correcta=v_answer::public.respuesta_enum",
+      "explicacion=v_change->>'explicacion'",
+      "nivel_pedagogico=v_level",
+      "tipo_trampa=v_trap",
+    ]) {
+      expect(migration).toContain(assignment);
+    }
     for (const field of [
       "new.id is distinct from old.id",
       "new.codigo is distinct from old.codigo",
@@ -65,10 +78,10 @@ describe("ELI-45 autonomous governed Auxiliar hardening executor", () => {
     expect(migration).toContain("stale package detected");
     expect(migration).toContain("package contains duplicate question ids");
     expect(migration).toContain("package contains duplicate question codes");
-    expect(migration).toContain("v_change_count > 500");
+    expect(migration).toContain("v_change_count>500");
   });
 
-  it("supports zero-write preflight and atomic execute postconditions", () => {
+  it("supports zero-write preflight, atomic execute and audit metadata", () => {
     expect(migration).toContain("v_mode not in ('preflight','execute')");
     expect(migration).toContain("'academic_writes',0");
     expect(migration).toContain("for update");
@@ -76,7 +89,7 @@ describe("ELI-45 autonomous governed Auxiliar hardening executor", () => {
     expect(migration).toContain("auxiliar_hardening_audit");
   });
 
-  it("does not weaken or replace the existing authenticated ELI-43 path", () => {
+  it("does not remove the authenticated ELI-43 path or relax app security", () => {
     expect(migration).not.toContain("drop function public.execute_auxiliar_maintenance");
     expect(migration).not.toContain("disable row level security");
     expect(migration).not.toContain("disable trigger");
