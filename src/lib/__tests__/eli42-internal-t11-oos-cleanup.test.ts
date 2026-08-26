@@ -21,6 +21,7 @@ describe("ELI-42 internal T11 OOS cleanup", () => {
     );
     expect(migration).toContain("from public, anon, authenticated, service_role");
     expect(migration).not.toMatch(/p_sql|sql_text|query_text|execute\s+immediate/i);
+    expect(migration).not.toMatch(/create\s+role|alter\s+role|bypassrls|set\s+role/i);
   });
 
   it("hard-locks the one-time operation to Auxiliar T11 and the exact OOS range", () => {
