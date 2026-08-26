@@ -18,22 +18,26 @@ describe("ELI-45 autonomous governed Auxiliar hardening executor", () => {
     expect(migration).toContain(
       "revoke all on function catalog_maintenance_private.execute_auxiliar_question_hardening(jsonb)",
     );
-    expect(migration).toContain(
-      "from public, anon, authenticated, service_role",
-    );
+    expect(migration).toContain("from public, anon, authenticated, service_role");
     expect(migration).toContain(
       "grant execute on function catalog_maintenance_private.execute_auxiliar_question_hardening(jsonb) to postgres",
     );
   });
 
-  it("hard-locks the executor to Auxiliar and question updates only", () => {
+  it("hard-locks the new executor to Auxiliar and question updates only", () => {
     expect(migration).toContain("00000000-0000-4000-8000-000000000001");
-    expect(migration).not.toContain("00000000-0000-4000-8000-000000000002");
+    expect(migration).toContain("if current_user='auxiliar_question_hardening_executor' then");
     expect(migration).toContain("tg_table_name <> 'questions'");
     expect(migration).toContain("tg_op <> 'UPDATE'");
     expect(migration).toContain("v_operation <> 'question_hardening'");
     expect(migration).not.toMatch(/insert\s+into\s+public\.questions/i);
     expect(migration).not.toMatch(/delete\s+from\s+public\.questions/i);
+  });
+
+  it("preserves the existing Celador Factory branch rather than repurposing it", () => {
+    expect(migration).toContain("if current_user='factory_catalog_executor' then");
+    expect(migration).toContain("00000000-0000-4000-8000-000000000002");
+    expect(migration).toContain("Factory v1 is restricted to Celador SMS");
   });
 
   it("limits mutable fields and preserves identity/scope", () => {
