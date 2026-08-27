@@ -12,6 +12,8 @@
     "typecheck": "tsc --noEmit",
     "check": "bun test && tsc --noEmit && vite build",
     "maintenance:auxiliar": "bun src/cli/eli43-auxiliar-maintenance.ts",
+    "maintenance:celador-hardening": "bun src/cli/eli44-celador-hardening.ts",
+    "maintenance:celador-hardening:build": "bun src/cli/eli44-build-celador-hardening-package.ts",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
