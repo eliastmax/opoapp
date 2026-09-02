@@ -16,53 +16,25 @@ type ProductTourStep = {
 
 export const PRODUCT_TOUR_STEPS = [
   {
-    journeyLabel: "Estudia",
+    journeyLabel: "Entrena",
     scenes: [
       {
-        route: "/estudio",
-        target: "study-unit",
-        title: "Avanza sin tragarte un tema entero",
-        description: "Tu temario se divide en unidades claras. Entras, estudias y sigues.",
-        emphasis: ["unidades claras"],
-      },
-      {
-        route: "study-preview",
-        target: "tour-study-understand",
-        title: "Entiende lo importante",
-        description: "Resumen y claves. Sin perderte entre páginas.",
-        emphasis: ["Resumen y claves"],
-      },
-      {
-        route: "study-preview",
-        target: "tour-study-traps",
-        title: "No caigas en las trampas",
-        description: "Compara conceptos parecidos antes de que te los mezclen en el examen.",
-        emphasis: ["antes de que te los mezclen"],
-      },
-      {
-        route: "study-preview",
-        target: "tour-study-flashcard-question",
-        title: "¿Lo recuerdas sin mirar?",
-        description: "Primero intenta recuperar la respuesta. Verla y reconocerla no basta.",
-        emphasis: ["no basta"],
-      },
-      {
-        route: "study-preview",
-        target: "tour-study-flashcard-answer",
-        title: "Ahora comprueba la respuesta",
-        description: "Después de intentarlo, compara lo que recordabas con la respuesta real.",
-        emphasis: ["Después de intentarlo"],
+        route: "/inicio",
+        target: "nav-practice",
+        title: "Empieza poniendo a prueba lo que sabes",
+        description: "Entrenar es el centro de OpoTest: eliges qué comprobar y tus respuestas generan evidencia real.",
+        emphasis: ["tus respuestas generan evidencia real"],
       },
     ],
     final: false,
   },
   {
-    journeyLabel: "Practica",
+    journeyLabel: "Configura",
     scenes: [
       {
         route: "/crear",
         target: "practice-builder",
-        title: "Practica lo que necesitas",
+        title: "Entrena lo que necesitas",
         description: "Elige contenido y cantidad. Sin tests al azar.",
         emphasis: ["Sin tests al azar"],
       },
@@ -123,9 +95,9 @@ export const PRODUCT_TOUR_STEPS = [
       {
         route: "/inicio",
         target: "today-session",
-        title: "No vuelvas a pensar «¿qué hago hoy?»",
-        description: "OpoTest usa tu progreso para proponerte el siguiente paso.",
-        emphasis: ["proponerte el siguiente paso"],
+        title: "Hoy te lleva al siguiente entrenamiento",
+        description: "Retoma un test pendiente o empieza uno nuevo. Sin planes de estudio obligatorios.",
+        emphasis: ["Retoma un test pendiente"],
       },
     ],
     final: true,
