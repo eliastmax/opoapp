@@ -16,7 +16,7 @@ describe("ELI-94 nullable Celador tipo_trampa alignment", () => {
       "pg_get_functiondef('public.execute_celador_question_hardening(jsonb)'::regprocedure)",
     );
     expect(migration).toContain("v_matches <> 1");
-    expect(migration).toContain("expected exactly one legacy tipo_trampa required-content guard");
+    expect(migration).toContain("expected exactly one legacy tipo_trampa NULL-rejection fragment");
     expect(migration).toContain("execute v_sql");
   });
 
@@ -26,19 +26,12 @@ describe("ELI-94 nullable Celador tipo_trampa alignment", () => {
     expect(migration).toContain("tipo_trampa IS NULL");
   });
 
-  test("removes only tipo_trampa from the required-content guard", () => {
-    const oldGuard = migration.slice(migration.indexOf("v_old text := $old$"), migration.indexOf("$old$;"));
-    const newGuard = migration.slice(migration.indexOf("v_new text := $new$"), migration.indexOf("$new$;"));
-
-    expect(oldGuard).toContain("nullif(v_values->>'tipo_trampa','') is null");
-    expect(newGuard).not.toContain("nullif(v_values->>'tipo_trampa','') is null");
-
-    for (const field of ["pregunta", "opcion_a", "opcion_b", "opcion_c", "opcion_d"]) {
-      expect(oldGuard).toContain(`nullif(v_values->>'${field}','') is null`);
-      expect(newGuard).toContain(`nullif(v_values->>'${field}','') is null`);
-    }
-
-    expect(newGuard).toContain("ELI-44 mutation % contains empty required content");
+  test("removes only the unique tipo_trampa NULL-rejection fragment", () => {
+    expect(migration).toContain(
+      "v_old constant text := 'or nullif(v_values->>''tipo_trampa'','''') is null then'",
+    );
+    expect(migration).toContain("v_new constant text := 'then'");
+    expect(migration).toContain("v_sql := replace(v_sql, v_old, v_new)");
   });
 
   test("does not add a direct academic-row write surface", () => {
