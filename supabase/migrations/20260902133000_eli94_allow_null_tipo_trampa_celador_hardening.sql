@@ -3,29 +3,19 @@
 -- public.questions.tipo_trampa is nullable and its CHECK explicitly allows NULL.
 -- The ELI-44 executor already writes `v_values->>'tipo_trampa'`, which naturally
 -- becomes SQL NULL when the package contains JSON null. The only blocker is the
--- legacy validation branch that incorrectly classifies NULL tipo_trampa as empty
--- required academic content.
+-- legacy validation fragment that incorrectly classifies NULL tipo_trampa as
+-- empty required academic content.
 --
--- This migration patches only that exact guard. Every other ELI-44/ELI-46 scope,
--- stale-package, identity, completeness, distribution, lock, preservation-hash,
--- confirmation and audit guard remains byte-for-byte in the current function body.
+-- This migration patches only that exact expression and requires exactly one
+-- match in the current governed function definition. Every other ELI-44/ELI-46
+-- scope, stale-package, identity, completeness, distribution, lock,
+-- preservation-hash, confirmation and audit guard remains unchanged.
 
 do $eli94$
 declare
   v_sql text;
-  v_old text := $old$
-if nullif(v_values->>'pregunta','') is null or nullif(v_values->>'opcion_a','') is null
-       or nullif(v_values->>'opcion_b','') is null or nullif(v_values->>'opcion_c','') is null or nullif(v_values->>'opcion_d','') is null
-       or nullif(v_values->>'tipo_trampa','') is null then
-      raise exception 'ELI-44 mutation % contains empty required content', v_index using errcode='22023';
-    end if;
-$old$;
-  v_new text := $new$
-if nullif(v_values->>'pregunta','') is null or nullif(v_values->>'opcion_a','') is null
-       or nullif(v_values->>'opcion_b','') is null or nullif(v_values->>'opcion_c','') is null or nullif(v_values->>'opcion_d','') is null then
-      raise exception 'ELI-44 mutation % contains empty required content', v_index using errcode='22023';
-    end if;
-$new$;
+  v_old constant text := 'or nullif(v_values->>''tipo_trampa'','''') is null then';
+  v_new constant text := 'then';
   v_matches integer;
 begin
   if not exists (
@@ -58,7 +48,7 @@ begin
 
   v_matches := (length(v_sql) - length(replace(v_sql, v_old, ''))) / nullif(length(v_old), 0);
   if v_matches <> 1 then
-    raise exception 'ELI-94 expected exactly one legacy tipo_trampa required-content guard, found %', v_matches;
+    raise exception 'ELI-94 expected exactly one legacy tipo_trampa NULL-rejection fragment, found %', v_matches;
   end if;
 
   v_sql := replace(v_sql, v_old, v_new);
