@@ -8,7 +8,6 @@ import {
   productTourScene,
   productTourSceneCount,
   shouldOpenProductTour,
-  type ProductTourScene,
 } from "../product-tour";
 
 const component = readFileSync(
@@ -67,7 +66,7 @@ describe("tests-first product shell", () => {
       "“Hoy”",
     ]);
 
-    const scenes = PRODUCT_TOUR_STEPS.flatMap<ProductTourScene>((phase) => phase.scenes);
+    const scenes = PRODUCT_TOUR_STEPS.flatMap((phase) => phase.scenes);
     expect(scenes.some((scene) => scene.route === "/estudio")).toBe(false);
     expect(scenes.some((scene) => scene.route === "study-preview")).toBe(false);
     expect(scenes.some((scene) => scene.target === "study-unit")).toBe(false);
@@ -120,15 +119,16 @@ describe("tests-first product shell", () => {
     expect(layout).not.toContain('"nav-study"');
   });
 
-  it("updates settings language to the tests-first direction", () => {
-    expect(settings).toContain("Repasa cómo entrenar y leer tu progreso");
+  it("keeps settings tests-first and removes the legacy tutorial replay entry point", () => {
     expect(settings).toContain("Datos de entrenamiento");
     expect(settings).not.toContain("Repasa cómo estudiar con la app");
     expect(settings).not.toContain("Datos de estudio");
+    expect(settings).not.toContain("useProductTour");
+    expect(settings).not.toContain("Ver tutorial de OpoTest");
   });
 
   it("keeps concise tour copy and closes on Today", () => {
-    const scenes = PRODUCT_TOUR_STEPS.flatMap<ProductTourScene>((phase) => phase.scenes);
+    const scenes = PRODUCT_TOUR_STEPS.flatMap((phase) => phase.scenes);
     for (const scene of scenes) {
       expect(scene.title.split(/\s+/).length).toBeLessThanOrEqual(8);
       expect(scene.description.length).toBeLessThanOrEqual(110);
