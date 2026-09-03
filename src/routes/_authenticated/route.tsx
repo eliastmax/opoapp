@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, redirect, Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Home, PlusSquare, Gauge, BookOpen, Settings } from "lucide-react";
+import { Home, PlusSquare, Gauge, History, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProductTourProvider } from "@/components/product-tour";
 
@@ -17,9 +17,9 @@ export const Route = createFileRoute("/_authenticated")({
 
 const nav = [
   { to: "/inicio", label: "Hoy", icon: Home },
-  { to: "/estudio", label: "Estudio", icon: BookOpen },
-  { to: "/crear", label: "Practicar", icon: PlusSquare },
+  { to: "/crear", label: "Entrenar", icon: PlusSquare },
   { to: "/progreso", label: "Progreso", icon: Gauge },
+  { to: "/historial", label: "Historial", icon: History },
   { to: "/ajustes", label: "Ajustes", icon: Settings },
 ] as const;
 
@@ -151,13 +151,11 @@ function AuthLayout() {
                     key={item.to}
                     to={item.to}
                     data-tour={
-                      item.to === "/estudio"
-                        ? "nav-study"
-                        : item.to === "/crear"
-                          ? "nav-practice"
-                          : item.to === "/progreso"
-                            ? "nav-progress"
-                            : undefined
+                      item.to === "/crear"
+                        ? "nav-practice"
+                        : item.to === "/progreso"
+                          ? "nav-progress"
+                          : undefined
                     }
                     className={cn(
                       "group flex min-h-14 flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium transition-colors sm:text-[11px]",

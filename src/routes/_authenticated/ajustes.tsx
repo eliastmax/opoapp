@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpenCheck, Database, Loader2, LogOut, RotateCcw, Target } from "lucide-react";
+import { Database, Loader2, LogOut, RotateCcw, Target } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +19,6 @@ import { toast } from "sonner";
 import { ActiveOppositionContext } from "@/components/active-opposition-context";
 import { useOppositionAdmin } from "@/hooks/use-opposition-admin";
 import { toUserFacingError } from "@/lib/user-facing-error";
-import { useProductTour } from "@/components/product-tour";
 
 export const Route = createFileRoute("/_authenticated/ajustes")({
   component: AjustesPage,
@@ -31,7 +30,6 @@ function AjustesPage() {
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
   const { data: isAdmin } = useOppositionAdmin();
-  const { replay } = useProductTour();
   const { data: profile } = useQuery({
     queryKey: ["profile"],
     queryFn: async () => {
@@ -84,15 +82,6 @@ function AjustesPage() {
         <div className="text-sm text-muted-foreground">{profile?.email}</div>
       </Card>
       <ActiveOppositionContext variant="settings" />
-      <button type="button" className="block w-full text-left" onClick={replay}>
-        <Card className="flex min-h-14 items-center gap-3 p-4 transition-colors hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring">
-          <BookOpenCheck className="h-5 w-5 text-primary" />
-          <div className="flex-1">
-            <div className="font-medium">Ver tutorial de OpoTest</div>
-            <div className="text-xs text-muted-foreground">Repasa cómo estudiar con la app</div>
-          </div>
-        </Card>
-      </button>
       <Link to="/preparacion">
         <Card className="flex items-center gap-3 p-4 transition-colors hover:bg-accent/50">
           <Target className="h-5 w-5 text-primary" />
@@ -102,7 +91,8 @@ function AjustesPage() {
           </div>
         </Card>
       </Link>
-      {isAdmin && <Link to="/preguntas">
+      {isAdmin && (
+        <Link to="/preguntas">
           <Card className="p-4 flex items-center gap-3 hover:bg-accent/50 transition-colors">
             <Database className="w-5 h-5 text-primary" />
             <div className="flex-1">
@@ -110,10 +100,11 @@ function AjustesPage() {
               <div className="text-xs text-muted-foreground">Editar y desactivar</div>
             </div>
           </Card>
-      </Link>}
+        </Link>
+      )}
       <Card className="space-y-3 border-destructive/15 bg-destructive/5 p-4">
         <div>
-          <div className="font-medium">Datos de estudio</div>
+          <div className="font-medium">Datos de entrenamiento</div>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
             Borra tus tests, estadísticas, fallos y dudas para empezar de cero. El catálogo
             compartido de la oposición no cambia.
@@ -137,7 +128,7 @@ function AjustesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Reiniciar todas tus estadísticas?</AlertDialogTitle>
             <AlertDialogDescription>
-              Se eliminarán definitivamente tus tests, progreso, fallos y dudas. La cuenta, las
+              Se eliminarán definitivamente tus tests, progreso, fallos y dudas. La cuenta, la
               inscripción y el catálogo compartido de la oposición se conservarán.
             </AlertDialogDescription>
           </AlertDialogHeader>
