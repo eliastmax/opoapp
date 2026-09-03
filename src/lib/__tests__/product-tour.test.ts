@@ -8,6 +8,7 @@ import {
   productTourScene,
   productTourSceneCount,
   shouldOpenProductTour,
+  type ProductTourScene,
 } from "../product-tour";
 
 const component = readFileSync(
@@ -67,7 +68,9 @@ describe("tests-first product shell", () => {
       "“Hoy”",
     ]);
 
-    const scenes = PRODUCT_TOUR_STEPS.flatMap((phase) => phase.scenes);
+    const scenes = PRODUCT_TOUR_STEPS.flatMap(
+      (phase): ProductTourScene[] => [...phase.scenes],
+    );
     expect(scenes.some((scene) => scene.route === "/estudio")).toBe(false);
     expect(scenes.some((scene) => scene.route === "study-preview")).toBe(false);
     expect(scenes.some((scene) => scene.target === "study-unit")).toBe(false);
@@ -129,7 +132,9 @@ describe("tests-first product shell", () => {
   });
 
   it("keeps concise tour copy and closes on Today", () => {
-    const scenes = PRODUCT_TOUR_STEPS.flatMap((phase) => phase.scenes);
+    const scenes = PRODUCT_TOUR_STEPS.flatMap(
+      (phase): ProductTourScene[] => [...phase.scenes],
+    );
     for (const scene of scenes) {
       expect(scene.title.split(/\s+/).length).toBeLessThanOrEqual(8);
       expect(scene.description.length).toBeLessThanOrEqual(110);
