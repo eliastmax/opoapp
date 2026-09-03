@@ -54,6 +54,7 @@ describe("tests-first product shell", () => {
     expect(active).toBe(true);
     expect(maintainTourSession(active, eligibility({ pathname: "/crear" }))).toBe(true);
     expect(component).toContain("replaying || tourSessionActive");
+    expect(component).toContain('void navigate({ to: "/inicio" });');
   });
 
   it("teaches training, configuration, progress and Today without exposing Study", () => {

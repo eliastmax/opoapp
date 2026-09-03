@@ -24,7 +24,7 @@ describe("private beta readiness contracts", () => {
     for (const id of ["recovery-new-password", "recovery-confirm-password"]) expect(recovery).toContain(`id=\"${id}\"`);
   });
   it("guards both curator routes and hides the curator CTA for learners", () => {
-    expect(importer).toContain("beforeLoad: requireOppositionAdmin"); expect(questions).toContain("beforeLoad: requireOppositionAdmin"); expect(settings).toContain("isAdmin && <Link");
+    expect(importer).toContain("beforeLoad: requireOppositionAdmin"); expect(questions).toContain("beforeLoad: requireOppositionAdmin"); expect(settings).toContain("isAdmin && (");
   });
   it("describes shared catalog and private study state accurately", () => {
     expect(settings).toContain("catálogo compartido"); expect(settings).not.toContain("Tus preguntas se");

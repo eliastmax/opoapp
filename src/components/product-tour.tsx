@@ -237,7 +237,7 @@ export function ProductTourProvider({ user, children }: { user: User; children: 
   const replay = useCallback(() => {
     setStep(0);
     setReplaying(true);
-    void navigate({ to: "/estudio" });
+    void navigate({ to: "/inicio" });
   }, [navigate]);
 
   const navigateTourRoute = useCallback(
