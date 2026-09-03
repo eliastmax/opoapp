@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpenCheck, Database, Loader2, LogOut, RotateCcw, Target } from "lucide-react";
+import { Database, Loader2, LogOut, RotateCcw, Target } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +19,6 @@ import { toast } from "sonner";
 import { ActiveOppositionContext } from "@/components/active-opposition-context";
 import { useOppositionAdmin } from "@/hooks/use-opposition-admin";
 import { toUserFacingError } from "@/lib/user-facing-error";
-import { useProductTour } from "@/components/product-tour";
 
 export const Route = createFileRoute("/_authenticated/ajustes")({
   component: AjustesPage,
@@ -31,7 +30,6 @@ function AjustesPage() {
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
   const { data: isAdmin } = useOppositionAdmin();
-  const { replay } = useProductTour();
   const { data: profile } = useQuery({
     queryKey: ["profile"],
     queryFn: async () => {
@@ -84,15 +82,6 @@ function AjustesPage() {
         <div className="text-sm text-muted-foreground">{profile?.email}</div>
       </Card>
       <ActiveOppositionContext variant="settings" />
-      <button type="button" className="block w-full text-left" onClick={replay}>
-        <Card className="flex min-h-14 items-center gap-3 p-4 transition-colors hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring">
-          <BookOpenCheck className="h-5 w-5 text-primary" />
-          <div className="flex-1">
-            <div className="font-medium">Ver tutorial de OpoTest</div>
-            <div className="text-xs text-muted-foreground">Repasa cómo entrenar y leer tu progreso</div>
-          </div>
-        </Card>
-      </button>
       <Link to="/preparacion">
         <Card className="flex items-center gap-3 p-4 transition-colors hover:bg-accent/50">
           <Target className="h-5 w-5 text-primary" />
