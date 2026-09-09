@@ -111,11 +111,7 @@ function ImportarPage() {
       );
       const batch = analyzeCsvBatch(inputs);
 
-      const { data: existing, error: existingError } = await supabase
-        .from("questions")
-        .select(
-          "id, codigo, pregunta, opcion_a, opcion_b, opcion_c, opcion_d, respuesta_correcta, explicacion, concepto, objetivo_aprendizaje, apartado, perspectiva, nivel_pedagogico, tipo_trampa, dificultad_conceptual, dificultad_examen, documento_referencia, pagina_inicio, pagina_fin, frecuencia_historica, referencia_fuente",
-        );
+      const { data: existing, error: existingError } = await supabase.rpc("get_my_admin_questions");
       if (existingError) throw existingError;
       const existingList = (existing ?? []) as ExistingQuestion[];
       const byCode = new Map(existingList.map((q) => [q.codigo, q]));
