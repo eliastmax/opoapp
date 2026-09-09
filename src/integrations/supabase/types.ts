@@ -986,6 +986,8 @@ export type Database = {
       }
       test_answers: {
         Row: {
+          confirmed: boolean
+          confirmed_at: string | null
           correcta: boolean | null
           created_at: string
           id: string
@@ -999,6 +1001,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          confirmed?: boolean
+          confirmed_at?: string | null
           correcta?: boolean | null
           created_at?: string
           id?: string
@@ -1012,6 +1016,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          confirmed?: boolean
+          confirmed_at?: string | null
           correcta?: boolean | null
           created_at?: string
           id?: string
@@ -1653,6 +1659,20 @@ export type Database = {
           porcentaje: number
           sin_responder: number
         }[]
+      }
+      confirm_test_answer: {
+        Args: { p_answer_id: string; p_selected_answer: Database["public"]["Enums"]["respuesta_enum"]; p_test_id: string }
+        Returns: { answer_id: string; concept_id: string | null; concept_title: string | null; confirmed_at: string; correct_answer: Database["public"]["Enums"]["respuesta_enum"] | null; explanation: string | null; feedback_revealed: boolean; is_correct: boolean | null; question_id: string; selected_answer: Database["public"]["Enums"]["respuesta_enum"]; test_id: string }[]
+      }
+      get_my_admin_questions: { Args: never; Returns: Database["public"]["Tables"]["questions"]["Row"][] }
+      get_my_completed_test_result: { Args: { p_test_id: string }; Returns: Json }
+      get_my_test_session: {
+        Args: { p_test_id: string }
+        Returns: { answer_id: string; answer_order: number; completed: boolean; confirmed: boolean; confirmed_at: string | null; difficulty: Database["public"]["Enums"]["dificultad_enum"]; exam_difficulty: Database["public"]["Enums"]["dificultad_enum"] | null; exam_duration_minutes: number | null; marked_doubt: boolean; option_a: string; option_b: string; option_c: string; option_d: string; pedagogical_level: string | null; question_code: string; question_id: string; question_text: string; selected_answer: Database["public"]["Enums"]["respuesta_enum"] | null; started_at: string; subtopic_id: string | null; test_id: string; test_type: string; topic_id: string }[]
+      }
+      get_my_tests_first_concept_progress: {
+        Args: never
+        Returns: { active_primary_question_count: number; attention_required: boolean; concept_id: string; concept_title: string; distinct_completed_test_sessions: number; distinct_test_questions: number; doubt_answers: number; evidence_reason: string; learner_state: string; next_review_on: string | null; safe_accuracy: number | null; topic_id: string; topic_name: string; topic_number: number }[]
       }
       create_exam_simulation: {
         Args: { p_duration_minutes?: number; p_question_count?: number }

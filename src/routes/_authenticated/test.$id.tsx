@@ -68,19 +68,22 @@ function TestPage() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["test", id],
     queryFn: async () => {
-      const { data: test, error: e1 } = await supabase
-        .from("tests")
-        .select("*")
-        .eq("id", id)
-        .single();
-      if (e1) throw e1;
-      const { data: answers, error: e2 } = await supabase
-        .from("test_answers")
-        .select("*, questions!test_answers_question_id_fkey(*)")
-        .eq("test_id", id)
-        .order("orden");
-      if (e2) throw e2;
-      return { test, answers: answers ?? [] };
+      const { data: rows, error } = await supabase.rpc("get_my_test_session", { p_test_id: id });
+      if (error) throw error;
+      if (!rows?.length) throw new Error("Test not found");
+      const first = rows[0];
+      return {
+        test: { id: first.test_id, tipo: first.test_type, completado: first.completed, fecha_inicio: first.started_at, exam_duration_minutes: first.exam_duration_minutes },
+        answers: rows.map((row) => ({
+          id: row.answer_id, question_id: row.question_id, orden: row.answer_order,
+          respuesta_usuario: row.selected_answer, marked_doubt: row.marked_doubt,
+          confirmed: row.confirmed, confirmed_at: row.confirmed_at,
+          questions: { id: row.question_id, codigo: row.question_code, pregunta: row.question_text,
+            opcion_a: row.option_a, opcion_b: row.option_b, opcion_c: row.option_c, opcion_d: row.option_d,
+            dificultad: row.difficulty, dificultad_examen: row.exam_difficulty,
+            nivel_pedagogico: row.pedagogical_level, topic_id: row.topic_id, subtopic_id: row.subtopic_id },
+        })),
+      };
     },
   });
 

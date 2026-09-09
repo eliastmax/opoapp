@@ -14,8 +14,6 @@ type PreviewQuestion = {
   opcion_b: string;
   opcion_c: string;
   opcion_d: string;
-  respuesta_correcta: string;
-  explicacion: string | null;
 };
 
 type OptionLetter = "A" | "B" | "C" | "D";
@@ -41,7 +39,7 @@ function questionCompactness(question: PreviewQuestion) {
     question.pregunta.length +
     Math.max(...options.map((option) => option.length)) * 2 +
     options.reduce((sum, option) => sum + option.length, 0) / 4 +
-    (question.explicacion?.trim() ? 0 : 400)
+    0
   );
 }
 
@@ -54,7 +52,7 @@ async function loadPreviewQuestion(): Promise<PreviewQuestion | null> {
 
   const questions = await supabase
     .from("questions")
-    .select("id, pregunta, opcion_a, opcion_b, opcion_c, opcion_d, respuesta_correcta, explicacion")
+    .select("id, pregunta, opcion_a, opcion_b, opcion_c, opcion_d")
     .eq("topic_id", topicId)
     .eq("activa", true)
     .limit(40);
@@ -70,7 +68,9 @@ async function loadPreviewQuestion(): Promise<PreviewQuestion | null> {
 }
 
 function prefersReducedMotion() {
-  return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  return (
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
 }
 
 function DemoShell({ children }: { children: React.ReactNode }) {
@@ -205,7 +205,8 @@ function LevelsPreview({
       key: "consolidacion",
       title: LEARNING_STAGE_LABELS.consolidacion,
       description: "Distingue relaciones y excepciones",
-      detail: "Aprendes a separar conceptos parecidos y a aplicar la norma cuando la pregunta se complica.",
+      detail:
+        "Aprendes a separar conceptos parecidos y a aplicar la norma cuando la pregunta se complica.",
       locked: unlocked < 1,
       index: 1,
     },
@@ -213,7 +214,8 @@ function LevelsPreview({
       key: "tribunal",
       title: LEARNING_STAGE_LABELS.tribunal,
       description: "Entrena al nivel del examen",
-      detail: "Preguntas más complejas basadas en exámenes oficiales para practicar matices y distractores.",
+      detail:
+        "Preguntas más complejas basadas en exámenes oficiales para practicar matices y distractores.",
       locked: unlocked < 2,
       index: 2,
     },
@@ -291,7 +293,9 @@ function LevelsPreview({
                   <span
                     className={cn(
                       "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors duration-300",
-                      stage.locked ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary",
+                      stage.locked
+                        ? "bg-muted text-muted-foreground"
+                        : "bg-primary/10 text-primary",
                     )}
                   >
                     {stage.index === 0 ? (
@@ -382,8 +386,7 @@ function QuestionPreview({
         : [],
     [question],
   );
-  const correct = (question?.respuesta_correcta?.toUpperCase() ?? "A") as OptionLetter;
-  const simulated = (["A", "B", "C", "D"] as OptionLetter[]).find((letter) => letter !== correct) ?? "A";
+  const simulated: OptionLetter = "A";
   const feedback = phase === "feedback";
   const target = feedback ? "tour-study-practice-feedback" : "tour-study-practice-question";
 
@@ -430,7 +433,9 @@ function QuestionPreview({
         {!feedback ? (
           <div data-tour="tour-study-practice-question" className="space-y-2.5">
             <Card className="border-primary/15 bg-gradient-to-br from-card to-primary/5 p-3.5">
-              <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-primary">Pregunta</p>
+              <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-primary">
+                Pregunta
+              </p>
               <h2 className="mt-1.5 text-[16px] font-semibold leading-[1.35]">
                 {question.pregunta}
               </h2>
@@ -481,22 +486,12 @@ function QuestionPreview({
                 </div>
               </div>
               <div className="rounded-xl border border-success/20 bg-success/5 p-3">
-                <p className="text-[15px] font-bold">Respuesta correcta</p>
-                <div className="mt-1 flex items-start gap-2">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden="true" />
-                  <p className="text-[14px] font-normal leading-[1.35] text-success">
-                    {correct}. {optionText(question, correct)}
-                  </p>
-                </div>
+                <p className="text-[15px] font-bold">Feedback seguro</p>
+                <p className="mt-1 text-[14px] leading-[1.35] text-success">
+                  Al confirmar en un entrenamiento verás aquí la solución y su explicación.
+                </p>
               </div>
             </div>
-            {question.explicacion && (
-              <p className="text-[13px] leading-[1.35] text-muted-foreground">
-                {question.explicacion.length > 105
-                  ? `${question.explicacion.slice(0, 102).trim()}…`
-                  : question.explicacion}
-              </p>
-            )}
           </Card>
         )}
       </div>

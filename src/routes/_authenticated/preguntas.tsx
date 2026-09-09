@@ -37,11 +37,13 @@ function PreguntasPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["questions-admin", search, dif],
     queryFn: async () => {
-      let q = supabase.from("questions").select("*").order("codigo").limit(200);
-      if (dif !== "all") q = q.eq("dificultad", dif as Dificultad);
-      if (search.trim()) q = q.or(`codigo.ilike.%${search}%,pregunta.ilike.%${search}%`);
-      const { data } = await q;
-      return (data ?? []) as QuestionRow[];
+      const { data, error } = await supabase.rpc("get_my_admin_questions");
+      if (error) throw error;
+      const needle = search.trim().toLowerCase();
+      return ((data ?? []) as QuestionRow[])
+        .filter((row) => dif === "all" || row.dificultad === dif)
+        .filter((row) => !needle || `${row.codigo} ${row.pregunta}`.toLowerCase().includes(needle))
+        .sort((a, b) => a.codigo.localeCompare(b.codigo)).slice(0, 200);
     },
   });
 

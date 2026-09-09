@@ -51,6 +51,7 @@ import {
   type ResultImpactItem,
   type ResultImpactSelection,
 } from "@/lib/result-impact";
+import type { Database } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/_authenticated/resultados/$id")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -117,25 +118,17 @@ function ResultadosPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["resultados", id],
     queryFn: async () => {
-      const { data: test } = await supabase.from("tests").select("*").eq("id", id).single();
-      const { data: answers } = await supabase
-        .from("test_answers")
-        .select(
-          "*, questions!test_answers_question_id_fkey(*, topics!questions_topic_id_fkey(nombre, numero), subtopics!questions_subtopic_id_fkey(nombre))",
-        )
-        .eq("test_id", id)
-        .order("orden");
-      const { data: selection } = await supabase
-        .from("test_question_selection")
-        .select(
-          "question_id, selection_group, selection_reason, was_in_previous_test, overlap_exception",
-        )
-        .eq("test_id", id)
-        .order("selection_order");
+      const { data, error } = await supabase.rpc("get_my_completed_test_result", { p_test_id: id });
+      if (error) throw error;
+      const result = data as unknown as {
+        test: Database["public"]["Tables"]["tests"]["Row"];
+        answers: AnswerRow[];
+        selection: SelectionTraceRow[];
+      };
       return {
-        test,
-        answers: (answers ?? []) as unknown as AnswerRow[],
-        selection: (selection ?? []) as SelectionTraceRow[],
+        test: result.test,
+        answers: result.answers ?? [],
+        selection: result.selection ?? [],
       };
     },
   });
