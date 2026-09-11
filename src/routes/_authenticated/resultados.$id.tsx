@@ -46,12 +46,15 @@ import { LEARNING_STAGE_LABELS, learningStage } from "@/lib/learning-stages";
 import { resultFeedback } from "@/lib/result-feedback";
 import { topicLabel } from "@/lib/topic-label";
 import { elapsedExamMinutes } from "@/lib/exam-simulation";
-import {
-  resultImpact,
-  type ResultImpactItem,
-  type ResultImpactSelection,
-} from "@/lib/result-impact";
 import type { Database } from "@/integrations/supabase/types";
+import {
+  TESTS_FIRST_STATE_LABELS,
+  TESTS_FIRST_STATE_STYLES,
+  evidenceDescription,
+  type TestsFirstProgressRow,
+} from "@/lib/tests-first-progress";
+import { Badge } from "@/components/ui/badge";
+import { toUserFacingError } from "@/lib/user-facing-error";
 
 export const Route = createFileRoute("/_authenticated/resultados/$id")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -93,12 +96,19 @@ type AnswerRow = {
   } | null;
 };
 
+type CompletedTestConcept = TestsFirstProgressRow & {
+  test_question_count: number;
+  test_correct_count: number;
+  test_doubt_count: number;
+};
+
 function ResultadosPage() {
   const { id } = Route.useParams();
   const search = Route.useSearch();
   const navigate = useNavigate();
   const [tab, setTab] = useState<"fallos" | "dudas" | "todas">("fallos");
   const [continuingSession, setContinuingSession] = useState(false);
+  const [startingWeakPoints, setStartingWeakPoints] = useState(false);
 
   async function continueGuidedSession() {
     if (!search.block) return;
@@ -118,9 +128,13 @@ function ResultadosPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["resultados", id],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_my_completed_test_result", { p_test_id: id });
-      if (error) throw error;
-      const result = data as unknown as {
+      const [resultResponse, conceptsResponse] = await Promise.all([
+        supabase.rpc("get_my_completed_test_result", { p_test_id: id }),
+        supabase.rpc("get_my_completed_test_concepts", { p_test_id: id }),
+      ]);
+      if (resultResponse.error) throw resultResponse.error;
+      if (conceptsResponse.error) throw conceptsResponse.error;
+      const result = resultResponse.data as unknown as {
         test: Database["public"]["Tables"]["tests"]["Row"];
         answers: AnswerRow[];
         selection: SelectionTraceRow[];
@@ -129,6 +143,7 @@ function ResultadosPage() {
         test: result.test,
         answers: result.answers ?? [],
         selection: result.selection ?? [],
+        concepts: (conceptsResponse.data ?? []) as CompletedTestConcept[],
       };
     },
   });
@@ -153,10 +168,11 @@ function ResultadosPage() {
     previousOverlap,
     overlapException,
   } = summarizeSelection(data.selection);
-  const impactItems = resultImpact(
-    answers,
-    data.selection as (SelectionTraceRow & ResultImpactSelection)[],
-  );
+  const weakConcepts = data.concepts
+    .filter(
+      (concept) => concept.learner_state === "needs_reinforcement" || concept.attention_required,
+    )
+    .slice(0, 3);
 
   const byTopic: Record<string, { ok: number; tot: number }> = {};
   answers.forEach((a) => {
@@ -284,6 +300,34 @@ function ResultadosPage() {
     navigate({
       to: "/test/$id",
       params: { id: newTest.id },
+      search: { block: undefined, session: undefined },
+    });
+  }
+
+  async function trainWeakPoints() {
+    if (startingWeakPoints || weakConcepts.length === 0) return;
+    setStartingWeakPoints(true);
+    const available = weakConcepts.filter((concept) => concept.active_primary_question_count > 0);
+    if (available.length === 0) {
+      toast.info("Estos conceptos no tienen capacidad PRIMARY activa para crear otro test.");
+      setStartingWeakPoints(false);
+      return;
+    }
+    const result = await supabase.rpc("create_tests_first_concept_test", {
+      p_concept_ids: available.map((concept) => concept.concept_id),
+      p_question_count: Math.min(
+        10,
+        available.reduce((total, concept) => total + concept.active_primary_question_count, 0),
+      ),
+    });
+    if (result.error || !result.data?.[0]) {
+      toast.error(toUserFacingError(result.error ?? new Error("No se pudo crear el test")).message);
+      setStartingWeakPoints(false);
+      return;
+    }
+    navigate({
+      to: "/test/$id",
+      params: { id: result.data[0].test_id },
       search: { block: undefined, session: undefined },
     });
   }
@@ -536,7 +580,12 @@ function ResultadosPage() {
         </div>
       </Card>
 
-      <ResultImpactCard items={impactItems} />
+      <TestedConceptsCard
+        concepts={data.concepts}
+        weakConcepts={weakConcepts}
+        starting={startingWeakPoints}
+        onTrain={() => void trainWeakPoints()}
+      />
 
       {t.tipo === "simulacro" && t.exam_duration_minutes && simulationElapsed !== null && (
         <Card className="flex items-center gap-3 border-primary/15 bg-card/90 p-4">
@@ -730,44 +779,68 @@ function ResultStat({
   );
 }
 
-function ResultImpactCard({ items }: { items: ResultImpactItem[] }) {
+function TestedConceptsCard({
+  concepts,
+  weakConcepts,
+  starting,
+  onTrain,
+}: {
+  concepts: CompletedTestConcept[];
+  weakConcepts: CompletedTestConcept[];
+  starting: boolean;
+  onTrain: () => void;
+}) {
+  if (concepts.length === 0) {
+    return (
+      <Card className="border-primary/15 bg-card/90 p-4">
+        <div className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
+          Conceptos puestos a prueba
+        </div>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Este test no tiene atribución de concepto disponible.
+        </p>
+      </Card>
+    );
+  }
   return (
     <Card className="border-primary/15 bg-card/90 p-4">
       <div>
         <div className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
-          Impacto de la sesión
+          Conceptos puestos a prueba
         </div>
-        <h2 className="mt-1 font-bold">Lo que has conseguido</h2>
+        <h2 className="mt-1 font-bold">Estado actual según tus tests</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          No se infieren mejoras ni cambios históricos sin una medición anterior comparable.
+        </p>
       </div>
-      <div className="mt-3 grid gap-2 sm:grid-cols-3">
-        {items.map((item) => {
-          const Icon =
-            item.kind === "new"
-              ? BookOpenCheck
-              : item.kind === "recovered"
-                ? RefreshCcw
-                : item.kind === "retained"
-                  ? ShieldCheck
-                  : item.kind === "reinforced"
-                    ? Target
-                    : CheckCircle2;
-          return (
-            <div key={item.kind} className="flex gap-3 rounded-xl bg-muted/55 p-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Icon className="h-4 w-4" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-bold leading-snug">
-                  {item.value} {item.label}
-                </p>
-                <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-                  {item.description}
-                </p>
-              </div>
+      <div className="mt-3 space-y-2">
+        {concepts.map((concept) => (
+          <div key={concept.concept_id} className="rounded-xl bg-muted/55 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="min-w-0 flex-1 text-sm font-bold leading-snug">
+                {concept.concept_title}
+              </p>
+              <Badge variant="outline" className={TESTS_FIRST_STATE_STYLES[concept.learner_state]}>
+                {TESTS_FIRST_STATE_LABELS[concept.learner_state]}
+              </Badge>
             </div>
-          );
-        })}
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              {evidenceDescription(concept)}
+            </p>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              En este test: {concept.test_correct_count}/{concept.test_question_count} correctas
+              {concept.test_doubt_count > 0 ? ` · ${concept.test_doubt_count} con duda` : ""}
+              {concept.safe_accuracy !== null ? ` · ${concept.safe_accuracy}% seguro global` : ""}
+            </p>
+          </div>
+        ))}
       </div>
+      {weakConcepts.length > 0 && (
+        <Button className="mt-3 h-12 w-full" disabled={starting} onClick={onTrain}>
+          {starting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Target className="h-4 w-4" />}
+          Entrenar puntos débiles
+        </Button>
+      )}
     </Card>
   );
 }
