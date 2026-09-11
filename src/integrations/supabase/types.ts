@@ -1664,7 +1664,37 @@ export type Database = {
         Args: { p_answer_id: string; p_selected_answer: Database["public"]["Enums"]["respuesta_enum"]; p_test_id: string }
         Returns: { answer_id: string; concept_id: string | null; concept_title: string | null; confirmed_at: string; correct_answer: Database["public"]["Enums"]["respuesta_enum"] | null; explanation: string | null; feedback_revealed: boolean; is_correct: boolean | null; question_id: string; selected_answer: Database["public"]["Enums"]["respuesta_enum"]; test_id: string }[]
       }
+      create_tests_first_concept_test: {
+        Args: { p_concept_ids: string[]; p_question_count?: number }
+        Returns: {
+          covered_concept_count: number
+          requested_concept_count: number
+          selected_count: number
+          test_id: string
+        }[]
+      }
       get_my_admin_questions: { Args: never; Returns: Database["public"]["Tables"]["questions"]["Row"][] }
+      get_my_completed_test_concepts: {
+        Args: { p_test_id: string }
+        Returns: {
+          active_primary_question_count: number
+          attention_required: boolean
+          concept_id: string
+          concept_title: string
+          distinct_completed_test_sessions: number
+          distinct_test_questions: number
+          evidence_reason: string
+          learner_state: string
+          next_review_on: string | null
+          safe_accuracy: number | null
+          test_correct_count: number
+          test_doubt_count: number
+          test_question_count: number
+          topic_id: string
+          topic_name: string
+          topic_number: number
+        }[]
+      }
       get_my_completed_test_result: { Args: { p_test_id: string }; Returns: Json }
       get_my_test_session: {
         Args: { p_test_id: string }
