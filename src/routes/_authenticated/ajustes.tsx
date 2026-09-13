@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Database, Loader2, LogOut, RotateCcw, Target } from "lucide-react";
+import { Database, HelpCircle, Loader2, LogOut, RotateCcw, Target } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,16 +17,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { ActiveOppositionContext } from "@/components/active-opposition-context";
+import { useProductTour } from "@/components/product-tour";
 import { useOppositionAdmin } from "@/hooks/use-opposition-admin";
 import { toUserFacingError } from "@/lib/user-facing-error";
 
-export const Route = createFileRoute("/_authenticated/ajustes")({
-  component: AjustesPage,
-});
+export const Route = createFileRoute("/_authenticated/ajustes")({ component: AjustesPage });
 
 function AjustesPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { replay } = useProductTour();
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
   const { data: isAdmin } = useOppositionAdmin();
@@ -34,11 +34,7 @@ function AjustesPage() {
     queryKey: ["profile"],
     queryFn: async () => {
       const { data: user } = await supabase.auth.getUser();
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.user!.id)
-        .maybeSingle();
+      const { data } = await supabase.from("profiles").select("*").eq("id", user.user!.id).maybeSingle();
       return { email: user.user!.email ?? "", nombre: data?.nombre ?? "" };
     },
   });
@@ -59,93 +55,39 @@ function AjustesPage() {
       setResetting(false);
       return;
     }
-
     await qc.invalidateQueries();
     const result = data?.[0];
-    toast.success(
-      result
-        ? `Progreso reiniciado: ${result.deleted_tests} tests eliminados`
-        : "Progreso reiniciado",
-    );
+    toast.success(result ? `Progreso reiniciado: ${result.deleted_tests} tests eliminados` : "Progreso reiniciado");
     setResetting(false);
     setConfirmReset(false);
   }
 
   return (
     <div className="space-y-4">
-      <header className="pt-2">
-        <h1 className="text-2xl font-bold">Ajustes</h1>
-      </header>
-      <Card className="p-4">
-        <div className="text-xs uppercase text-muted-foreground font-medium mb-1">Cuenta</div>
-        <div className="text-base font-medium">{profile?.nombre || "—"}</div>
-        <div className="text-sm text-muted-foreground">{profile?.email}</div>
-      </Card>
+      <header className="pt-2"><h1 className="text-2xl font-bold">Ajustes</h1></header>
+      <Card className="p-4"><div className="mb-1 text-xs font-medium uppercase text-muted-foreground">Cuenta</div><div className="text-base font-medium">{profile?.nombre || "—"}</div><div className="text-sm text-muted-foreground">{profile?.email}</div></Card>
       <ActiveOppositionContext variant="settings" />
       <Link to="/preparacion">
         <Card className="flex items-center gap-3 p-4 transition-colors hover:bg-accent/50">
           <Target className="h-5 w-5 text-primary" />
-          <div className="flex-1">
-            <div className="font-medium">Perfil de preparación</div>
-            <div className="text-xs text-muted-foreground">Fecha, ritmo y valoración inicial</div>
-          </div>
+          <div className="flex-1"><div className="font-medium">Cambiar oposición</div><div className="text-xs text-muted-foreground">Cambia el catálogo activo sin mezclar tu progreso</div></div>
         </Card>
       </Link>
-      {isAdmin && (
-        <Link to="/preguntas">
-          <Card className="p-4 flex items-center gap-3 hover:bg-accent/50 transition-colors">
-            <Database className="w-5 h-5 text-primary" />
-            <div className="flex-1">
-              <div className="font-medium">Administrar preguntas</div>
-              <div className="text-xs text-muted-foreground">Editar y desactivar</div>
-            </div>
-          </Card>
-        </Link>
-      )}
+      <button type="button" className="w-full text-left" onClick={replay}>
+        <Card className="flex items-center gap-3 p-4 transition-colors hover:bg-accent/50">
+          <HelpCircle className="h-5 w-5 text-primary" />
+          <div className="flex-1"><div className="font-medium">Ver tutorial de OpoTest</div><div className="text-xs text-muted-foreground">Repasa cómo OpoTest usa tus respuestas para entrenarte mejor</div></div>
+        </Card>
+      </button>
+      {isAdmin && <Link to="/preguntas"><Card className="flex items-center gap-3 p-4 transition-colors hover:bg-accent/50"><Database className="h-5 w-5 text-primary" /><div className="flex-1"><div className="font-medium">Administrar preguntas</div><div className="text-xs text-muted-foreground">Editar y desactivar</div></div></Card></Link>}
       <Card className="space-y-3 border-destructive/15 bg-destructive/5 p-4">
-        <div>
-          <div className="font-medium">Datos de entrenamiento</div>
-          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            Borra tus tests, estadísticas, fallos y dudas para empezar de cero. El catálogo
-            compartido de la oposición no cambia.
-          </p>
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
-          onClick={() => setConfirmReset(true)}
-        >
-          <RotateCcw className="h-4 w-4" /> Reiniciar estadísticas
-        </Button>
+        <div><div className="font-medium">Datos de entrenamiento</div><p className="mt-1 text-xs leading-relaxed text-muted-foreground">Borra tus tests, estadísticas, fallos y dudas para empezar de cero. El catálogo compartido de la oposición no cambia.</p></div>
+        <Button type="button" variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setConfirmReset(true)}><RotateCcw className="h-4 w-4" /> Reiniciar estadísticas</Button>
       </Card>
-      <Button onClick={logout} variant="outline" className="w-full h-12">
-        <LogOut className="w-4 h-4 mr-2" /> Cerrar sesión
-      </Button>
+      <Button onClick={logout} variant="outline" className="h-12 w-full"><LogOut className="mr-2 h-4 w-4" /> Cerrar sesión</Button>
 
       <AlertDialog open={confirmReset} onOpenChange={setConfirmReset}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Reiniciar todas tus estadísticas?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Se eliminarán definitivamente tus tests, progreso, fallos y dudas. La cuenta, la
-              inscripción y el catálogo compartido de la oposición se conservarán.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={resetting}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(event) => {
-                event.preventDefault();
-                void resetStatistics();
-              }}
-              disabled={resetting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {resetting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sí, empezar de cero"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
+        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Reiniciar todas tus estadísticas?</AlertDialogTitle><AlertDialogDescription>Se eliminarán definitivamente tus tests, progreso, fallos y dudas. La cuenta, la inscripción y el catálogo compartido de la oposición se conservarán.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={resetting}>Cancelar</AlertDialogCancel><AlertDialogAction onClick={(event) => { event.preventDefault(); void resetStatistics(); }} disabled={resetting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{resetting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sí, empezar de cero"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
       </AlertDialog>
     </div>
   );
