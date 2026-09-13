@@ -24,8 +24,10 @@ describe("ELI-99 onboarding and weekly recap", () => {
     expect(oppositionMigration).toContain("SECURITY INVOKER");
     expect(oppositionMigration).toContain("auth.uid()");
     expect(oppositionMigration).toContain("o.published = true");
-    expect(oppositionMigration).toContain("REVOKE ALL ON FUNCTION public.set_active_opposition(UUID) FROM PUBLIC");
-    expect(oppositionMigration).toContain("GRANT EXECUTE ON FUNCTION public.set_active_opposition(UUID) TO authenticated");
+    expect(oppositionMigration).toContain("REVOKE ALL ON FUNCTION public.set_active_opposition(uuid) FROM PUBLIC, anon;");
+    expect(oppositionMigration).not.toContain("GRANT EXECUTE ON FUNCTION public.set_active_opposition(uuid) TO PUBLIC");
+    expect(oppositionMigration).not.toContain("GRANT EXECUTE ON FUNCTION public.set_active_opposition(uuid) TO anon");
+    expect(oppositionMigration).toContain("GRANT EXECUTE ON FUNCTION public.set_active_opposition(uuid) TO authenticated;");
   });
 
   it("keeps Settings focused on account, opposition, replay, reset and logout", () => {
