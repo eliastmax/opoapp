@@ -7,6 +7,7 @@ const settings = readFileSync(new URL("../../routes/_authenticated/ajustes.tsx",
 const recap = readFileSync(new URL("../../components/weekly-tests-first-recap.tsx", import.meta.url), "utf8");
 const today = readFileSync(new URL("../../routes/_authenticated/inicio.tsx", import.meta.url), "utf8");
 const tour = readFileSync(new URL("../../components/product-tour.tsx", import.meta.url), "utf8");
+const activeOppositionContext = readFileSync(new URL("../../components/active-opposition-context.tsx", import.meta.url), "utf8");
 const oppositionMigration = readFileSync(new URL("../../../supabase/migrations/20260802020000_v3_0_multi_opposition_catalog.sql", import.meta.url), "utf8");
 
 describe("ELI-99 onboarding and weekly recap", () => {
@@ -23,7 +24,7 @@ describe("ELI-99 onboarding and weekly recap", () => {
     expect(oppositionMigration).toContain("CREATE OR REPLACE FUNCTION public.set_active_opposition");
     expect(oppositionMigration).toContain("SECURITY INVOKER");
     expect(oppositionMigration).toContain("auth.uid()");
-    expect(oppositionMigration).toContain("o.published = true");
+    expect(oppositionMigration).toContain("opposition.published = true");
     expect(oppositionMigration).toContain("REVOKE ALL ON FUNCTION public.set_active_opposition(uuid) FROM PUBLIC, anon;");
     expect(oppositionMigration).not.toContain("GRANT EXECUTE ON FUNCTION public.set_active_opposition(uuid) TO PUBLIC");
     expect(oppositionMigration).not.toContain("GRANT EXECUTE ON FUNCTION public.set_active_opposition(uuid) TO anon");
@@ -31,9 +32,11 @@ describe("ELI-99 onboarding and weekly recap", () => {
   });
 
   it("keeps Settings focused on account, opposition, replay, reset and logout", () => {
-    for (const expected of ["Cuenta", "Oposición activa", "Cambiar oposición", "Ver tutorial de OpoTest", "Datos de entrenamiento", "Cerrar sesión"]) {
+    for (const expected of ["Cuenta", "Cambiar oposición", "Ver tutorial de OpoTest", "Datos de entrenamiento", "Cerrar sesión"]) {
       expect(settings).toContain(expected);
     }
+    expect(settings).toContain('<ActiveOppositionContext variant="settings" />');
+    expect(activeOppositionContext).toContain("Oposición activa");
     expect(settings).not.toContain("Perfil de preparación");
     expect(settings).not.toContain("Fecha, ritmo y valoración inicial");
   });
@@ -52,7 +55,7 @@ describe("ELI-99 onboarding and weekly recap", () => {
   });
 
   it("keeps the recap secondary to Today and never writes learner state", () => {
-    expect(today.indexOf("PrimaryCard")).toBeLessThan(today.indexOf("WeeklyTestsFirstRecap"));
+    expect(today.indexOf("<PrimaryCard")).toBeLessThan(today.indexOf("<WeeklyTestsFirstRecap"));
     for (const forbidden of [".insert(", ".update(", ".upsert(", ".delete("]) expect(recap).not.toContain(forbidden);
   });
 
