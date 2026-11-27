@@ -55,7 +55,7 @@ export function PreAuthIntro({
 
   return (
     <div className="min-h-[100svh] bg-background">
-      <div className="mx-auto flex min-h-[100svh] w-full max-w-md flex-col px-5 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-[calc(env(safe-area-inset-top,0px)+1rem)] min-[390px]:px-6">
+      <div className="mx-auto flex min-h-[100svh] w-full max-w-md flex-col px-5 pb-[calc(env(safe-area-inset-bottom,0px)+1rem+var(--app-bottom-clearance))] pt-[calc(env(safe-area-inset-top,0px)+1rem)] min-[390px]:px-6">
         <header className="shrink-0" aria-label="OpoTest">
           <div className="flex h-8 items-center gap-2 text-sm font-semibold tracking-tight text-foreground/80">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/8 text-primary">
