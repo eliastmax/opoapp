@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import React, { useState, useMemo, useEffect, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -435,6 +435,9 @@ function CrearPage() {
         <p className="mt-1 text-sm text-muted-foreground">
           Elige qué quieres practicar y la app prepara el resto.
         </p>
+        <Button asChild variant="outline" className="mt-3">
+          <Link to="/simulacro">Configurar simulacro</Link>
+        </Button>
       </header>
 
       <Card className="space-y-4 bg-card/90 p-4">
