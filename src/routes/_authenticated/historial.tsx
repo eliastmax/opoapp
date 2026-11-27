@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useActiveOpposition } from "@/hooks/use-active-opposition";
 import {
   historyOverview,
   historyTestLabel,
@@ -37,19 +38,26 @@ const FILTERS: { value: HistoryFilter; label: string }[] = [
 
 function HistorialPage() {
   const [filter, setFilter] = useState<HistoryFilter>("todos");
-  const { data, isLoading } = useQuery({
-    queryKey: ["tests-history"],
+  const activeOpposition = useActiveOpposition();
+  const oppositionId = activeOpposition.data?.id;
+  const history = useQuery({
+    queryKey: ["tests-history", oppositionId],
+    enabled: Boolean(oppositionId),
     queryFn: async () => {
+      if (!oppositionId) return [];
       const result = await supabase
         .from("tests")
         .select("*")
+        .eq("opposition_id", oppositionId)
         .order("created_at", { ascending: false });
       if (result.error) throw result.error;
       return result.data ?? [];
     },
   });
 
-  const tests = data ?? [];
+  const isLoading = activeOpposition.isLoading || history.isLoading;
+  const hasError = activeOpposition.isError || history.isError;
+  const tests = history.data ?? [];
   const overview = historyOverview(tests);
   const filteredTests = tests.filter((test) => matchesHistoryFilter(test, filter));
 
@@ -62,7 +70,7 @@ function HistorialPage() {
         </p>
       </header>
 
-      {!isLoading && tests.length > 0 && (
+      {!isLoading && !hasError && tests.length > 0 && (
         <>
           <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/10 via-card to-card p-0">
             <div className="flex items-center gap-3 p-4">
@@ -104,6 +112,16 @@ function HistorialPage() {
         <div className="flex justify-center py-12">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
+      ) : hasError ? (
+        <Card className="p-6 text-center" role="alert">
+          <p className="font-semibold">No hemos podido cargar tu historial</p>
+          <Button variant="outline" className="mt-3" onClick={() => {
+            if (activeOpposition.isError) void activeOpposition.refetch();
+            else void history.refetch();
+          }}>
+            Reintentar
+          </Button>
+        </Card>
       ) : tests.length === 0 ? (
         <Card className="p-7 text-center">
           <ClipboardList className="mx-auto mb-3 h-8 w-8 text-primary" />
