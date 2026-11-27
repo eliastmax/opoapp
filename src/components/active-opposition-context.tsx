@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActiveOpposition } from "@/hooks/use-active-opposition";
-import type { ActiveOppositionViewState } from "@/lib/active-opposition";
+import { oppositionDescription, type ActiveOppositionViewState } from "@/lib/active-opposition";
 import { cn } from "@/lib/utils";
 
 type ActiveOppositionContextProps = { variant?: "compact" | "settings"; className?: string };
@@ -30,6 +30,8 @@ export function ActiveOppositionDisplay({ state, variant = "compact", className,
     return <div className={cn("mt-3 inline-flex max-w-full items-center gap-2 rounded-full bg-primary/8 px-3 py-1.5 text-xs ring-1 ring-primary/10", className)} title={state.opposition.name}><BookMarked className="h-3.5 w-3.5 shrink-0 text-primary" /><span className="shrink-0 font-medium text-muted-foreground">Oposición</span><span className="truncate font-semibold">{state.opposition.name}</span></div>;
   }
 
+  const description = state.status === "active" ? oppositionDescription(state.opposition) : null;
+
   return (
     <Card className={cn("p-4", className)} aria-live="polite">
       <div className="flex items-start gap-3">
@@ -39,7 +41,7 @@ export function ActiveOppositionDisplay({ state, variant = "compact", className,
           {state.status === "loading" ? <div className="mt-2 space-y-2"><Skeleton className="h-5 w-4/5" /><Skeleton className="h-3.5 w-full" /></div>
             : state.status === "error" ? <div className="mt-1.5"><p className="text-sm font-semibold">No hemos podido cargar tu oposición</p>{onRetry ? <Button type="button" variant="ghost" size="sm" className="mt-1 -ml-3" onClick={onRetry}><RotateCw className="h-3.5 w-3.5" /> Reintentar</Button> : null}</div>
             : state.status === "empty" ? <div className="mt-1.5"><p className="text-sm font-semibold">Todavía no tienes una oposición activa</p><p className="mt-1 text-xs leading-relaxed text-muted-foreground">Elige una oposición para cargar sus preguntas y empezar a entrenar.</p></div>
-            : <div className="mt-1.5"><p className="line-clamp-2 text-sm font-semibold leading-snug" title={state.opposition.name}>{state.opposition.name}</p>{state.opposition.description ? <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{state.opposition.description}</p> : null}</div>}
+            : <div className="mt-1.5"><p className="line-clamp-2 text-sm font-semibold leading-snug" title={state.opposition.name}>{state.opposition.name}</p>{description ? <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{description}</p> : null}</div>}
         </div>
       </div>
     </Card>
