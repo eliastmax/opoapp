@@ -401,7 +401,7 @@ function TestPage() {
   const isSimulation = data.test.tipo === "simulacro";
 
   return (
-    <div className="space-y-3 pb-20">
+    <div className="space-y-3 pb-[calc(5rem+var(--app-bottom-clearance))]">
       <header className="sticky top-0 z-20 -mx-4 -mt-4 border-b border-border/60 bg-background/90 px-4 pb-3 pt-4 backdrop-blur-xl">
         {guided && (
           <p className="mb-2 text-center text-[11px] font-bold uppercase tracking-[0.14em] text-primary">
