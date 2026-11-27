@@ -4,7 +4,7 @@ import { ArrowRight, CheckCircle2, CircleAlert, Clock3, HelpCircle, Target, XCir
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
-import { testsFirstStateTotals, type TestsFirstProgressRow } from "@/lib/tests-first-progress";
+import { hasLearnerAttention, testsFirstStateTotals, type TestsFirstProgressRow } from "@/lib/tests-first-progress";
 
 const ROLLING_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -74,7 +74,7 @@ export function WeeklyTestsFirstRecap({ oppositionId }: { oppositionId: string }
         doubts,
         accuracy: accuracyDenominator > 0 ? Math.round((correct / accuracyDenominator) * 100) : null,
         currentStates: states,
-        attention: progress.filter((row) => row.attention_required).length,
+        attention: progress.filter(hasLearnerAttention).length,
         evaluatedConcepts: progress.filter((row) => row.learner_state !== "not_evaluated").length,
       };
     },
