@@ -134,6 +134,17 @@ main:has([data-tour="progress-overview"]) button:not([aria-label^="Abrir detalle
   box-shadow: 0 10px 32px -24px oklch(0.28 0.08 250 / 0.45);
 }
 
+:root {
+  --app-bottom-clearance: 0px;
+}
+
+/* Leave room for the hosting badge on narrow screens. */
+@media (max-width: 767px) {
+  :root {
+    --app-bottom-clearance: 2.5rem;
+  }
+}
+
 @utility safe-bottom {
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem + var(--app-bottom-clearance));
 }
