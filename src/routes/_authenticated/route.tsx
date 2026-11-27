@@ -127,7 +127,7 @@ function AuthLayout() {
           data-app-main
           className={cn(
             "relative flex-1 w-full max-w-md mx-auto px-4 pt-[calc(env(safe-area-inset-top,0px)+1rem)]",
-            focusedJourney ? "pb-6" : "pb-28",
+            focusedJourney ? "pb-6" : "pb-[calc(7rem+var(--app-bottom-clearance))]",
           )}
         >
           {pageTourTarget && (
