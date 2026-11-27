@@ -125,14 +125,21 @@ function ResultadosPage() {
     navigate({ to: "/sesion" });
   }
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["resultados", id],
     queryFn: async () => {
       const [resultResponse, conceptsResponse] = await Promise.all([
         supabase.rpc("get_my_completed_test_result", { p_test_id: id }),
         supabase.rpc("get_my_completed_test_concepts", { p_test_id: id }),
       ]);
-      if (resultResponse.error) throw resultResponse.error;
+      if (resultResponse.error) {
+        const { code, message } = resultResponse.error;
+        if (code === "22P02" || code === "42501" || message === "Completed test not found") {
+          return null;
+        }
+        throw resultResponse.error;
+      }
+      if (!resultResponse.data) return null;
       if (conceptsResponse.error) throw conceptsResponse.error;
       const result = resultResponse.data as unknown as {
         test: Database["public"]["Tables"]["tests"]["Row"];
@@ -154,7 +161,24 @@ function ResultadosPage() {
         <Loader2 className="w-6 h-6 animate-spin" />
       </div>
     );
-  if (!data?.test) return <p className="p-4">Test no encontrado</p>;
+  if (isError || !data?.test) {
+    return (
+      <Card className="space-y-3 p-5" role={isError ? "alert" : "status"}>
+        <h1 className="text-lg font-bold">
+          {isError ? "No hemos podido cargar el resultado" : "Resultado no disponible"}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {isError
+            ? "Comprueba tu conexión e inténtalo de nuevo."
+            : "Puede que el test esté pendiente, pertenezca a otra cuenta o sea de otra oposición."}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {isError && <Button onClick={() => void refetch()}>Reintentar</Button>}
+          <Button variant="outline" asChild><Link to="/historial">Volver a Historial</Link></Button>
+        </div>
+      </Card>
+    );
+  }
 
   const t = data.test;
   const answers = data.answers;

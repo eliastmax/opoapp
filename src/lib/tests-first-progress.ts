@@ -25,6 +25,11 @@ export const TESTS_FIRST_STATE_STYLES: Record<TestsFirstState, string> = {
   mastered: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
 };
 
+export function hasLearnerAttention(row: TestsFirstProgressRow) {
+  return (row.attention_required || row.learner_state === "needs_reinforcement") &&
+    (row.distinct_test_questions > 0 || row.doubt_answers > 0);
+}
+
 export function testsFirstStateTotals(rows: TestsFirstProgressRow[]) {
   return rows.reduce(
     (totals, row) => {

@@ -10,3 +10,9 @@ export type ActiveOppositionViewState =
   | { status: "error" }
   | { status: "empty" }
   | { status: "active"; opposition: ActiveOpposition };
+
+export function oppositionDescription({ code, description }: Pick<ActiveOpposition, "code" | "description">) {
+  return code === "celador-sms"
+    ? "Temario parcial en preparación. Puedes practicar los temas disponibles."
+    : description;
+}
