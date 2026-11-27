@@ -6,12 +6,13 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useActiveOpposition } from "@/hooks/use-active-opposition";
+import { oppositionDescription, type ActiveOpposition } from "@/lib/active-opposition";
 import { supabase } from "@/integrations/supabase/client";
 import { toUserFacingError } from "@/lib/user-facing-error";
 
 export const Route = createFileRoute("/_authenticated/preparacion")({ component: PreparationPage });
 
-type OppositionOption = { id: string; name: string; description: string | null };
+type OppositionOption = ActiveOpposition;
 
 function PreparationPage() {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ function PreparationPage() {
     queryFn: async (): Promise<OppositionOption[]> => {
       const { data, error } = await supabase
         .from("oppositions")
-        .select("id, name, description")
+        .select("id, code, name, description")
         .eq("published", true)
         .order("name");
       if (error) throw error;
@@ -88,7 +89,7 @@ function PreparationPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Oposición</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight">{changing ? "Cambiar oposición" : "Elige tu oposición"}</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Solo necesitamos saber qué oposición preparas. Tus tests y tu progreso quedan separados por oposición.
+          Auxiliar Administrativo es la oposición principal de la beta. Tus tests y tu progreso quedan separados por oposición.
         </p>
       </header>
 
@@ -98,6 +99,7 @@ function PreparationPage() {
         <div className="space-y-3" data-tour="opposition-selector">
           {options.map((opposition) => {
             const current = activeOpposition.data?.id === opposition.id;
+            const description = oppositionDescription(opposition);
             const selecting = selectingId === opposition.id;
             return (
               <button
@@ -114,7 +116,7 @@ function PreparationPage() {
                       {opposition.name}
                       {current ? <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] text-primary">Activa</span> : null}
                     </span>
-                    {opposition.description ? <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">{opposition.description}</span> : null}
+                    {description ? <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">{description}</span> : null}
                   </span>
                   {selecting ? <Loader2 className="h-5 w-5 shrink-0 animate-spin text-primary" /> : current ? <Check className="h-5 w-5 shrink-0 text-primary" /> : null}
                 </span>
