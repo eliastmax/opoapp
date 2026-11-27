@@ -24,6 +24,7 @@ import {
   TESTS_FIRST_STATE_STYLES,
   evidenceDescription,
   groupTestsFirstProgressByTopic,
+  hasLearnerAttention,
   testsFirstStateTotals,
   type TestsFirstProgressRow,
 } from "@/lib/tests-first-progress";
@@ -52,7 +53,7 @@ function ProgresoPage() {
   const attention = useMemo(
     () =>
       data
-        .filter((row) => row.attention_required || row.learner_state === "needs_reinforcement")
+        .filter(hasLearnerAttention)
         .slice(0, 3),
     [data],
   );
@@ -223,7 +224,7 @@ function ConceptCard({
             <Badge variant="outline" className={TESTS_FIRST_STATE_STYLES[row.learner_state]}>
               {TESTS_FIRST_STATE_LABELS[row.learner_state]}
             </Badge>
-            {row.attention_required && (
+            {hasLearnerAttention(row) && (
               <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
                 <CircleAlert className="h-3.5 w-3.5" /> Atención
               </span>
