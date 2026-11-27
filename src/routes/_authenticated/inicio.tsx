@@ -24,10 +24,15 @@ function InicioPage() {
       const profile = await supabase.from("profiles").select("nombre, active_opposition_id").eq("id", user.id).maybeSingle();
       if (profile.error) throw profile.error;
 
+      const userName = displayName({ profileName: profile.data?.nombre, metadataName: user.user_metadata?.nombre, email: user.email });
+      const activeOppositionId = profile.data?.active_opposition_id ?? null;
+      if (!activeOppositionId) return { userName, activeOppositionId, unfinished: null };
+
       const unfinished = await supabase
         .from("tests")
         .select("id, numero_preguntas")
         .eq("user_id", user.id)
+        .eq("opposition_id", activeOppositionId)
         .eq("completado", false)
         .neq("tipo", "v4_concept_check")
         .order("fecha_inicio", { ascending: false })
@@ -41,8 +46,8 @@ function InicioPage() {
       if (answerResult.error) throw answerResult.error;
 
       return {
-        userName: displayName({ profileName: profile.data?.nombre, metadataName: user.user_metadata?.nombre, email: user.email }),
-        activeOppositionId: profile.data?.active_opposition_id ?? null,
+        userName,
+        activeOppositionId,
         unfinished: unfinished.data
           ? { id: unfinished.data.id, total: unfinished.data.numero_preguntas, answered: (answerResult.data ?? []).filter((answer) => answer.respuesta_usuario !== null).length }
           : null,
