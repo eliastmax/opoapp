@@ -26,8 +26,10 @@ export const TESTS_FIRST_STATE_STYLES: Record<TestsFirstState, string> = {
 };
 
 export function hasLearnerAttention(row: TestsFirstProgressRow) {
-  return (row.attention_required || row.learner_state === "needs_reinforcement") &&
-    (row.distinct_test_questions > 0 || row.doubt_answers > 0);
+  return (
+    (row.attention_required || row.learner_state === "needs_reinforcement") &&
+    (row.distinct_test_questions > 0 || row.doubt_answers > 0)
+  );
 }
 
 export function testsFirstStateTotals(rows: TestsFirstProgressRow[]) {
@@ -67,19 +69,19 @@ export function groupTestsFirstProgressByTopic(rows: TestsFirstProgressRow[]) {
     }));
 }
 
-export function evidenceDescription(row: TestsFirstProgressRow) {
+export function evidenceDescription(row: Pick<TestsFirstProgressRow, "evidence_reason">) {
   switch (row.evidence_reason) {
     case "insufficient_test_evidence":
       return "Aún faltan preguntas o sesiones distintas para clasificarlo con seguridad.";
     case "safe_accuracy_below_70":
-      return "La muestra ya es segura y el acierto está por debajo del 70 %.";
+      return "El acierto está por debajo del 70 % con suficientes respuestas para evaluarlo.";
     case "diverse_high_accuracy_test_evidence":
-      return "Evidencia diversa: al menos 6 preguntas, 3 sesiones, 85 % y sin dudas.";
+      return "Has acertado al menos el 85 % en una muestra de 6 o más preguntas y 3 o más sesiones, sin dudas marcadas.";
     case "limited_active_primary_capacity":
-      return "La capacidad de preguntas PRIMARY limita cuánto puede comprobarse.";
+      return "Hay pocas preguntas activas que evalúen directamente este conocimiento.";
     case "confirmed_doubt_requires_attention":
       return "Hay respuestas marcadas con duda dentro de la evidencia disponible.";
     default:
-      return "La evidencia de tests está creciendo, pero todavía no alcanza Dominado.";
+      return "Tus tests ya permiten evaluarlo. Todavía necesita más práctica para afianzarse.";
   }
 }

@@ -20,6 +20,10 @@ const progressRoute = readFileSync(
   new URL("../../routes/_authenticated/progreso.tsx", import.meta.url),
   "utf8",
 );
+const overviewHook = readFileSync(
+  new URL("../../hooks/use-training-overview.ts", import.meta.url),
+  "utf8",
+);
 const migration = readFileSync(
   new URL(
     "../../../supabase/migrations/20260911103000_eli98_tests_first_results_weak_points.sql",
@@ -63,7 +67,8 @@ describe("ELI-98 tests-first learner integration", () => {
   });
 
   test("Progress has one tests-first authority and no learner legacy signals", () => {
-    expect(progressRoute).toContain('rpc("get_my_tests_first_concept_progress"');
+    expect(overviewHook).toContain('rpc("get_my_tests_first_concept_progress"');
+    expect(progressRoute).toContain("useTrainingProgress(user.id, oppositionId)");
     for (const legacy of [
       "prepare_my_v4_today_context",
       "user_concept_mastery",
@@ -74,7 +79,7 @@ describe("ELI-98 tests-first learner integration", () => {
     ]) {
       expect(progressRoute).not.toContain(legacy);
     }
-    expect(progressRoute).toContain("evidencia insuficiente de tests");
+    expect(progressRoute).toContain("falta evidencia de tests para evaluar");
   });
 
   test("Results attribution and weak-point selection stay in backend contracts", () => {
@@ -121,7 +126,7 @@ describe("ELI-98 tests-first learner integration", () => {
   });
 
   test("mobile contracts include narrow layout and safe-area handling", () => {
-    expect(progressRoute).toContain("min-[390px]:inline");
+    expect(progressRoute).toContain("grid-cols-6 gap-1.5 min-[390px]:gap-2");
     expect(progressRoute).toContain("min-[430px]:grid-cols-4");
     expect(testRoute).toContain("safe-bottom");
     expect(testRoute).toContain("break-words");

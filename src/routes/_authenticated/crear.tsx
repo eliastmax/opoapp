@@ -65,19 +65,38 @@ import {
   recommendedStageForScope,
   type ContentScope,
 } from "@/lib/multi-topic";
+import { useActiveOpposition } from "@/hooks/use-active-opposition";
 import { topicLabel } from "@/lib/topic-label";
 
 export const Route = createFileRoute("/_authenticated/crear")({
-  component: CrearPage,
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { topic?: string; review?: "falladas" | "dudas" } => ({
+    topic: typeof search.topic === "string" ? search.topic : undefined,
+    review: search.review === "falladas" || search.review === "dudas" ? search.review : undefined,
+  }),
+  component: CrearRoute,
 });
 
 type Modalidad = "mezcladas" | "nuevas" | "falladas" | "dudas";
 const CANTIDADES = [5, 10, 20, 30, 50] as const;
 
-function CrearPage() {
+function CrearRoute() {
+  const { topic, review } = Route.useSearch();
+  return <CrearPage key={JSON.stringify([topic, review])} initialTopic={topic} review={review} />;
+}
+
+function CrearPage({
+  initialTopic,
+  review,
+}: {
+  initialTopic?: string;
+  review?: "falladas" | "dudas";
+}) {
   const navigate = useNavigate();
+  const oppositionId = useActiveOpposition().data?.id;
   const [contentScope, setContentScope] = useState<ContentScope>("tema");
-  const [topicId, setTopicId] = useState<string>("");
+  const [chosenTopicId, setTopicId] = useState(initialTopic ?? "");
   const [multiTopicIds, setMultiTopicIds] = useState<string[]>([]);
   const [multiTopicDialogOpen, setMultiTopicDialogOpen] = useState(false);
   const [multiTopicSearch, setMultiTopicSearch] = useState("");
@@ -90,7 +109,7 @@ function CrearPage() {
   const [draftSubtopicIds, setDraftSubtopicIds] = useState<string[]>([]);
   const [subtopicSearch, setSubtopicSearch] = useState("");
   const [cantidad, setCantidad] = useState<number>(10);
-  const [modalidad, setModalidad] = useState<Modalidad>("mezcladas");
+  const [modalidad, setModalidad] = useState<Modalidad>(review ?? "mezcladas");
   const [selectedStage, setSelectedStage] = useState<PracticeStage>("aprendizaje");
   const [stageFreeMode, setStageFreeMode] = useState(false);
   const [pendingLockedStage, setPendingLockedStage] = useState<LearningStage | null>(null);
@@ -102,16 +121,19 @@ function CrearPage() {
       (await supabase.from("subjects").select("id, nombre").order("nombre")).data ?? [],
   });
   const { data: allTopics } = useQuery({
-    queryKey: ["topics", "all"],
+    queryKey: ["topics", "all", oppositionId],
+    enabled: Boolean(oppositionId),
     queryFn: async () =>
       (
         await supabase
           .from("topics")
           .select("id, numero, nombre, subject_id")
+          .eq("opposition_id", oppositionId!)
           .order("numero", { ascending: true })
           .order("nombre", { ascending: true })
       ).data ?? [],
   });
+  const topicId = allTopics?.some((topic) => topic.id === chosenTopicId) ? chosenTopicId : "";
   const { data: subtopics } = useQuery({
     queryKey: ["subtopics", topicId],
     enabled: !!topicId,

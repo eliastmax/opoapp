@@ -5,6 +5,11 @@ import { readFileSync } from "node:fs";
 const tour = readFileSync(new URL("../../components/product-tour.tsx", import.meta.url), "utf8");
 const styles = readFileSync(new URL("../../styles.css", import.meta.url), "utf8");
 
+const progress = readFileSync(
+  new URL("../../routes/_authenticated/progreso.tsx", import.meta.url),
+  "utf8",
+);
+
 describe("ELI-99 tutorial layout and progress readability", () => {
   it("lets the component own its responsive bottom-sheet geometry", () => {
     expect(tour).toContain("min-[700px]:items-center");
@@ -22,12 +27,9 @@ describe("ELI-99 tutorial layout and progress readability", () => {
     expect(tour).toContain('persist("skipped")');
   });
 
-  it("retains the larger minimum readable typography on Progress", () => {
-    expect(styles).toContain('main:has([data-tour="progress-overview"]) h1');
-    expect(styles).toContain("font-size: 2rem !important");
-    expect(styles).toContain('main:has([data-tour="progress-overview"]) .text-sm');
-    expect(styles).toContain("font-size: 1rem !important");
-    expect(styles).toContain('main:has([data-tour="progress-overview"]) .text-xs');
-    expect(styles).toContain("font-size: 0.875rem !important");
+  it("anchors the progress tour on the real overview and keeps the title readable", () => {
+    expect(progress).toContain('data-tour="progress-overview"');
+    expect(progress).toContain("text-[2rem]");
+    expect(styles).not.toContain('main:has([data-tour="progress-overview"])');
   });
 });

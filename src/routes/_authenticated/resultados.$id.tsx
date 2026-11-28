@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,8 @@ import {
   CheckCircle2,
   ClipboardCopy,
   Clock3,
+  Compass,
+  ListChecks,
   Flag,
   Lightbulb,
   Loader2,
@@ -44,6 +46,9 @@ import {
 } from "@/lib/result-diagnostics";
 import { LEARNING_STAGE_LABELS, learningStage } from "@/lib/learning-stages";
 import { resultFeedback } from "@/lib/result-feedback";
+import { trainingCard } from "@/components/training-visuals";
+import { cn } from "@/lib/utils";
+import { useActiveOpposition } from "@/hooks/use-active-opposition";
 import { topicLabel } from "@/lib/topic-label";
 import { elapsedExamMinutes } from "@/lib/exam-simulation";
 import type { Database } from "@/integrations/supabase/types";
@@ -96,17 +101,19 @@ type AnswerRow = {
   } | null;
 };
 
-type CompletedTestConcept = TestsFirstProgressRow & {
-  test_question_count: number;
-  test_correct_count: number;
-  test_doubt_count: number;
-};
+type CompletedTestConcept = Omit<
+  Database["public"]["Functions"]["get_my_completed_test_concepts"]["Returns"][number],
+  "learner_state"
+> & { learner_state: TestsFirstProgressRow["learner_state"] };
 
 function ResultadosPage() {
   const { id } = Route.useParams();
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"fallos" | "dudas" | "todas">("fallos");
+  const { user } = Route.useRouteContext();
+  const opposition = useActiveOpposition();
+  const [tab, setTab] = useState<"fallos" | "dudas" | "todas" | null>(null);
+  const reviewHeading = useRef<HTMLHeadingElement>(null);
   const [continuingSession, setContinuingSession] = useState(false);
   const [startingWeakPoints, setStartingWeakPoints] = useState(false);
 
@@ -126,7 +133,8 @@ function ResultadosPage() {
   }
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["resultados", id],
+    queryKey: ["resultados", user.id, opposition.data?.id, id],
+    enabled: Boolean(opposition.data?.id),
     queryFn: async () => {
       const [resultResponse, conceptsResponse] = await Promise.all([
         supabase.rpc("get_my_completed_test_result", { p_test_id: id }),
@@ -155,26 +163,33 @@ function ResultadosPage() {
     },
   });
 
-  if (isLoading)
+  if (isLoading || opposition.isLoading)
     return (
       <div className="flex items-center justify-center pt-20">
         <Loader2 className="w-6 h-6 animate-spin" />
       </div>
     );
-  if (isError || !data?.test) {
+  if (isError || opposition.isError || !data?.test) {
+    const failed = isError || opposition.isError;
     return (
-      <Card className="space-y-3 p-5" role={isError ? "alert" : "status"}>
+      <Card className="space-y-3 p-5" role={failed ? "alert" : "status"}>
         <h1 className="text-lg font-bold">
-          {isError ? "No hemos podido cargar el resultado" : "Resultado no disponible"}
+          {failed ? "No hemos podido cargar el resultado" : "Resultado no disponible"}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {isError
+          {failed
             ? "Comprueba tu conexión e inténtalo de nuevo."
             : "Puede que el test esté pendiente, pertenezca a otra cuenta o sea de otra oposición."}
         </p>
         <div className="flex flex-wrap gap-2">
-          {isError && <Button onClick={() => void refetch()}>Reintentar</Button>}
-          <Button variant="outline" asChild><Link to="/historial">Volver a Historial</Link></Button>
+          {failed && (
+            <Button onClick={() => void (opposition.isError ? opposition.refetch() : refetch())}>
+              Reintentar
+            </Button>
+          )}
+          <Button variant="outline" asChild>
+            <Link to="/historial">Volver a Historial</Link>
+          </Button>
         </div>
       </Card>
     );
@@ -184,9 +199,9 @@ function ResultadosPage() {
   const answers = data.answers;
   const falladas = answers.filter((a) => a.correcta === false);
   const dudosas = answers.filter((a) => a.marked_doubt);
-  const revisar = [...falladas, ...answers.filter((a) => a.correcta !== false && a.marked_doubt)];
+  const hasReview = falladas.length > 0 || dudosas.length > 0;
+  const reviewTab = falladas.length > 0 ? "fallos" : "dudas";
   const diagnosticGroups = buildDiagnosticGroups(answers as unknown as DiagnosticAnswer[]);
-  const perfecto = t.fallos === 0 && t.sin_responder === 0;
   const {
     counts: selectionCounts,
     previousOverlap,
@@ -478,27 +493,22 @@ function ResultadosPage() {
     );
   };
 
-  const reviewBlock = (
+  function openReview(next: "fallos" | "dudas" | "todas") {
+    setTab(next);
+    requestAnimationFrame(() => reviewHeading.current?.focus());
+  }
+
+  const reviewBlock = tab && (
     <section id="revision" className="scroll-mt-4">
-      <div className="mb-3">
-        <h2 className="text-lg font-bold tracking-tight">
-          {falladas.length > 0 ? "Tus fallos" : dudosas.length > 0 ? "Tus dudas" : "Revisión"}
-        </h2>
-        <p className="text-xs text-muted-foreground">
-          {falladas.length > 0
-            ? "Empieza por comprender qué ha fallado y qué debes repasar."
-            : dudosas.length > 0
-              ? "Revisa las respuestas que no contestaste con seguridad."
-              : "Consulta las respuestas completas del test."}
-        </p>
-      </div>
-      {revisar.length === 0 ? (
-        <div className="space-y-3">{answers.map(renderAnswer)}</div>
-      ) : (
-        <Tabs
-          value={falladas.length === 0 && tab === "fallos" ? "dudas" : tab}
-          onValueChange={(value) => setTab(value as "fallos" | "dudas" | "todas")}
-        >
+      <h2
+        ref={reviewHeading}
+        tabIndex={-1}
+        className="mb-3 scroll-mt-4 text-lg font-bold tracking-tight outline-none"
+      >
+        Corrección del test
+      </h2>
+      {hasReview ? (
+        <Tabs value={tab} onValueChange={(value) => setTab(value as "fallos" | "dudas" | "todas")}>
           <TabsList
             className={`grid h-11 w-full rounded-xl ${falladas.length > 0 && dudosas.length > 0 ? "grid-cols-3" : "grid-cols-2"}`}
           >
@@ -524,11 +534,13 @@ function ResultadosPage() {
             {answers.map(renderAnswer)}
           </TabsContent>
         </Tabs>
+      ) : (
+        <div className="space-y-3">{answers.map(renderAnswer)}</div>
       )}
 
       {falladas.length > 0 ? (
         <div className="mt-4 space-y-2">
-          <Button className="h-12 w-full" onClick={repetirFalladas}>
+          <Button variant="outline" className="h-12 w-full" onClick={repetirFalladas}>
             <RefreshCcw className="h-4 w-4" /> Practicar de nuevo las falladas
           </Button>
           {dudosas.length > 0 && (
@@ -538,7 +550,7 @@ function ResultadosPage() {
           )}
         </div>
       ) : dudosas.length > 0 ? (
-        <Button className="mt-4 h-12 w-full" onClick={repetirDudas}>
+        <Button variant="outline" className="mt-4 h-12 w-full" onClick={repetirDudas}>
           <RefreshCcw className="h-4 w-4" /> Practicar de nuevo las dudas
         </Button>
       ) : null}
@@ -560,85 +572,93 @@ function ResultadosPage() {
     t.exam_duration_minutes,
   );
 
+  const strongConcept = data.concepts
+    .filter((concept) => concept.test_correct_count > 0 && concept.test_doubt_count === 0)
+    .sort(
+      (a, b) =>
+        b.test_correct_count / b.test_question_count -
+          a.test_correct_count / a.test_question_count ||
+        b.test_correct_count - a.test_correct_count,
+    )[0];
+  const focusQuestion = falladas[0] ?? dudosas[0];
+  const focusName =
+    focusQuestion?.questions?.concepto?.trim() || focusQuestion?.questions?.topics?.nombre;
+
   return (
-    <div className="space-y-5">
-      <header className="pt-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-          Test completado
-        </p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight">
-          {perfecto ? "Resultado perfecto" : "Tus resultados"}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          <span>
-            {t.tipo === "simulacro"
-              ? "Simulacro"
-              : t.tipo.startsWith("multitema_")
-                ? `Varios temas · ${t.tipo.replace("multitema_", "")}`
-                : t.tipo}
-          </span>
+    <div className="space-y-4">
+      <header className="pt-3">
+        <p className="text-xs font-semibold tracking-wide text-primary">
+          {t.tipo === "simulacro" ? "Simulacro completado" : "Entrenamiento completado"}
           {t.learning_stage ? ` · ${LEARNING_STAGE_LABELS[learningStage(t.learning_stage)]}` : ""}
           {t.stage_free_mode ? " · modo libre" : ""}
         </p>
+        <h1 className="mt-2 text-[2rem] leading-tight font-bold tracking-tight">Resultados</h1>
       </header>
 
-      <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-card via-card to-primary/8 p-0">
-        <div className="flex items-center gap-4 p-5">
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-primary text-2xl font-bold text-primary-foreground shadow-lg shadow-primary/15">
-            {percentage}%
-          </div>
-          <div className="min-w-0">
-            <div className="text-lg font-bold">{feedback.title}</div>
-            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{feedback.message}</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-3 divide-x border-t border-border/70 bg-background/45">
-          <ResultStat icon={CheckCircle2} value={t.aciertos} label="Aciertos" tone="success" />
-          <ResultStat icon={XCircle} value={t.fallos} label="Fallos" tone="error" />
-          <ResultStat
-            icon={MinusCircle}
-            value={t.sin_responder}
-            label="Sin responder"
-            tone="muted"
-          />
-        </div>
-      </Card>
-
-      <TestedConceptsCard
-        concepts={data.concepts}
-        weakConcepts={weakConcepts}
-        starting={startingWeakPoints}
-        onTrain={() => void trainWeakPoints()}
-      />
-
-      {t.tipo === "simulacro" && t.exam_duration_minutes && simulationElapsed !== null && (
-        <Card className="flex items-center gap-3 border-primary/15 bg-card/90 p-4">
-          <span className="rounded-xl bg-primary/10 p-2.5 text-primary">
-            <Clock3 className="h-5 w-5" />
-          </span>
-          <div>
-            <div className="text-sm font-bold">Tiempo utilizado</div>
-            <div className="text-xs text-muted-foreground">
-              {simulationElapsed} de {t.exam_duration_minutes} minutos
+      <section className={cn(trainingCard, "overflow-hidden")} aria-label="Resultado del test">
+        <div className="flex items-center gap-4 bg-[#163d70] p-5 text-white">
+          <div className="grid min-h-20 min-w-20 shrink-0 place-items-center rounded-2xl bg-white/10 p-2 ring-1 ring-inset ring-white/25">
+            <div className="text-center">
+              <p className="text-[1.65rem] leading-none font-bold tracking-tight tabular-nums">
+                {new Intl.NumberFormat("es-ES").format(percentage)}%
+              </p>
+              <p className="mt-1 text-xs text-blue-100">del test</p>
             </div>
           </div>
-        </Card>
+          <div className="min-w-0">
+            <h2 className="text-lg leading-snug font-bold">{feedback.title}</h2>
+            <p className="mt-1 text-sm text-blue-100">
+              {t.aciertos} de {t.numero_preguntas} preguntas correctas
+            </p>
+            {t.tipo === "simulacro" && t.exam_duration_minutes && simulationElapsed !== null && (
+              <p className="mt-2 flex items-center gap-1.5 text-xs text-blue-100">
+                <Clock3 className="size-3.5" aria-hidden="true" /> {simulationElapsed} de{" "}
+                {t.exam_duration_minutes} min utilizados
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="grid grid-cols-4 divide-x">
+          <ResultStat icon={CheckCircle2} value={t.aciertos} label="Aciertos" tone="success" />
+          <ResultStat icon={XCircle} value={t.fallos} label="Fallos" tone="error" />
+          <ResultStat icon={Flag} value={dudosas.length} label="Dudas" tone="warning" />
+          <ResultStat icon={MinusCircle} value={t.sin_responder} label="En blanco" tone="muted" />
+        </div>
+      </section>
+
+      {answers.length > 0 && (
+        <section className={cn(trainingCard, "p-4")} aria-labelledby="answer-map">
+          <h2 id="answer-map" className="flex items-center gap-2 font-bold">
+            <ListChecks className="size-4 text-primary" aria-hidden="true" /> Tus respuestas
+          </h2>
+          <AnswerMap answers={answers} />
+        </section>
       )}
 
-      <Card className="space-y-3 bg-card/90 p-4">
-        <div>
-          <div className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
-            Siguiente paso
+      <section className={cn(trainingCard, "space-y-3 p-4")} aria-labelledby="next-objective">
+        <h2 id="next-objective" className="flex items-center gap-2 font-bold">
+          <Compass className="size-4 text-primary" aria-hidden="true" /> Qué hacer ahora
+        </h2>
+        {strongConcept && (
+          <div className="rounded-xl bg-[#279d79]/10 p-3">
+            <h3 className="text-xs font-bold text-emerald-900 dark:text-emerald-100">
+              Punto fuerte en este test
+            </h3>
+            <p className="mt-1 text-sm">
+              {strongConcept.concept_title} · {strongConcept.test_correct_count}/
+              {strongConcept.test_question_count} correctas.
+            </p>
           </div>
-          <h2 className="mt-1 font-bold">
-            {search.block
-              ? "OpoTest ya ha registrado esta comprobación"
-              : t.fallos > 0
-                ? "Refuerza ahora las respuestas falladas"
-                : dudosas.length > 0
-                  ? "Aclara las respuestas que dejaste con duda"
-                  : "Continúa con una nueva sesión"}
-          </h2>
+        )}
+        <div className="rounded-xl bg-muted/75 p-3">
+          <h3 className="text-xs font-bold">Próximo objetivo</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {focusQuestion
+              ? `${falladas.length > 0 ? "Revisa la explicación del primer fallo" : "Aclara la primera duda"}${focusName ? ` sobre ${focusName}` : ""}.`
+              : t.sin_responder > 0
+                ? "Revisa las preguntas que dejaste en blanco y comprueba qué te faltaba para responder."
+                : "Prueba preguntas distintas para comprobar si mantienes este resultado."}
+          </p>
         </div>
         {search.block ? (
           <Button
@@ -646,44 +666,55 @@ function ResultadosPage() {
             disabled={continuingSession}
             onClick={() => void continueGuidedSession()}
           >
-            {continuingSession ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Continuar sesión <ArrowRight className="h-4 w-4" />
+            {continuingSession && <Loader2 className="animate-spin" aria-hidden="true" />}
+            Continuar sesión <ArrowRight aria-hidden="true" />
           </Button>
-        ) : revisar.length > 0 ? (
-          <Button asChild className="h-12 w-full">
-            <a href="#revision">
-              {falladas.length > 0
-                ? `Revisar ${falladas.length} ${falladas.length === 1 ? "fallo" : "fallos"}`
-                : `Revisar ${dudosas.length} ${dudosas.length === 1 ? "duda" : "dudas"}`}
-              <ArrowRight className="h-4 w-4" />
-            </a>
+        ) : hasReview ? (
+          <Button className="h-12 w-full" onClick={() => openReview(reviewTab)}>
+            Repasar fallos y dudas <ArrowRight aria-hidden="true" />
           </Button>
         ) : (
-          <Link to="/crear" className="block">
-            <Button className="h-12 w-full">
-              Hacer otro test <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
-        )}
-        {!search.block && (
-          <div className="flex items-center justify-center gap-3 text-xs font-medium">
-            {revisar.length > 0 && (
-              <Link to="/crear" className="text-primary hover:underline">
-                Otro test
-              </Link>
-            )}
-            {revisar.length > 0 && <span className="text-muted-foreground/50">·</span>}
-            <Link
-              to="/inicio"
-              className="text-muted-foreground hover:text-foreground hover:underline"
-            >
-              Terminar por hoy
+          <Button asChild className="h-12 w-full">
+            <Link to="/crear">
+              Hacer otro test <ArrowRight aria-hidden="true" />
             </Link>
-          </div>
+          </Button>
         )}
-      </Card>
+        <div className="grid grid-cols-[1fr_auto] gap-1">
+          {answers.length > 0 && (
+            <Button
+              variant="ghost"
+              className="h-11 justify-start px-1.5 text-primary"
+              onClick={() => openReview("todas")}
+            >
+              Ver corrección completa
+            </Button>
+          )}
+          <Button variant="ghost" className="col-start-2 h-11 px-1.5 text-muted-foreground" asChild>
+            <Link to="/inicio">Volver a inicio</Link>
+          </Button>
+        </div>
+      </section>
 
-      {revisar.length > 0 && reviewBlock}
+      {reviewBlock}
+
+      <Card className="bg-card/90 px-4">
+        <Accordion type="single" collapsible>
+          <AccordionItem value="concepts" className="border-b-0">
+            <AccordionTrigger className="hover:no-underline">
+              Conocimientos puestos a prueba
+            </AccordionTrigger>
+            <AccordionContent>
+              <TestedConceptsCard
+                concepts={data.concepts}
+                weakConcepts={weakConcepts}
+                starting={startingWeakPoints}
+                onTrain={() => void trainWeakPoints()}
+              />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </Card>
 
       <Card className="bg-card/90 px-4">
         <Accordion
@@ -760,20 +791,62 @@ function ResultadosPage() {
           </AccordionItem>
         </Accordion>
       </Card>
-
-      {revisar.length === 0 && (
-        <Card className="bg-card/90 px-4">
-          <Accordion type="single" collapsible>
-            <AccordionItem value="all" className="border-b-0">
-              <AccordionTrigger className="hover:no-underline">
-                Revisar todas las respuestas
-              </AccordionTrigger>
-              <AccordionContent>{reviewBlock}</AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </Card>
-      )}
     </div>
+  );
+}
+
+function AnswerMap({ answers }: { answers: AnswerRow[] }) {
+  return (
+    <>
+      <ol
+        className="mt-3 grid grid-cols-8 gap-1.5 min-[390px]:grid-cols-10"
+        aria-label="Resultado de cada pregunta"
+      >
+        {answers.map((answer) => {
+          const outcome =
+            answer.correcta === true
+              ? {
+                  label: "acierto",
+                  tone: "bg-[#279d79]/17 text-emerald-950 dark:text-emerald-100",
+                  Icon: CheckCircle2,
+                }
+              : answer.correcta === false
+                ? {
+                    label: "fallo",
+                    tone: "bg-destructive/12 text-red-900 dark:text-red-200",
+                    Icon: XCircle,
+                  }
+                : { label: "en blanco", tone: "bg-muted text-muted-foreground", Icon: MinusCircle };
+          return (
+            <li key={answer.id}>
+              <span className="sr-only">
+                Pregunta {answer.orden}, {outcome.label}
+                {answer.marked_doubt ? ", con duda" : ""}
+              </span>
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "relative grid min-h-10 content-center justify-items-center gap-0.5 rounded-md py-1 text-xs leading-none tabular-nums",
+                  outcome.tone,
+                )}
+              >
+                <outcome.Icon className="size-3" />
+                {answer.orden}
+                {answer.marked_doubt && (
+                  <span className="absolute top-1 right-1 size-1.5 rounded-full bg-[#a96806] ring-[1.5px] ring-card" />
+                )}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+      {answers.some((answer) => answer.marked_doubt) && (
+        <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span aria-hidden="true" className="size-1.5 rounded-full bg-[#a96806]" /> Punto ámbar =
+          duda marcada
+        </p>
+      )}
+    </>
   );
 }
 
@@ -786,17 +859,19 @@ function ResultStat({
   icon: React.ElementType;
   value: number;
   label: string;
-  tone: "success" | "error" | "muted";
+  tone: "success" | "error" | "warning" | "muted";
 }) {
   const color =
     tone === "success"
       ? "text-success"
       : tone === "error"
         ? "text-destructive"
-        : "text-muted-foreground";
+        : tone === "warning"
+          ? "text-amber-800 dark:text-amber-200"
+          : "text-muted-foreground";
   return (
     <div className="px-2 py-3 text-center">
-      <Icon className={`mx-auto mb-1 h-4 w-4 ${color}`} />
+      <Icon className={`mx-auto mb-1 h-4 w-4 ${color}`} aria-hidden="true" />
       <div className="font-bold leading-none">{value}</div>
       <div className="mt-1 text-[11px] text-muted-foreground">{label}</div>
     </div>
@@ -816,27 +891,12 @@ function TestedConceptsCard({
 }) {
   if (concepts.length === 0) {
     return (
-      <Card className="border-primary/15 bg-card/90 p-4">
-        <div className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
-          Conceptos puestos a prueba
-        </div>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Este test no tiene atribución de concepto disponible.
-        </p>
-      </Card>
+      <p className="text-sm text-muted-foreground">No hay conocimientos asociados a este test.</p>
     );
   }
   return (
-    <Card className="border-primary/15 bg-card/90 p-4">
-      <div>
-        <div className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
-          Conceptos puestos a prueba
-        </div>
-        <h2 className="mt-1 font-bold">Estado actual según tus tests</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          No se infieren mejoras ni cambios históricos sin una medición anterior comparable.
-        </p>
-      </div>
+    <div>
+      <p className="text-sm text-muted-foreground">Estado actual según el conjunto de tus tests.</p>
       <div className="mt-3 space-y-2">
         {concepts.map((concept) => (
           <div key={concept.concept_id} className="rounded-xl bg-muted/55 p-3">
@@ -860,11 +920,16 @@ function TestedConceptsCard({
         ))}
       </div>
       {weakConcepts.length > 0 && (
-        <Button className="mt-3 h-12 w-full" disabled={starting} onClick={onTrain}>
+        <Button
+          variant="outline"
+          className="mt-3 h-12 w-full"
+          disabled={starting}
+          onClick={onTrain}
+        >
           {starting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Target className="h-4 w-4" />}
           Entrenar puntos débiles
         </Button>
       )}
-    </Card>
+    </div>
   );
 }
