@@ -1,5 +1,4 @@
 import { createFileRoute, Outlet, redirect, Link, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Home, PlusSquare, Gauge, History, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -22,93 +21,6 @@ const nav = [
   { to: "/historial", label: "Historial", icon: History },
   { to: "/ajustes", label: "Ajustes", icon: Settings },
 ] as const;
-
-type ProgressTargetRect = {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-};
-
-function ProgressTourTarget() {
-  const [rect, setRect] = useState<ProgressTargetRect | null>(null);
-
-  useEffect(() => {
-    let resizeObserver: ResizeObserver | null = null;
-    let mutationObserver: MutationObserver | null = null;
-    let trackedCard: HTMLElement | null = null;
-
-    const measure = () => {
-      const main = document.querySelector<HTMLElement>("[data-app-main]");
-      const marker = document.querySelector<HTMLElement>(
-        '[aria-label="Distribución del conocimiento"]',
-      );
-      const knowledgeBar = marker?.closest<HTMLElement>(".overflow-hidden") ?? null;
-      const card = knowledgeBar?.parentElement?.parentElement ?? null;
-      const exactKnowledgeCard =
-        card instanceof HTMLElement &&
-        card.textContent?.includes("Conocimiento real") &&
-        card.textContent?.includes("En comprobación")
-          ? card
-          : null;
-      if (!main || !exactKnowledgeCard) return false;
-
-      const mainRect = main.getBoundingClientRect();
-      const cardRect = exactKnowledgeCard.getBoundingClientRect();
-      setRect({
-        top: cardRect.top - mainRect.top,
-        left: cardRect.left - mainRect.left,
-        width: cardRect.width,
-        height: cardRect.height,
-      });
-
-      if (exactKnowledgeCard !== trackedCard) {
-        resizeObserver?.disconnect();
-        trackedCard = exactKnowledgeCard;
-        resizeObserver = new ResizeObserver(measure);
-        resizeObserver.observe(main);
-        resizeObserver.observe(exactKnowledgeCard);
-      }
-      mutationObserver?.disconnect();
-      mutationObserver = null;
-      return true;
-    };
-
-    if (!measure()) {
-      const main = document.querySelector<HTMLElement>("[data-app-main]");
-      if (main) {
-        mutationObserver = new MutationObserver(measure);
-        mutationObserver.observe(main, { childList: true, subtree: true });
-      }
-    }
-
-    const visualViewport = window.visualViewport;
-    window.addEventListener("resize", measure);
-    visualViewport?.addEventListener("resize", measure);
-    return () => {
-      resizeObserver?.disconnect();
-      mutationObserver?.disconnect();
-      window.removeEventListener("resize", measure);
-      visualViewport?.removeEventListener("resize", measure);
-    };
-  }, []);
-
-  if (!rect) return null;
-
-  return (
-    <div
-      data-tour="progress-overview"
-      className="pointer-events-none absolute"
-      style={{
-        top: rect.top,
-        left: rect.left,
-        width: rect.width,
-        height: rect.height,
-      }}
-      aria-hidden="true"
-    />
-  );
-}
 
 function AuthLayout() {
   const { user } = Route.useRouteContext();
@@ -137,7 +49,6 @@ function AuthLayout() {
               aria-hidden="true"
             />
           )}
-          {pathname === "/progreso" && <ProgressTourTarget />}
           <Outlet />
         </main>
         {!focusedJourney && (

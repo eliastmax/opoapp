@@ -157,6 +157,10 @@ function TestPage() {
       if (error) throw error;
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["dashboard"] }),
+        qc.invalidateQueries({ queryKey: ["today-tests-first"] }),
+        qc.invalidateQueries({ queryKey: ["tests-first-concept-progress"] }),
+        qc.invalidateQueries({ queryKey: ["training-activity"] }),
+        qc.invalidateQueries({ queryKey: ["training-reviews"] }),
         qc.invalidateQueries({ queryKey: weeklyRoadmapQueryKey }),
       ]);
       navigate({ to: "/resultados/$id", params: { id }, search, replace: true });

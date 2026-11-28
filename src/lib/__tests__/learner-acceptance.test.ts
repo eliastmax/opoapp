@@ -8,8 +8,10 @@ const route = (name: string) =>
 describe("Learner acceptance regressions", () => {
   test("Hoy only offers to resume a test from the active opposition", () => {
     const today = route("inicio");
-    expect(today).toContain("if (!activeOppositionId) return");
-    expect(today).toMatch(/\.from\("tests"\)[\s\S]*?\.eq\("opposition_id", activeOppositionId\)[\s\S]*?\.eq\("completado", false\)/);
+    expect(today).toContain("if (!oppositionId) return");
+    expect(today).toMatch(
+      /\.from\("tests"\)[\s\S]*?\.eq\("opposition_id", oppositionId\)[\s\S]*?\.eq\("completado", false\)/,
+    );
   });
 
   test("Historial scopes its query and cache to the active opposition", () => {

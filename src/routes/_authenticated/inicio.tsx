@@ -1,101 +1,386 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import type { ElementType } from "react";
-import { ArrowRight, Brain, Play, Target } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronRight,
+  CircleHelp,
+  ClipboardCheck,
+  Clock3,
+  Crosshair,
+  Layers3,
+  Loader2,
+  Play,
+  RotateCcw,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  CoverageFigures,
+  CoverageRings,
+  Streak,
+  TrainingError,
+  trainingCard,
+} from "@/components/training-visuals";
 import { WeeklyTestsFirstRecap } from "@/components/weekly-tests-first-recap";
+import { useActiveOpposition } from "@/hooks/use-active-opposition";
+import {
+  useConceptTraining,
+  useTrainingActivity,
+  useTrainingProgress,
+  useTrainingTopics,
+} from "@/hooks/use-training-overview";
 import { supabase } from "@/integrations/supabase/client";
 import { displayName } from "@/lib/user-greeting";
+import { coverage, recommendKnowledge } from "@/lib/training-overview";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/inicio")({ component: InicioPage });
 
-type UnfinishedTest = { id: string; total: number; answered: number };
-
 function InicioPage() {
+  const { user } = Route.useRouteContext();
   const navigate = useNavigate();
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["today-tests-first"],
+  const opposition = useActiveOpposition();
+  const oppositionId = opposition.data?.id;
+  const progress = useTrainingProgress(user.id, oppositionId);
+  const activity = useTrainingActivity(user.id, oppositionId);
+  const training = useConceptTraining();
+  const today = useQuery({
+    queryKey: ["today-tests-first", user.id, oppositionId],
     queryFn: async () => {
-      const userResult = await supabase.auth.getUser();
-      if (userResult.error || !userResult.data.user) throw userResult.error ?? new Error("Sesión no válida");
-      const user = userResult.data.user;
-      const profile = await supabase.from("profiles").select("nombre, active_opposition_id").eq("id", user.id).maybeSingle();
+      const profile = await supabase
+        .from("profiles")
+        .select("nombre")
+        .eq("id", user.id)
+        .maybeSingle();
       if (profile.error) throw profile.error;
-
-      const userName = displayName({ profileName: profile.data?.nombre, metadataName: user.user_metadata?.nombre, email: user.email });
-      const activeOppositionId = profile.data?.active_opposition_id ?? null;
-      if (!activeOppositionId) return { userName, activeOppositionId, unfinished: null };
+      const userName = displayName({
+        profileName: profile.data?.nombre,
+        metadataName: user.user_metadata?.nombre,
+        email: user.email,
+      });
+      if (!oppositionId) return { userName, unfinished: null };
 
       const unfinished = await supabase
         .from("tests")
         .select("id, numero_preguntas")
         .eq("user_id", user.id)
-        .eq("opposition_id", activeOppositionId)
+        .eq("opposition_id", oppositionId)
         .eq("completado", false)
         .neq("tipo", "v4_concept_check")
         .order("fecha_inicio", { ascending: false })
+        .order("id", { ascending: false })
         .limit(1)
         .maybeSingle();
       if (unfinished.error) throw unfinished.error;
+      if (!unfinished.data) return { userName, unfinished: null };
 
-      const answerResult = unfinished.data
-        ? await supabase.from("test_answers").select("respuesta_usuario").eq("test_id", unfinished.data.id)
-        : { data: [], error: null };
+      const answerResult = await supabase
+        .from("test_answers")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("test_id", unfinished.data.id)
+        .not("respuesta_usuario", "is", null);
       if (answerResult.error) throw answerResult.error;
-
       return {
         userName,
-        activeOppositionId,
-        unfinished: unfinished.data
-          ? { id: unfinished.data.id, total: unfinished.data.numero_preguntas, answered: (answerResult.data ?? []).filter((answer) => answer.respuesta_usuario !== null).length }
-          : null,
+        unfinished: {
+          id: unfinished.data.id,
+          total: unfinished.data.numero_preguntas,
+          answered: answerResult.count ?? 0,
+        },
       };
     },
   });
-
-  const unfinished = data?.unfinished ?? null;
-  const hasOpposition = Boolean(data?.activeOppositionId);
+  const unfinished = today.data?.unfinished;
+  const recommendation = progress.data && recommendKnowledge(progress.data);
+  const summary = progress.data && coverage(progress.data);
+  const loading =
+    today.isLoading ||
+    opposition.isLoading ||
+    (!!oppositionId && !unfinished && progress.isLoading);
+  const error = today.isError || opposition.isError;
 
   return (
-    <div className="relative isolate space-y-4">
-      <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-20 -z-10 h-72 w-[92%] max-w-md -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
-      <header className="pt-1">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Hoy</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight">{isLoading ? "Preparando tu entrenamiento…" : `Hola, ${data?.userName ?? ""}`}</h1>
-        {!isLoading && !error && hasOpposition ? <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Entrena, mide lo que realmente sabes y usa tus resultados para decidir dónde apretar.</p> : null}
+    <div className="space-y-4">
+      <header className="space-y-3 pt-3">
+        {opposition.data && (
+          <p className="text-xs font-semibold tracking-wide text-primary">{opposition.data.name}</p>
+        )}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-[2rem] leading-tight font-bold tracking-tight">
+            {today.data ? `Hola, ${today.data.userName}` : "Hoy"}
+          </h1>
+          {!activity.isError && activity.data && <Streak days={activity.data.streak} />}
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Cada entrenamiento te ayuda a decidir qué repasar.
+        </p>
       </header>
 
-      {isLoading ? <TodaySkeleton />
-        : error ? <Card className="border-destructive/20 p-5 text-center"><p className="font-semibold">No hemos podido preparar Hoy</p><p className="mt-1 text-sm text-muted-foreground">Tus tests y tu progreso están intactos. Inténtalo de nuevo.</p><Button className="mt-4 w-full" onClick={() => void refetch()}>Reintentar</Button></Card>
-        : !hasOpposition ? <PrimaryCard icon={Target} eyebrow="Primero, elige tu oposición" title="Activa el temario con el que vas a entrenar" description="Solo necesitamos saber qué oposición preparas para cargar sus preguntas y tu progreso." action="Elegir oposición" onAction={() => navigate({ to: "/preparacion" })} />
-        : unfinished ? <UnfinishedPrimary test={unfinished} onContinue={() => navigate({ to: "/test/$id", params: { id: unfinished.id }, search: { block: undefined, session: undefined } })} />
-        : <PrimaryCard icon={Brain} eyebrow="Tu siguiente entrenamiento" title="Pon a prueba lo que sabes" description="Elige tema, nivel y formato. Cada respuesta dará a OpoTest evidencia para mostrarte qué dominas y qué necesitas reforzar." action="Entrenar ahora" onAction={() => navigate({ to: "/crear" })} />}
+      {error ? (
+        <TrainingError
+          message="Hoy no se ha podido cargar."
+          retry={() => {
+            void opposition.refetch();
+            void today.refetch();
+          }}
+        />
+      ) : loading ? (
+        <Skeleton className="h-56 rounded-[1.5rem]" aria-label="Preparando tu entrenamiento" />
+      ) : !oppositionId ? (
+        <PrimaryCard
+          title="Elige tu oposición"
+          description="Activa el temario que quieres practicar."
+          action="Elegir oposición"
+          onAction={() => navigate({ to: "/preparacion" })}
+        />
+      ) : unfinished ? (
+        <PrimaryCard
+          title="Tu test está en marcha"
+          description="Retoma el entrenamiento donde lo dejaste."
+          action="Continuar test"
+          questions={`${unfinished.answered} de ${unfinished.total} respondidas`}
+          onAction={() =>
+            navigate({
+              to: "/test/$id",
+              params: { id: unfinished.id },
+              search: { block: undefined, session: undefined },
+            })
+          }
+        />
+      ) : recommendation && !progress.isError ? (
+        <PrimaryCard
+          title={
+            recommendation.reason === "reinforce"
+              ? "Refuerza lo trabajado"
+              : "Comprueba lo que sabes"
+          }
+          description={
+            recommendation.reason === "reinforce"
+              ? `Tus respuestas del tema ${recommendation.row.topic_number} señalan dónde te conviene practicar.`
+              : `Empieza con preguntas del tema ${recommendation.row.topic_number} para reunir evidencia.`
+          }
+          action="Iniciar entrenamiento"
+          questions={`${recommendation.questionCount} preguntas`}
+          duration={`${recommendation.questionCount}–${recommendation.questionCount * 2} min aprox.`}
+          pending={training.isPending}
+          onAction={() =>
+            training.mutate({
+              conceptId: recommendation.row.concept_id,
+              questionCount: recommendation.questionCount,
+            })
+          }
+        />
+      ) : (
+        <PrimaryCard
+          title="Prepara tu próximo test"
+          description="Elige el tema y el número de preguntas que quieres practicar."
+          action="Configurar test"
+          onAction={() => navigate({ to: "/crear" })}
+        />
+      )}
 
-      {!isLoading && !error && data?.activeOppositionId ? <WeeklyTestsFirstRecap oppositionId={data.activeOppositionId} /> : null}
+      {oppositionId && !error && (
+        <>
+          <PendingReviews userId={user.id} oppositionId={oppositionId} />
+          {progress.isError ? (
+            <TrainingError
+              message="Tu dominio del temario no se ha podido cargar."
+              retry={() => void progress.refetch()}
+            />
+          ) : (
+            summary &&
+            summary.total > 0 && (
+              <section className={cn(trainingCard, "p-4")} aria-labelledby="today-progress">
+                <h2 id="today-progress" className="font-bold">
+                  Tu dominio del temario
+                </h2>
+                <div className="my-3 flex items-center gap-5">
+                  <CoverageRings summary={summary} />
+                  <CoverageFigures summary={summary} />
+                </div>
+                <Button
+                  variant="ghost"
+                  asChild
+                  className="h-11 w-full justify-between text-primary"
+                >
+                  <Link to="/progreso">
+                    Ver mi progreso <ChevronRight aria-hidden="true" />
+                  </Link>
+                </Button>
+              </section>
+            )
+          )}
+          {activity.isError ? (
+            <TrainingError
+              message="Tu actividad no se ha podido cargar."
+              retry={() => void activity.refetch()}
+            />
+          ) : (
+            activity.data && <WeeklyTestsFirstRecap data={activity.data} />
+          )}
+        </>
+      )}
     </div>
   );
 }
 
-function UnfinishedPrimary({ test, onContinue }: { test: UnfinishedTest; onContinue: () => void }) {
-  const remaining = Math.max(0, test.total - test.answered);
-  return <PrimaryCard icon={Play} eyebrow="Continúa donde lo dejaste" title="Tienes un test en marcha" description={`${test.answered} de ${test.total} preguntas respondidas. Te quedan ${remaining}; continúa sin perder el intento.`} action="Continuar test" onAction={onContinue} />;
-}
-
-function PrimaryCard({ icon: Icon, eyebrow, title, description, action, onAction }: { icon: ElementType; eyebrow: string; title: string; description: string; action: string; onAction: () => void }) {
+function PrimaryCard({
+  title,
+  description,
+  questions,
+  duration,
+  action,
+  pending,
+  onAction,
+}: {
+  title: string;
+  description: string;
+  questions?: string;
+  duration?: string;
+  action: string;
+  pending?: boolean;
+  onAction: () => void;
+}) {
   return (
-    <Card data-tour="today-session" className="relative overflow-hidden border-0 bg-gradient-to-br from-primary via-primary to-[oklch(0.46_0.13_228)] text-primary-foreground shadow-[0_26px_56px_-28px_oklch(0.3_0.14_250/0.95)] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-300">
-      <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-52 w-52 rounded-full bg-white/10 blur-3xl" />
-      <div aria-hidden="true" className="pointer-events-none absolute -bottom-24 -left-14 h-44 w-44 rounded-full bg-cyan-200/10 blur-3xl" />
-      <div className="relative p-5 sm:p-6">
-        <div className="flex items-start gap-3.5"><span className="rounded-2xl bg-white/15 p-2.5 ring-1 ring-white/20"><Icon className="h-5 w-5" /></span><div className="min-w-0 flex-1"><p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/72">{eyebrow}</p><h2 className="mt-1.5 text-[1.35rem] font-bold leading-[1.15] tracking-tight">{title}</h2><p className="mt-2.5 text-[15px] leading-relaxed text-white/88">{description}</p></div></div>
-        <Button onClick={onAction} className="mt-5 h-12 w-full bg-white text-primary shadow-sm transition-transform duration-200 hover:bg-white/92 active:scale-[0.995]"><Play className="mr-2 h-4 w-4" />{action}<ArrowRight className="ml-2 h-4 w-4" /></Button>
+    <section
+      data-tour="today-session"
+      className="relative isolate overflow-hidden rounded-[1.5rem] bg-[#163d70] p-5 text-white shadow-[0_20px_30px_-21px_#163d70] motion-safe:animate-in motion-safe:fade-in"
+    >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-20 -right-20 -z-10 size-56 rounded-full border-24 border-[#468bd3]/25 ring-[18px] ring-[#468bd3]/15"
+      />
+      <div className="mb-4 flex items-center gap-2 text-sm font-medium text-blue-100">
+        <span className="grid size-8 place-items-center rounded-lg bg-white/15">
+          <Crosshair className="size-4" aria-hidden="true" />
+        </span>
+        Entrenamiento de hoy
       </div>
-    </Card>
+      <h2 className="text-[1.5rem] leading-tight font-bold tracking-tight">{title}</h2>
+      <p className="mt-2 max-w-[34ch] text-sm leading-relaxed text-blue-100">{description}</p>
+      {questions && (
+        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs font-semibold text-blue-100">
+          <span className="flex items-center gap-1.5">
+            <Layers3 className="size-4" aria-hidden="true" /> {questions}
+          </span>
+          {duration && (
+            <span className="flex items-center gap-1.5">
+              <Clock3 className="size-4" aria-hidden="true" /> {duration}
+            </span>
+          )}
+        </div>
+      )}
+      <Button
+        type="button"
+        disabled={pending}
+        onClick={onAction}
+        className="mt-5 h-12 w-full justify-between bg-white text-[#163d70] hover:bg-blue-50 focus-visible:ring-white focus-visible:ring-offset-[#163d70]"
+      >
+        {pending ? (
+          <Loader2 className="animate-spin" aria-hidden="true" />
+        ) : (
+          <Play aria-hidden="true" />
+        )}
+        {action}
+        <ArrowRight aria-hidden="true" />
+      </Button>
+    </section>
   );
 }
 
-function TodaySkeleton() {
-  return <Card className="space-y-4 p-5" aria-label="Preparando tu entrenamiento de hoy"><div className="flex gap-3"><Skeleton className="h-11 w-11 rounded-xl" /><div className="flex-1 space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-6 w-4/5" /><Skeleton className="h-4 w-full" /></div></div><Skeleton className="h-12 w-full rounded-xl" /></Card>;
+function PendingReviews({ userId, oppositionId }: { userId: string; oppositionId: string }) {
+  const topics = useTrainingTopics(oppositionId);
+  const reviews = useQuery({
+    queryKey: ["training-reviews", userId, oppositionId, topics.data?.map((topic) => topic.id)],
+    enabled: Boolean(topics.data?.length),
+    queryFn: async () => {
+      const ids = topics.data!.map((topic) => topic.id);
+      return Promise.all(
+        (
+          [
+            {
+              view: "active_failed_questions",
+              date: "last_answered_at",
+              mode: "falladas",
+              label: "Repasar fallos",
+              icon: RotateCcw,
+            },
+            {
+              view: "active_doubt_questions",
+              date: "last_reviewed_at",
+              mode: "dudas",
+              label: "Aclarar dudas",
+              icon: CircleHelp,
+            },
+          ] as const
+        ).map(async (item) => {
+          const result = await supabase
+            .from(item.view)
+            .select("topic_id")
+            .eq("user_id", userId)
+            .in("topic_id", ids)
+            .order(item.date, { ascending: false })
+            .order("question_id")
+            .limit(1)
+            .maybeSingle();
+          if (result.error) throw result.error;
+          return {
+            ...item,
+            topic: topics.data!.find((topic) => topic.id === result.data?.topic_id),
+          };
+        }),
+      );
+    },
+  });
+  if (topics.isError || reviews.isError) {
+    return (
+      <TrainingError
+        message="No se han podido consultar los repasos."
+        retry={() => {
+          void (topics.isError ? topics.refetch() : reviews.refetch());
+        }}
+      />
+    );
+  }
+  const pending = reviews.data?.filter((item) => item.topic);
+  if (!pending?.length) return null;
+
+  return (
+    <section className={cn(trainingCard, "p-4")} aria-labelledby="pending-review">
+      <h2 id="pending-review" className="flex items-center gap-2 font-bold">
+        <ClipboardCheck className="size-4 text-primary" aria-hidden="true" /> Repasos pendientes
+      </h2>
+      <div className="mt-2 divide-y">
+        {pending.map(
+          ({ topic, mode, icon: Icon, label }) =>
+            topic && (
+              <Link
+                key={mode}
+                to="/crear"
+                search={{ topic: topic.id, review: mode }}
+                className="flex min-h-12 items-center gap-2.5 rounded-md py-2 text-sm focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#d49a36]/20 text-amber-900 dark:text-amber-100">
+                  <Icon className="size-4" aria-hidden="true" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <strong className="block">{label}</strong>
+                  <span
+                    className="block truncate text-xs text-muted-foreground"
+                    title={topic.nombre}
+                  >
+                    Tema {topic.numero} · {topic.nombre}
+                  </span>
+                </span>
+                <ChevronRight
+                  className="size-4 shrink-0 text-muted-foreground"
+                  aria-hidden="true"
+                />
+              </Link>
+            ),
+        )}
+      </div>
+    </section>
+  );
 }
